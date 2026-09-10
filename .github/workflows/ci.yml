@@ -20,13 +20,13 @@ jobs:
         with:
           bun-version: 1.4.0
       - name: Install
-        working-directory: plugins/pstack/skills/poteto-mode/scripts
+        working-directory: plugins/pstack/skills/engineering-mode/scripts
         run: bun install --frozen-lockfile
       - name: Test
-        working-directory: plugins/pstack/skills/poteto-mode/scripts
+        working-directory: plugins/pstack/skills/engineering-mode/scripts
         run: bun run test
       - name: Typecheck
-        working-directory: plugins/pstack/skills/poteto-mode/scripts
+        working-directory: plugins/pstack/skills/engineering-mode/scripts
         run: bun run typecheck
       - name: Validate manifests and static invariants
         run: |

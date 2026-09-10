@@ -7,7 +7,7 @@ description: "Sketch types, signatures, and module structure before code, then s
 
 Design before implementing. Sketch types, function signatures, class shapes, and module boundaries with `not implemented` bodies and pseudocode. Synthesize across multiple model perspectives, then fill in code against the chosen sketch. If implementation proves the sketch wrong, throw it out and redesign.
 
-**Dispatch contract.** Architect's Arena uses the centralized provider routing in [`provider-dispatch.md`](../poteto-mode/references/provider-dispatch.md). Configured entries are descriptors, not native model slugs. On Codex, resolve remaining Claude tool names via [`codex-tools.md`](../poteto-mode/references/codex-tools.md).
+**Dispatch contract.** Architect's Arena uses the centralized provider routing in [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md). Configured entries are descriptors, not native model slugs. On Codex, resolve remaining Claude tool names via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
 
 ## Start
 

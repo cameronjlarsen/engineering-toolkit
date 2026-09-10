@@ -49,7 +49,7 @@ Do not send a same-provider descriptor to the external runner. It rejects that c
 
 ## External lanes
 
-The launcher lives at `skills/poteto-mode/scripts/runner/pstack-runner` under the installed plugin. The parent writes the complete candidate prompt to a unique file, creates a unique output directory or worktree, and invokes the launcher directly. Do not put another agent in front of it.
+The launcher lives at `skills/engineering-mode/scripts/runner/pstack-runner` under the installed plugin. The parent writes the complete candidate prompt to a unique file, creates a unique output directory or worktree, and invokes the launcher directly. Do not put another agent in front of it.
 
 ```text
 pstack-runner \

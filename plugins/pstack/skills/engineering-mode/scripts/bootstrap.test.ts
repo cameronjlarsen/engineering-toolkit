@@ -14,7 +14,7 @@ describe("Bun runtime guard", () => {
       expect(result.exitCode).toBe(1);
       expect(result.stdout.toString()).toBe("");
       expect(result.stderr.toString()).toBe(
-        "pstack poteto-mode tooling requires Bun (https://bun.sh). Install Bun, then re-run.\n"
+        "pstack engineering-mode tooling requires Bun (https://bun.sh). Install Bun, then re-run.\n"
       );
     });
   }

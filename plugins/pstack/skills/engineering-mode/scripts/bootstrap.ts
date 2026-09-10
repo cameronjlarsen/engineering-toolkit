@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 if (typeof Bun === "undefined") {
   console.error(
-    "pstack poteto-mode tooling requires Bun (https://bun.sh). Install Bun, then re-run."
+    "pstack engineering-mode tooling requires Bun (https://bun.sh). Install Bun, then re-run."
   );
   process.exit(1);
 }
@@ -18,7 +18,7 @@ const commanderPackagePath = join(
 );
 const installKeyPath = join(
   nodeModulesDirectory,
-  ".poteto-mode-tools-install-key"
+  ".engineering-mode-tools-install-key"
 );
 
 function currentInstallKey(): string {

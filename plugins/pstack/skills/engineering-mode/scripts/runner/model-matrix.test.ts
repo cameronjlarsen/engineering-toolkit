@@ -6,7 +6,7 @@ import { EFFORTS, type Effort } from "./types.ts";
 const PLUGIN_ROOT = join(import.meta.dir, "../../../..");
 const DISPATCH_PATH = join(
   PLUGIN_ROOT,
-  "skills/poteto-mode/references/provider-dispatch.md"
+  "skills/engineering-mode/references/provider-dispatch.md"
 );
 const SETUP_PATH = join(PLUGIN_ROOT, "skills/setup-pstack/SKILL.md");
 const AGENTS_DIR = join(PLUGIN_ROOT, "agents");

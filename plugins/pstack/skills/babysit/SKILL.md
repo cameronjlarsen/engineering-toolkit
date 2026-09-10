@@ -7,13 +7,13 @@ description: Watch an open PR — fix failing CI, handle the straightforward rev
 
 Claude Code analog of Cursor's built-in `/babysit`. The implementation is a loop over `gh` CLI plus the Claude Code `loop` skill for pacing.
 
-**Platform note.** On Codex or another non-Claude runtime, the Claude tool names and Claude built-in skills named below (`loop`, `AskUserQuestion`) are Claude defaults. Resolve them via [`codex-tools.md`](../poteto-mode/references/codex-tools.md).
+**Platform note.** On Codex or another non-Claude runtime, the Claude tool names and Claude built-in skills named below (`loop`, `AskUserQuestion`) are Claude defaults. Resolve them via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
 
-Inside poteto-mode, the **Babysit** playbook ([`../poteto-mode/playbooks/babysit.md`](../poteto-mode/playbooks/babysit.md)) supersedes this skill: it owns mode declaration, the merge frontier, stack safety, and the `watch-pr` watcher. This skill stays the standalone `/babysit` entry point for a single PR outside a poteto-mode run.
+Inside engineering-mode, the **Babysit** playbook ([`../engineering-mode/playbooks/babysit.md`](../engineering-mode/playbooks/babysit.md)) supersedes this skill: it owns mode declaration, the merge frontier, stack safety, and the `watch-pr` watcher. This skill stays the standalone `/babysit` entry point for a single PR outside a engineering-mode run.
 
 ## When to use
 
-- There's an open PR and the user explicitly wants it kept green, and you are not already inside a poteto-mode run (the playbook owns that case).
+- There's an open PR and the user explicitly wants it kept green, and you are not already inside a engineering-mode run (the playbook owns that case).
 - The user invokes `/babysit` directly.
 - A subagent that opens a PR does NOT babysit — return to the parent and let the parent decide.
 
@@ -29,7 +29,7 @@ Inside poteto-mode, the **Babysit** playbook ([`../poteto-mode/playbooks/babysit
    - Merge conflicts (`mergeStateStatus == DIRTY`): rebase or merge `main`; resolve; force-push only if the branch is yours and not shared.
    - Failing checks (`statusCheckRollup` entries with `conclusion: FAILURE`): pull logs with `gh run view <run-id> --log-failed`. Root-cause the failure; fix the underlying code or test; commit; push.
    - Review comments from human reviewers (`gh pr view --json comments,reviews`): act only on feedback you actually agree with. When a comment has a single mechanical answer — a rename, a guard clause, a formatting nit — make the edit and quote the comment in the commit message. When it hinges on a judgement call, or you can't tell what's being asked, don't guess: leave it and reply with what you would have done.
-   - Review-bot comments (Bugbot and similar automation): classify as fix, dismiss, or ask before acting, per [`../poteto-mode/references/bugbot-triage.md`](../poteto-mode/references/bugbot-triage.md). Follow the rubric's Ask by default categories, including security, data, and high-severity findings.
+   - Review-bot comments (Bugbot and similar automation): classify as fix, dismiss, or ask before acting, per [`../engineering-mode/references/bugbot-triage.md`](../engineering-mode/references/bugbot-triage.md). Follow the rubric's Ask by default categories, including security, data, and high-severity findings.
 
 3. **Loop.** Use the Claude Code `loop` skill to pace re-checks. Pick the interval from what you're watching:
    - Active CI run: poll `gh pr checks --watch` (it blocks until checks finish, so no separate loop interval needed).
@@ -53,7 +53,7 @@ Inside poteto-mode, the **Babysit** playbook ([`../poteto-mode/playbooks/babysit
 
 ## Cross-refs
 
-- `poteto-mode` opens here after a PR is opened.
+- `engineering-mode` opens here after a PR is opened.
 - Use `interrogate` before opening if the diff is contested; once open, babysit takes over.
 - Use `unslop` on any prose you write here (PR comments, commit messages, status reports).
 

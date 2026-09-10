@@ -16,7 +16,7 @@ Open Pstack is an unofficial community project that makes pstack work in Claude 
 
 pstack is a plugin for coding agents. It is not a new model or a hosted service. It gives your agent engineering rules, step-by-step workflows for different kinds of work, focused skills, and small local tools.
 
-The normal entry point is `poteto-mode`. You give it a task in plain language. It then:
+The normal entry point is `engineering-mode`. You give it a task in plain language. It then:
 
 - reads the task and chooses a workflow that fits;
 - learns how the current system works before changing it;
@@ -84,25 +84,25 @@ Setup checks the models you can actually run, shows how each one will start, and
 
 An older model sheet starts using the rolling aliases in memory as soon as this release is installed. Run setup once after updating to persist that migration. It replaces versioned Fable and Opus entries while preserving every role assignment and effort selection.
 
-### 2. Use poteto-mode
+### 2. Use engineering-mode
 
-Start any task that needs careful engineering with `poteto-mode`.
+Start any task that needs careful engineering with `engineering-mode`.
 
 In Claude Code:
 
 ```text
-/pstack:poteto-mode Add saved filters to search. Keep the design simple, verify it in the real app, and open a pull request.
+/pstack:engineering-mode Add saved filters to search. Keep the design simple, verify it in the real app, and open a pull request.
 ```
 
 In Codex:
 
 ```text
-Use pstack:poteto-mode. Add saved filters to search. Keep the design simple, verify it in the real app, and open a pull request.
+Use pstack:engineering-mode. Add saved filters to search. Keep the design simple, verify it in the real app, and open a pull request.
 ```
 
-For that feature, poteto-mode should first understand how search works today. It should decide how the data should be represented before writing code, implement the smallest complete version, run the feature the way a user would, review the result, and prepare the pull request.
+For that feature, engineering-mode should first understand how search works today. It should decide how the data should be represented before writing code, implement the smallest complete version, run the feature the way a user would, review the result, and prepare the pull request.
 
-That is the main workflow. The other skills are there when poteto-mode needs them or when you want to call one directly.
+That is the main workflow. The other skills are there when engineering-mode needs them or when you want to call one directly.
 
 ## Useful skills
 
@@ -132,7 +132,7 @@ Both apps read the same pstack skills. Only the way they start those skills and 
 
 | | Claude Code | Codex |
 | --- | --- | --- |
-| Start poteto-mode | Claude loads a small startup instruction that can route non-trivial work into it. You can also run `/pstack:poteto-mode` yourself. | Ask for `pstack:poteto-mode` by name. Codex does not load the Claude startup instruction. |
+| Start engineering-mode | Claude loads a small startup instruction that can route non-trivial work into it. You can also run `/pstack:engineering-mode` yourself. | Ask for `pstack:engineering-mode` by name. Codex does not load the Claude startup instruction. |
 | Runs inside the app | Claude models stay inside Claude Code. | The Sol model stays inside Codex. |
 | Other models | Codex and Grok run through their signed-in command-line tools. | Claude and Grok run through their signed-in command-line tools. |
 | Skills and workflows | Shared with Codex. | Shared with Claude Code. |

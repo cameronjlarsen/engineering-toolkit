@@ -1,7 +1,7 @@
 {
   "name": "pstack",
   "version": "1.4.1",
-  "description": "if you want to go fast, go deep first. pstack helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence. Codex port of the Claude Code plugin; skills are shared, tool names resolve via skills/poteto-mode/references/codex-tools.md.",
+  "description": "if you want to go fast, go deep first. pstack helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence. Codex port of the Claude Code plugin; skills are shared, tool names resolve via skills/engineering-mode/references/codex-tools.md.",
   "author": {
     "name": "Lauren Tan"
   },
@@ -10,7 +10,7 @@
   "license": "MIT",
   "keywords": [
     "pstack",
-    "poteto-mode",
+    "engineering-mode",
     "workflow",
     "principles",
     "agent-style",
@@ -22,7 +22,7 @@
     "logo": "./assets/logo.png",
     "displayName": "pstack",
     "shortDescription": "Rigorous, parallelizable agent workflows: go deep first, write less, verify everything",
-    "longDescription": "pstack guides agent work through poteto-mode's principles, parallel design exploration (architect/arena), adversarial multi-model review (interrogate), root-cause debugging, prose deslopping, and verified delivery. Skills are shared with the Claude Code build; on Codex, tool names resolve via the codex-tools mapping.",
+    "longDescription": "pstack guides agent work through engineering-mode's principles, parallel design exploration (architect/arena), adversarial multi-model review (interrogate), root-cause debugging, prose deslopping, and verified delivery. Skills are shared with the Claude Code build; on Codex, tool names resolve via the codex-tools mapping.",
     "developerName": "Lauren Tan (original), open-pstack maintainers",
     "category": "Developer Tools",
     "capabilities": [
@@ -31,7 +31,7 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Work on this in poteto-mode.",
+      "Work on this in engineering-mode.",
       "Interrogate this diff with multiple models."
     ],
     "websiteURL": "https://github.com/ericlitman/open-pstack",

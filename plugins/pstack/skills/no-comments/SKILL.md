@@ -9,7 +9,7 @@ Spawn comment-sicko. Act on accepted findings.
 
 Defer to comment-sicko's fresh perspective.
 
-**Platform note.** On Codex or another non-Claude runtime, the `comment-sicko` subagent and the Claude tool names below are Claude defaults. Resolve them via [`codex-tools.md`](../poteto-mode/references/codex-tools.md).
+**Platform note.** On Codex or another non-Claude runtime, the `comment-sicko` subagent and the Claude tool names below are Claude defaults. Resolve them via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
 
 ## Scope
 

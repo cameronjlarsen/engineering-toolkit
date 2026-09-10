@@ -75,7 +75,7 @@ fi
 # Static invariant (CHANGES maintenance note): provider-dispatch owns the default
 # provider/model quad and the three panel skills plus setup-pstack copy it verbatim.
 setup="$repo/plugins/pstack/skills/setup-pstack/SKILL.md"
-dispatch="$repo/plugins/pstack/skills/poteto-mode/references/provider-dispatch.md"
+dispatch="$repo/plugins/pstack/skills/engineering-mode/references/provider-dispatch.md"
 quad_of() { { grep -oE '(claude|codex|grok):[a-z0-9.-]+@(low|medium|high|xhigh|max)' || true; } | tr '\n' ' ' | sed 's/ $//'; }
 canon_quad="$(awk '
   $0 == "## Model matrix" { in_matrix = 1; next }
@@ -132,10 +132,10 @@ else
 fi
 
 plugin="$repo/plugins/pstack"
-canon="$plugin/skills/poteto-mode/references/bugbot-triage.md"
+canon="$plugin/skills/engineering-mode/references/bugbot-triage.md"
 skill="$plugin/skills/babysit/SKILL.md"
-playbook="$plugin/skills/poteto-mode/playbooks/babysit.md"
-bugbot_skill_rel="../poteto-mode/references/bugbot-triage.md"
+playbook="$plugin/skills/engineering-mode/playbooks/babysit.md"
+bugbot_skill_rel="../engineering-mode/references/bugbot-triage.md"
 bugbot_playbook_rel="../references/bugbot-triage.md"
 bugbot_bad=""
 if [ ! -f "$canon" ]; then
@@ -160,9 +160,9 @@ fi
 playbook_op="$(grep -E '^8\. \*\*Bugbot is triaged skeptically, always\.\*\*' "$playbook" || true)"
 playbook_n="$(printf '%s\n' "$playbook_op" | awk 'NF { c++ } END { print c+0 }')"
 if [ "$playbook_n" != "1" ]; then
-  bugbot_bad="${bugbot_bad}poteto-mode babysit playbook lost step-8 Bugbot operational line"$'\n'
+  bugbot_bad="${bugbot_bad}engineering-mode babysit playbook lost step-8 Bugbot operational line"$'\n'
 elif ! printf '%s\n' "$playbook_op" | grep -Fq "$bugbot_playbook_rel"; then
-  bugbot_bad="${bugbot_bad}poteto-mode babysit playbook step 8 lost bugbot-triage binding ($bugbot_playbook_rel)"$'\n'
+  bugbot_bad="${bugbot_bad}engineering-mode babysit playbook step 8 lost bugbot-triage binding ($bugbot_playbook_rel)"$'\n'
 fi
 copies="$(find "$plugin" -name 'bugbot-triage.md' ! -path '*/node_modules/*' -print 2>/dev/null || true)"
 n="$(printf '%s\n' "$copies" | awk 'NF { c++ } END { print c+0 }')"
@@ -178,13 +178,13 @@ else
 fi
 
 forge_neutral_files=(
-  "$plugin/skills/poteto-mode/playbooks/shipping.md"
-  "$plugin/skills/poteto-mode/playbooks/babysit.md"
-  "$plugin/skills/poteto-mode/playbooks/autopilot-full.md"
-  "$plugin/skills/poteto-mode/playbooks/autopilot-stack.md"
-  "$plugin/skills/poteto-mode/playbooks/opening-a-pr.md"
-  "$plugin/skills/poteto-mode/playbooks/multi-phase-plan.md"
-  "$plugin/skills/poteto-mode/references/bugbot-triage.md"
+  "$plugin/skills/engineering-mode/playbooks/shipping.md"
+  "$plugin/skills/engineering-mode/playbooks/babysit.md"
+  "$plugin/skills/engineering-mode/playbooks/autopilot-full.md"
+  "$plugin/skills/engineering-mode/playbooks/autopilot-stack.md"
+  "$plugin/skills/engineering-mode/playbooks/opening-a-pr.md"
+  "$plugin/skills/engineering-mode/playbooks/multi-phase-plan.md"
+  "$plugin/skills/engineering-mode/references/bugbot-triage.md"
 )
 graphite_commands="$(grep -En 'gt (submit|track|restack|sync|merge|ls)' "${forge_neutral_files[@]}" || true)"
 if [ -n "$graphite_commands" ]; then
@@ -195,7 +195,7 @@ else
   note "ok: forge-neutral stack playbooks name no Graphite command"
 fi
 
-unsafe_shell_templates="$(perl -ne 'while (/`((?:git|gh|origin|skills\/poteto-mode\/scripts\/watch-pr\/watch-pr)[^`]*)`/g) { my $command = $1; print "$command\n" if $command =~ /<[^>]+>/ }' "${forge_neutral_files[@]}" | sort -u)"
+unsafe_shell_templates="$(perl -ne 'while (/`((?:git|gh|origin|skills\/engineering-mode\/scripts\/watch-pr\/watch-pr)[^`]*)`/g) { my $command = $1; print "$command\n" if $command =~ /<[^>]+>/ }' "${forge_neutral_files[@]}" | sort -u)"
 if [ -n "$unsafe_shell_templates" ]; then
   note "FAIL: executable shell templates paste placeholder text into commands:"
   note "$unsafe_shell_templates"
@@ -204,11 +204,11 @@ else
   note "ok: forge-derived values stay quoted shell data"
 fi
 
-shipping="$plugin/skills/poteto-mode/playbooks/shipping.md"
-autopilot_full="$plugin/skills/poteto-mode/playbooks/autopilot-full.md"
-autopilot_stack="$plugin/skills/poteto-mode/playbooks/autopilot-stack.md"
-opening_a_pr="$plugin/skills/poteto-mode/playbooks/opening-a-pr.md"
-multi_phase_plan="$plugin/skills/poteto-mode/playbooks/multi-phase-plan.md"
+shipping="$plugin/skills/engineering-mode/playbooks/shipping.md"
+autopilot_full="$plugin/skills/engineering-mode/playbooks/autopilot-full.md"
+autopilot_stack="$plugin/skills/engineering-mode/playbooks/autopilot-stack.md"
+opening_a_pr="$plugin/skills/engineering-mode/playbooks/opening-a-pr.md"
+multi_phase_plan="$plugin/skills/engineering-mode/playbooks/multi-phase-plan.md"
 shipping_safety_bad=""
 grep -Fq 'watch-pr --owner "$base_owner" --repo "$base_name" --pr "$pr"' "$playbook" || shipping_safety_bad="${shipping_safety_bad}Babysit watcher does not pin the base repository and PR number"$'\n'
 grep -Fq -- '--disable-auto' "$shipping" || shipping_safety_bad="${shipping_safety_bad}Shipping does not disarm pre-existing auto-merge"$'\n'
@@ -219,7 +219,7 @@ if [ -n "$shipping_disarm_order" ]; then
 fi
 grep -Fq 'current bottom and every descendant' "$shipping" || shipping_safety_bad="${shipping_safety_bad}Shipping does not disarm the frontier and descendants before mutation"$'\n'
 grep -Fq 'Stop before any rebase, force-push, retarget, arm, or merge' "$shipping" || shipping_safety_bad="${shipping_safety_bad}Shipping can mutate the frontier before every merge request is confirmed off"$'\n'
-grep -Fq 'skills/poteto-mode/scripts/watch-pr/watch-pr' "$shipping" || shipping_safety_bad="${shipping_safety_bad}Shipping does not use the installed-plugin watcher path"$'\n'
+grep -Fq 'skills/engineering-mode/scripts/watch-pr/watch-pr' "$shipping" || shipping_safety_bad="${shipping_safety_bad}Shipping does not use the installed-plugin watcher path"$'\n'
 grep -Fq -- '--owner "$base_owner" --repo "$base_name"' "$shipping" || shipping_safety_bad="${shipping_safety_bad}Shipping does not pin the GitHub watcher to the base repository"$'\n'
 grep -Fq -- '--force-with-lease="refs/heads/$branch:$captured_sha"' "$shipping" || shipping_safety_bad="${shipping_safety_bad}Shipping does not bind rewritten branch pushes to the captured SHA"$'\n'
 grep -Fq 'git merge-base --is-ancestor "$landing_base_sha" "refs/heads/$branch"' "$shipping" || shipping_safety_bad="${shipping_safety_bad}Shipping does not prove its recorded patch base is an ancestor before rebasing"$'\n'
@@ -364,7 +364,7 @@ for role in bug-fix perf-issue hillclimb; do
   if [ "$setup_descriptor" != "$sol_descriptor" ]; then
     solo_code_bad="${solo_code_bad}${setup} ${role}: [${setup_descriptor}] != [${sol_descriptor}]"$'\n'
   fi
-  role_playbook="$plugin/skills/poteto-mode/playbooks/$role.md"
+  role_playbook="$plugin/skills/engineering-mode/playbooks/$role.md"
   playbook_descriptor="$(sed -n 's/.*default `\([^`]*\)`.*/\1/p' "$role_playbook")"
   if [ "$playbook_descriptor" != "$sol_descriptor" ]; then
     solo_code_bad="${solo_code_bad}${role_playbook}: [${playbook_descriptor}] != [${sol_descriptor}]"$'\n'
