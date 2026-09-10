@@ -250,7 +250,7 @@ describe("model matrix", () => {
         const { fields, body } = parseFrontmatter(text);
         expect(fields).toEqual({
           name,
-          description: `Native Claude lane for pstack roles configured as ${row.provider}:${row.model}@${effort}.`,
+          description: `Native Claude lane for pstack roles configured as ${namedApp(row)}/${row.model}@${effort}.`,
           model: row.model,
           effort,
           background: "true",

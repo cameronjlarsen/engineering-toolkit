@@ -73,10 +73,10 @@ else
 fi
 
 # Static invariant (CHANGES maintenance note): provider-dispatch owns the default
-# provider/model quad and the three panel skills plus setup-pstack copy it verbatim.
+# app/model quad and the three panel skills plus setup-pstack copy it verbatim.
 setup="$repo/plugins/pstack/skills/setup-pstack/SKILL.md"
 dispatch="$repo/plugins/pstack/skills/engineering-mode/references/provider-dispatch.md"
-quad_of() { { grep -oE '(claude|codex|grok):[a-z0-9.-]+@(low|medium|high|xhigh|max)' || true; } | tr '\n' ' ' | sed 's/ $//'; }
+quad_of() { { grep -oE '(claude-code|codex|grok)/[a-z0-9.-]+@(low|medium|high|xhigh|max)' || true; } | tr '\n' ' ' | sed 's/ $//'; }
 canon_quad="$(awk '
   $0 == "## Model matrix" { in_matrix = 1; next }
   in_matrix && /^## / { exit }
@@ -94,8 +94,9 @@ canon_quad="$(awk '
     provider = cells[3]
     model = cells[4]
     effort = cells[5]
+    app = (provider == "claude") ? "claude-code" : provider
     if (out != "") out = out " "
-    out = out provider ":" model "@" effort
+    out = out app "/" model "@" effort
   }
   END { print out }
 ' "$dispatch")"
@@ -352,7 +353,8 @@ fi
 sol_descriptor="$(awk -F '|' '
   $2 ~ /^[[:space:]]*sol[[:space:]]*$/ {
     for (i = 4; i <= 6; i++) gsub(/^[[:space:]]+|[[:space:]]+$/, "", $i)
-    print $4 ":" $5 "@" $6
+    app = ($4 == "claude") ? "claude-code" : $4
+    print app "/" $5 "@" $6
   }
 ' "$dispatch")"
 solo_code_bad=""

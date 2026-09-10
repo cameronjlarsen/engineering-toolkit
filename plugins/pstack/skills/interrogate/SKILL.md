@@ -9,7 +9,7 @@ Spawn one reviewer per configured model to adversarially review code changes. Ea
 
 The deliverable is a synthesized verdict. Do NOT auto-apply changes.
 
-**Dispatch contract.** Read [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md) before launching reviewers. Configured entries are provider-qualified descriptors; the parent starts native and external read-only lanes directly. On Codex, resolve remaining Claude tool names via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
+**Dispatch contract.** Read [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md) before launching reviewers. Configured entries are typed Routes written as `app/model@effort`; the parent starts native and external read-only lanes directly. On Codex, resolve remaining Claude tool names via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
 
 ## Step 1, Determine Scope
 
@@ -38,10 +38,10 @@ Start all reviewers in one fan-out phase. Use `interrogate reviewers` from the c
 
 | Subagent | Default model |
 |----------|---------------|
-| Reviewer A | `claude:fable@max` |
-| Reviewer B | `codex:gpt-5.6-sol@max` |
-| Reviewer C | `grok:grok-4.6@xhigh` |
-| Reviewer D | `claude:opus@xhigh` |
+| Reviewer A | `claude-code/fable@max` |
+| Reviewer B | `codex/gpt-5.6-sol@max` |
+| Reviewer C | `grok/grok-4.6@xhigh` |
+| Reviewer D | `claude-code/opus@xhigh` |
 
 For each reviewer, route the configured descriptor with `read-only` access and a unique output/receipt path. If the descriptor is `inherit-parent` or `auto`, use the parent subagent primitive without a model override. If a provider, login, or model is unavailable, record a dropout and continue with the completed reviewers. Never pick the closest model or silently fall back; that destroys the meaning of cross-provider agreement.
 

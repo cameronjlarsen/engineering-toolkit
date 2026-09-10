@@ -1,6 +1,6 @@
 # Codex tool mapping for pstack
 
-pstack skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuestion`) in shared prose. On Codex the files are the same; only those tool names resolve differently. Model execution is not translated here. Read [`provider-dispatch.md`](provider-dispatch.md) for the parent-owned Claude/Codex/Grok route table and provider-qualified descriptors.
+pstack skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuestion`) in shared prose. On Codex the files are the same; only those tool names resolve differently. Model execution is not translated here. Read [`provider-dispatch.md`](provider-dispatch.md) for the parent-owned Claude/Codex/Grok route table and typed Route values written as `app/model@effort`.
 
 ## Tool actions
 
@@ -42,7 +42,7 @@ engineering-mode's Subagents section sets Claude-specific defaults (`subagent_ty
 
 ## Models and providers
 
-Do not replace every configured entry with a Codex model. `/setup-pstack` writes portable descriptors such as `claude:fable@max`, `codex:gpt-5.6-sol@max`, and `grok:grok-4.6@xhigh`. In a Codex parent, only `codex:*` is native. Route Claude and Grok descriptors through the external launcher exactly as `provider-dispatch.md` specifies. The current default panel intentionally keeps four-provider frontier diversity and contains no older GPT or Claude substitute.
+Do not replace every configured entry with a Codex model. `/setup-pstack` writes named-app values such as `claude-code/fable@max`, `codex/gpt-5.6-sol@max`, and `grok/grok-4.6@xhigh`. In a Codex parent, only `codex/...` is native. Route Claude and Grok values through the external launcher exactly as `provider-dispatch.md` specifies. The current default panel intentionally keeps four-provider frontier diversity and contains no older GPT or Claude substitute.
 
 ## Claude built-in skills pstack references
 
