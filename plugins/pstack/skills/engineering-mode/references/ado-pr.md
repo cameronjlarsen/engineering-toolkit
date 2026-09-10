@@ -184,6 +184,32 @@ az repos pr policy list --id {id} --organization {org} --project {project} --rep
 
 Use policy evaluation status to distinguish pending checks from terminal failures during watch.
 
+### Threads
+
+Babysit uses these recipes. Read live `user-azure-devops` schemas before calling. Never interpolate comment bodies into shell commands — pass `content` as a tool argument.
+
+**List threads**
+
+**MCP** `repo_pull_request_thread` action `list`. Pass `repositoryId`, `pullRequestId`, and `project` when the repository is named. Optional filters: `status`, `authorEmail`, `authorDisplayName`. Use `list_comments` with `threadId` to read a single thread's comments.
+
+**CLI fallback** (when available):
+
+```bash
+az repos pr thread list --id {id} --organization {org} --project {project} --repository {repo-name} --output json
+```
+
+If the CLI is weak or unavailable, MCP-only is fine.
+
+**Reply**
+
+**MCP** `repo_pull_request_thread_write` action `reply`. Required: `repositoryId`, `pullRequestId`, `threadId`, `content`.
+
+**Update thread status**
+
+**MCP** `repo_pull_request_thread_write` action `update_status`. Required: `repositoryId`, `pullRequestId`, `threadId`, `status` (`Fixed`, `WontFix`, `Active`, `Closed`, `ByDesign`, `Pending`, etc.).
+
+Use `Fixed` when the babysitter addressed the thread. Use `WontFix` or `ByDesign` only with a concrete disproof on the thread.
+
 ### Complete with lastMergeSourceCommit
 
 Immediate land requires REST PATCH. Preflight get first; require `lastMergeSourceCommit.commitId` equals `<landing-sha>` and target branch equals trunk.
