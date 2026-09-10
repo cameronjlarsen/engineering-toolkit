@@ -1,10 +1,10 @@
 import { describe, expect, it } from "bun:test";
-import { parseProviderOutput, reportedModelMatches } from "./parse-output.ts";
+import { parseAppOutput, reportedModelMatches } from "./parse-output.ts";
 
-describe("parseProviderOutput", () => {
+describe("parseAppOutput", () => {
   it("extracts Claude text, model, usage, cost, and session", () => {
-    const parsed = parseProviderOutput(
-      "claude",
+    const parsed = parseAppOutput(
+      "claude-code",
       JSON.stringify({
         result: "CLAUDE_OK",
         session_id: "claude-session",
@@ -25,7 +25,7 @@ describe("parseProviderOutput", () => {
   });
 
   it("extracts Codex JSONL without inventing a provider-reported model", () => {
-    const parsed = parseProviderOutput(
+    const parsed = parseAppOutput(
       "codex",
       [
         JSON.stringify({ type: "thread.started", thread_id: "codex-session" }),
@@ -60,7 +60,7 @@ describe("parseProviderOutput", () => {
   });
 
   it("accepts Grok's reported build suffix", () => {
-    const parsed = parseProviderOutput(
+    const parsed = parseAppOutput(
       "grok",
       [
         JSON.stringify({
@@ -95,8 +95,8 @@ describe("parseProviderOutput", () => {
   });
 
   it("selects the requested Claude model when usage includes a side model", () => {
-    const parsed = parseProviderOutput(
-      "claude",
+    const parsed = parseAppOutput(
+      "claude-code",
       JSON.stringify({
         result: "CLAUDE_OK",
         modelUsage: {
@@ -111,21 +111,21 @@ describe("parseProviderOutput", () => {
   });
 
   it("matches only concrete Claude revisions from the requested rolling family", () => {
-    expect(reportedModelMatches("claude", "fable", "claude-fable-9-9")).toBe(true);
-    expect(reportedModelMatches("claude", "opus", "claude-opus-9")).toBe(true);
-    expect(reportedModelMatches("claude", "fable", "claude-opus-9")).toBe(false);
-    expect(reportedModelMatches("claude", "fable", "claude-fable-beta")).toBe(false);
-    expect(reportedModelMatches("claude", "fable", "fable")).toBe(false);
-    expect(reportedModelMatches("claude", "fable", "fable-preview")).toBe(false);
+    expect(reportedModelMatches("claude-code", "fable", "claude-fable-9-9")).toBe(true);
+    expect(reportedModelMatches("claude-code", "opus", "claude-opus-9")).toBe(true);
+    expect(reportedModelMatches("claude-code", "fable", "claude-opus-9")).toBe(false);
+    expect(reportedModelMatches("claude-code", "fable", "claude-fable-beta")).toBe(false);
+    expect(reportedModelMatches("claude-code", "fable", "fable")).toBe(false);
+    expect(reportedModelMatches("claude-code", "fable", "fable-preview")).toBe(false);
     expect(reportedModelMatches("grok", "fable", "claude-fable-9-9")).toBe(false);
   });
 
   it("rejects malformed or textless responses", () => {
     expect(() =>
-      parseProviderOutput("claude", "not-json", "", "fable")
+      parseAppOutput("claude-code", "not-json", "", "fable")
     ).toThrow("valid JSON");
     expect(() =>
-      parseProviderOutput(
+      parseAppOutput(
         "codex",
         JSON.stringify({ type: "turn.completed" }),
         "",

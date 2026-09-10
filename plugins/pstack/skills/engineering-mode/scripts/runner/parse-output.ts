@@ -1,7 +1,7 @@
 import type {
   NormalizedUsage,
   ParsedOutput,
-  Provider,
+  App,
 } from "./types.ts";
 import {
   concreteModelMatchesRollingAlias,
@@ -48,14 +48,14 @@ function normalizedUsage(value: unknown): NormalizedUsage | null {
 
 function modelFromUsage(
   value: unknown,
-  provider: Provider,
+  app: App,
   requestedModel: string
 ): string | null {
   const usage = object(value);
   if (usage === null) return null;
   const models = Object.keys(usage);
   return models.find((model) =>
-    reportedModelMatches(provider, requestedModel, model)
+    reportedModelMatches(app, requestedModel, model)
   )
     ?? models[0]
     ?? null;
@@ -77,7 +77,7 @@ function parseClaude(stdout: string, requestedModel: string): ParsedOutput {
 
   return {
     text,
-    reportedModel: modelFromUsage(value.modelUsage, "claude", requestedModel),
+    reportedModel: modelFromUsage(value.modelUsage, "claude-code", requestedModel),
     sessionId: nullableString(value.session_id ?? value.sessionId),
     usage: normalizedUsage(value.usage),
     costUsd: finiteNumber(value.total_cost_usd) ?? null,
@@ -157,29 +157,35 @@ function parseCodex(stdout: string): ParsedOutput {
   };
 }
 
-export function parseProviderOutput(
-  provider: Provider,
+export function parseAppOutput(
+  app: App,
   stdout: string,
   stderr: string,
   requestedModel: string
 ): ParsedOutput {
-  switch (provider) {
-    case "claude":
+  switch (app) {
+    case "claude-code":
       return parseClaude(stdout, requestedModel);
     case "codex":
       return parseCodex(stdout);
     case "grok":
       return parseGrok(stdout, requestedModel);
+    case "cursor":
+      throw new Error("cursor output is unsupported");
+    default: {
+      const neverApp: never = app;
+      throw new Error(`unsupported app: ${neverApp}`);
+    }
   }
 }
 
 export function reportedModelMatches(
-  provider: Provider,
+  app: App,
   requested: string,
   reported: string | null
 ): boolean {
   if (reported === null) return false;
-  if (provider === "claude" && isRollingClaudeAlias(requested)) {
+  if (app === "claude-code" && isRollingClaudeAlias(requested)) {
     return concreteModelMatchesRollingAlias(requested, reported);
   }
   if (reported === requested || reported.startsWith(`${requested}-`)) {

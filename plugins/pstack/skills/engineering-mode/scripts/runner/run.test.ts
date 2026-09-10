@@ -14,7 +14,7 @@ import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import { childEnvironment, runLane } from "./run.ts";
 import { main } from "./cli.ts";
-import type { Provider, RunnerOptions, RunnerReceipt } from "./types.ts";
+import type { AppId, RunnerOptions, RunnerReceipt } from "./types.ts";
 
 let scratch = "";
 let bin = "";
@@ -135,19 +135,19 @@ function makeExecutable(name: string): void {
   chmodSync(path, 0o755);
 }
 
-function options(provider: Provider, suffix: string = provider): RunnerOptions {
-  const parent = provider === "codex" ? "claude" : "codex";
+function options(app: AppId, suffix: string = app): RunnerOptions {
+  const parent = app === "codex" ? "claude-code" : "codex";
   const model =
-    provider === "claude"
+    app === "claude-code"
       ? "fable"
-      : provider === "codex"
+      : app === "codex"
         ? "gpt-5.6-sol"
         : "grok-4.6";
   return {
     parent,
-    provider,
+    app,
     model,
-    effort: provider === "grok" ? "xhigh" : "max",
+    effort: app === "grok" ? "xhigh" : "max",
     mode: "read-only",
     promptPath: join(scratch, "prompt.md"),
     cwd: scratch,
@@ -165,7 +165,7 @@ function runnerArgs(input: RunnerOptions): string[] {
   const args = [
     join(import.meta.dir, "pstack-runner"),
     "--parent", input.parent,
-    "--provider", input.provider,
+    "--app", input.app,
     "--model", input.model,
     "--effort", input.effort,
     "--mode", input.mode,
@@ -272,23 +272,23 @@ afterEach(() => {
 });
 
 describe("runLane", () => {
-  for (const provider of ["claude", "codex", "grok"] as const) {
-    it(`executes and receipts the ${provider} external lane`, async () => {
-      const input = options(provider);
+  for (const app of ["claude-code", "codex", "grok"] as const) {
+    it(`executes and receipts the ${app} external lane`, async () => {
+      const input = options(app);
       const result = await runLane(input);
       expect(result.exitCode).toBe(0);
       expect(readFileSync(input.outputPath, "utf8")).toContain(
-        provider.toUpperCase()
+        app === "claude-code" ? "CLAUDE" : app.toUpperCase()
       );
       expect(receipt(input.receiptPath)).toMatchObject({
         status: "complete",
-        provider,
+        app,
         model: input.model,
-        modelVerified: provider !== "codex",
-        modelEvidence: provider === "codex" ? "pinned-argv" : "provider-report",
+        modelVerified: app !== "codex",
+        modelEvidence: app === "codex" ? "pinned-argv" : "provider-report",
         preflight: { status: "passed" },
       });
-      if (provider === "claude") {
+      if (app === "claude-code") {
         expect(receipt(input.receiptPath).reportedModel).toBe("claude-fable-9-9");
       }
     });
@@ -446,7 +446,7 @@ describe("runLane", () => {
 
   it("kills a timed-out child and preserves a failure receipt", async () => {
     process.env.FAKE_TIMEOUT = "1";
-    const input = { ...options("claude"), timeoutMs: 30 };
+    const input = { ...options("claude-code"), timeoutMs: 30 };
     const result = await runLane(input);
     expect(result.exitCode).toBe(124);
     expect(existsSync(input.outputPath)).toBe(false);
@@ -455,7 +455,7 @@ describe("runLane", () => {
 
   it("does not spawn the model when preflight exhausts the wrapper deadline", async () => {
     const modelStarted = join(scratch, "deadline-model.started");
-    const input = { ...options("claude", "preflight-deadline"), timeoutMs: 300 };
+    const input = { ...options("claude-code", "preflight-deadline"), timeoutMs: 300 };
     const runner = Bun.spawn([process.execPath, ...runnerArgs(input)], {
       cwd: scratch,
       env: {
@@ -480,7 +480,7 @@ describe("runLane", () => {
   });
 
   it("lets a delayed wrapper lane finish when timeout is omitted", async () => {
-    const input = options("claude", "unbounded-default");
+    const input = options("claude-code", "unbounded-default");
     const runner = Bun.spawn([process.execPath, ...runnerArgs(input)], {
       cwd: scratch,
       env: { ...process.env, FAKE_MODEL_DELAY_MS: "400" },
@@ -501,7 +501,7 @@ describe("runLane", () => {
 
   it("keeps a very long explicit deadline without timer overflow", async () => {
     const input = {
-      ...options("claude", "long-runtime-deadline"),
+      ...options("claude-code", "long-runtime-deadline"),
       timeoutMs: 2_147_483_648,
     };
     const runner = Bun.spawn([process.execPath, ...runnerArgs(input)], {
@@ -527,7 +527,7 @@ describe("runLane", () => {
     const modelStarted = join(scratch, "expired-model.started");
     process.env.FAKE_PREFLIGHT_STARTED_PATH = preflightStarted;
     process.env.FAKE_MODEL_STARTED_PATH = modelStarted;
-    const input = { ...options("claude", "expired-at-entry"), timeoutMs: 100 };
+    const input = { ...options("claude-code", "expired-at-entry"), timeoutMs: 100 };
     const stdout: string[] = [];
     const stderr: string[] = [];
 
@@ -554,7 +554,7 @@ describe("runLane", () => {
   it("spends one explicit deadline across preflight and model execution", async () => {
     process.env.FAKE_PREFLIGHT_DELAY_MS = "1200";
     process.env.FAKE_MODEL_DELAY_MS = "1200";
-    const input = { ...options("claude"), timeoutMs: 1_500 };
+    const input = { ...options("claude-code"), timeoutMs: 1_500 };
     const result = await runLane(input);
     const recorded = receipt(input.receiptPath);
 
@@ -566,7 +566,7 @@ describe("runLane", () => {
 
   it("bounds a descendant-held pipe by the explicit deadline without fabricating a signal", async () => {
     const descendantPidPath = join(scratch, "deadline-descendant.pid");
-    const input = { ...options("claude", "deadline-drain"), timeoutMs: 700 };
+    const input = { ...options("claude-code", "deadline-drain"), timeoutMs: 700 };
     const runner = Bun.spawn([process.execPath, ...runnerArgs(input)], {
       cwd: scratch,
       env: {
@@ -597,7 +597,7 @@ describe("runLane", () => {
 
   it("does not claim a signal was sent to an already signal-reaped child", async () => {
     const descendantPidPath = join(scratch, "signalled-descendant.pid");
-    const input = { ...options("claude", "signalled-drain"), timeoutMs: 700 };
+    const input = { ...options("claude-code", "signalled-drain"), timeoutMs: 700 };
     const runner = Bun.spawn([process.execPath, ...runnerArgs(input)], {
       cwd: scratch,
       env: {
@@ -628,7 +628,7 @@ describe("runLane", () => {
   it("lets manual cancellation end a post-exit pipe drain without a default timeout", async () => {
     const descendantPidPath = join(scratch, "cancel-descendant.pid");
     const modelExiting = join(scratch, "cancel-model.exiting");
-    const input = options("claude", "cancel-drain");
+    const input = options("claude-code", "cancel-drain");
     const runner = Bun.spawn([process.execPath, ...runnerArgs(input)], {
       cwd: scratch,
       env: {
@@ -661,7 +661,7 @@ describe("runLane", () => {
   });
 
   it("clears a losing long-deadline timer when the shipped wrapper succeeds", async () => {
-    const input = { ...options("claude", "long-deadline"), timeoutMs: 60_000 };
+    const input = { ...options("claude-code", "long-deadline"), timeoutMs: 60_000 };
     const runner = Bun.spawn([process.execPath, ...runnerArgs(input)], {
       cwd: scratch,
       env: { ...process.env },
@@ -677,7 +677,7 @@ describe("runLane", () => {
   });
 
   it("cancels a preflight with SIGINT and writes a terminal receipt", async () => {
-    const input = options("claude", "preflight-cancelled");
+    const input = options("claude-code", "preflight-cancelled");
     const started = join(scratch, "preflight-child.started");
     const terminated = join(scratch, "preflight-child.terminated");
     const isolatedRunner = join(scratch, "isolated-runner");
@@ -808,7 +808,7 @@ describe("runLane", () => {
     expect(receipt(input.receiptPath).status).toBe("unavailable-cli");
   });
 
-  it("runs simultaneous same-provider lanes only into their unique paths", async () => {
+  it("runs simultaneous same-app lanes only into their unique paths", async () => {
     const first = options("grok", "first");
     const second = options("grok", "second");
     const results = await Promise.all([runLane(first), runLane(second)]);
@@ -819,7 +819,7 @@ describe("runLane", () => {
   });
 
   it("refuses a second writer for an already-reserved path", async () => {
-    const input = options("claude");
+    const input = options("claude-code");
     writeFileSync(input.outputPath, "owned");
     await expect(runLane(input)).rejects.toThrow();
     expect(readFileSync(input.outputPath, "utf8")).toBe("owned");
@@ -827,7 +827,7 @@ describe("runLane", () => {
   });
 
   it("terminalizes catchable failures after reserving output paths", async () => {
-    const unreadable = options("claude", "unreadable-prompt");
+    const unreadable = options("claude-code", "unreadable-prompt");
     chmodSync(unreadable.promptPath, 0o000);
     const unreadableRunner = Bun.spawn([process.execPath, ...runnerArgs(unreadable)], {
       cwd: scratch,
@@ -862,7 +862,7 @@ describe("runLane", () => {
     await Promise.all([sameStdout, sameStderr]);
     expect(readFileSync(unreadable.receiptPath, "utf8")).toBe(preservedReceipt);
 
-    const spawnFailure = options("claude", "spawn-failure");
+    const spawnFailure = options("claude-code", "spawn-failure");
     const modelStarted = join(scratch, "spawn-failure-model.started");
     const spawnRunner = Bun.spawn([process.execPath, ...runnerArgs(spawnFailure)], {
       cwd: scratch,
@@ -886,18 +886,18 @@ describe("runLane", () => {
     });
 
     makeExecutable("claude");
-    const retry = options("claude", "post-reservation-retry");
+    const retry = options("claude-code", "post-reservation-retry");
     expect((await runLane(retry)).exitCode).toBe(0);
     expect(receipt(retry.receiptPath).status).toBe("complete");
   });
 
-  it("rejects same-provider recursion", async () => {
-    const input = { ...options("claude"), parent: "claude" as const };
+  it("rejects same-host recursion", async () => {
+    const input = { ...options("claude-code"), parent: "claude-code" as const };
     await expect(runLane(input)).rejects.toThrow("native to parent");
   });
 
   it("rejects a versioned Claude family before it can stay pinned", async () => {
-    const input = { ...options("claude"), model: "claude-fable-9-9" };
+    const input = { ...options("claude-code"), model: "claude-fable-9-9" };
     await expect(runLane(input)).rejects.toThrow(
       "normalize it to fable before invoking the runner"
     );
@@ -916,7 +916,7 @@ describe("childEnvironment", () => {
       CLAUDE_CODE_CHILD_SESSION: "1",
       KEEP_ME: "yes",
     };
-    expect(childEnvironment("claude", source)).toEqual({
+    expect(childEnvironment("claude-code", source)).toEqual({
       PATH: "/bin",
       CLAUDECODE: "1",
       CLAUDE_CODE_CHILD_SESSION: "1",

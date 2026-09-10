@@ -4,20 +4,20 @@ import {
   ACCESS_MODES,
   EFFORTS,
   PARENTS,
-  PROVIDERS,
+  APPS,
   type AccessMode,
+  type App,
   type Effort,
   type Parent,
-  type Provider,
   type RunnerOptions,
   UsageError,
 } from "./types.ts";
 
-const HELP = `Usage: pstack-runner --parent <claude|codex> --provider <claude|codex|grok> \\
+const HELP = `Usage: pstack-runner --parent <claude-code|codex> --app <claude-code|codex|grok|cursor> \\
   --model <slug> --effort <level> --mode <read-only|isolated-write> \\
   --prompt <file> --cwd <dir> --output <file> --receipt <file> [--timeout <seconds>]
 
-Runs exactly one external model lane. Same-provider calls are rejected; use the
+Runs exactly one external model lane. Same-host calls are rejected; use the
 parent harness's native subagent primitive for those lanes. Output and receipt
 paths must not already exist. There is no implicit timeout. Pass --timeout only
 when the user or task supplies a real deadline; it is one end-to-end launcher
@@ -65,7 +65,7 @@ export function parseArgs(argv: readonly string[]): RunnerOptions | null {
       strict: true,
       options: {
         parent: { type: "string" },
-        provider: { type: "string" },
+        app: { type: "string" },
         model: { type: "string" },
         effort: { type: "string" },
         mode: { type: "string" },
@@ -96,7 +96,7 @@ export function parseArgs(argv: readonly string[]): RunnerOptions | null {
   }
   return resolvedOptions({
     parent: oneOf("parent", stringValue(parsed.values.parent), PARENTS) as Parent,
-    provider: oneOf("provider", stringValue(parsed.values.provider), PROVIDERS) as Provider,
+    app: oneOf("app", stringValue(parsed.values.app), APPS) as App,
     model: required("model", stringValue(parsed.values.model)),
     effort: oneOf("effort", stringValue(parsed.values.effort), EFFORTS) as Effort,
     mode,

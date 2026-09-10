@@ -1,16 +1,25 @@
-export const PARENTS = ["claude", "codex"] as const;
-export const PROVIDERS = ["claude", "codex", "grok"] as const;
+import {
+  APP_IDS,
+  PARENT_HOSTS,
+  type AppId as RouteAppId,
+  type Effort as RouteEffort,
+  type ParentHost,
+} from "../routing/route.ts";
+
+export const PARENTS = PARENT_HOSTS;
+export const APPS = APP_IDS;
 export const EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
 export const ACCESS_MODES = ["read-only", "isolated-write"] as const;
 
-export type Parent = (typeof PARENTS)[number];
-export type Provider = (typeof PROVIDERS)[number];
-export type Effort = (typeof EFFORTS)[number];
+export type Parent = ParentHost;
+export type AppId = RouteAppId;
+export type App = AppId;
+export type Effort = RouteEffort;
 export type AccessMode = (typeof ACCESS_MODES)[number];
 
 export interface RunnerOptions {
   readonly parent: Parent;
-  readonly provider: Provider;
+  readonly app: AppId;
   readonly model: string;
   readonly effort: Effort;
   readonly mode: AccessMode;
@@ -52,7 +61,7 @@ export interface RunnerReceipt {
   readonly schemaVersion: 1;
   readonly status: ReceiptStatus;
   readonly parent: Parent;
-  readonly provider: Provider;
+  readonly app: AppId;
   readonly model: string;
   readonly effort: Effort;
   readonly mode: AccessMode;

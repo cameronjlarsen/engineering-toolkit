@@ -5,9 +5,9 @@ import { parseArgs } from "./cli.ts";
 function argv(extra: readonly string[] = []): string[] {
   return [
     "--parent",
-    "claude",
-    "--provider",
     "codex",
+    "--app",
+    "claude-code",
     "--model",
     "gpt-5.6-sol",
     "--effort",

@@ -1,7 +1,7 @@
 import type {
   AccessMode,
   Effort,
-  Provider,
+  App,
   RunnerOptions,
 } from "./types.ts";
 
@@ -11,9 +11,9 @@ export interface CommandSpec {
   readonly stdin: "prompt" | "none";
 }
 
-export function preflightCommand(provider: Provider): CommandSpec {
-  switch (provider) {
-    case "claude":
+export function preflightCommand(app: App): CommandSpec {
+  switch (app) {
+    case "claude-code":
       return {
         command: "claude",
         args: ["auth", "status", "--json"],
@@ -27,6 +27,12 @@ export function preflightCommand(provider: Provider): CommandSpec {
       };
     case "grok":
       return { command: "grok", args: ["models"], stdin: "none" };
+    case "cursor":
+      throw new Error("cursor does not have a launch interface");
+    default: {
+      const neverApp: never = app;
+      throw new Error(`unsupported app: ${neverApp}`);
+    }
   }
 }
 
@@ -64,8 +70,8 @@ function effortOverride(effort: Effort): string {
 }
 
 export function invocationCommand(options: RunnerOptions): CommandSpec {
-  switch (options.provider) {
-    case "claude":
+  switch (options.app) {
+    case "claude-code":
       return {
         command: "claude",
         args: [
@@ -146,5 +152,11 @@ export function invocationCommand(options: RunnerOptions): CommandSpec {
         ],
         stdin: "none",
       };
+    case "cursor":
+      throw new Error("cursor does not have a launch interface");
+    default: {
+      const neverApp: never = options.app;
+      throw new Error(`unsupported app: ${neverApp}`);
+    }
   }
 }

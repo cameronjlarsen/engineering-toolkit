@@ -11,9 +11,9 @@ import {
 import { dirname, resolve } from "node:path";
 import { invocationCommand, preflightCommand, type CommandSpec } from "./commands.ts";
 import { versionedClaudeAlias } from "./model-aliases.ts";
-import { parseProviderOutput, reportedModelMatches } from "./parse-output.ts";
+import { parseAppOutput, reportedModelMatches } from "./parse-output.ts";
 import type {
-  Provider,
+  App,
   ReceiptStatus,
   RunnerOptions,
   RunnerReceipt,
@@ -130,13 +130,13 @@ const CLAUDE_IDENTITY = [
 ] as const;
 
 export function childEnvironment(
-  provider: Provider,
+  app: App,
   source: NodeJS.ProcessEnv = process.env
 ): NodeJS.ProcessEnv {
   const result = { ...source };
-  const remove = provider === "claude"
+  const remove = app === "claude-code"
     ? CODEX_IDENTITY
-    : provider === "codex"
+    : app === "codex"
       ? CLAUDE_IDENTITY
       : [...CODEX_IDENTITY, ...CLAUDE_IDENTITY];
   for (const key of remove) delete result[key];
@@ -350,11 +350,11 @@ async function waitForGrokPreflightRetry(
   }
 }
 
-function preflightPassed(provider: Provider, model: string, result: ProcessResult): boolean {
+function preflightPassed(app: App, model: string, result: ProcessResult): boolean {
   if (result.exitCode !== 0 || result.timedOut) return false;
   const combined = `${result.stdout}\n${result.stderr}`;
-  switch (provider) {
-    case "claude": {
+  switch (app) {
+    case "claude-code": {
       try {
         const value: unknown = JSON.parse(result.stdout);
         return (
@@ -370,11 +370,17 @@ function preflightPassed(provider: Provider, model: string, result: ProcessResul
       return /logged in/i.test(combined);
     case "grok":
       return /logged in/i.test(combined) && combined.includes(model);
+    case "cursor":
+      throw new Error("cursor is not launchable");
+    default: {
+      const neverApp: never = app;
+      throw new Error(`unsupported app: ${neverApp}`);
+    }
   }
 }
 
-function successfulPreflightEvidence(provider: Provider, model: string): string {
-  return provider === "grok"
+function successfulPreflightEvidence(app: App, model: string): string {
+  return app === "grok"
     ? `authenticated; model ${model} available`
     : "authenticated";
 }
@@ -390,13 +396,13 @@ function unavailableStatus(value: string): ReceiptStatus {
 }
 
 function preflightFailureStatus(
-  provider: Provider,
+  app: App,
   model: string,
   value: string
 ): ReceiptStatus {
   const status = unavailableStatus(value);
   if (status !== "child-failed") return status;
-  return provider === "grok" && !value.includes(model)
+  return app === "grok" && !value.includes(model)
     ? "unavailable-model"
     : "unauthenticated";
 }
@@ -435,7 +441,7 @@ function statusExitCode(status: ReceiptStatus): number {
 }
 
 function modelProof(
-  provider: Provider,
+  app: App,
   requested: string,
   reported: string | null
 ): {
@@ -443,14 +449,14 @@ function modelProof(
   readonly modelVerified: boolean;
   readonly modelEvidence: "provider-report" | "pinned-argv" | null;
 } {
-  if (reportedModelMatches(provider, requested, reported)) {
+  if (reportedModelMatches(app, requested, reported)) {
     return {
       reportedModel: reported,
       modelVerified: true,
       modelEvidence: "provider-report",
     };
   }
-  if (provider === "codex" && reported === null) {
+  if (app === "codex" && reported === null) {
     return {
       reportedModel: null,
       modelVerified: false,
@@ -466,12 +472,12 @@ function modelProof(
 
 function completeReceipt(
   options: RunnerOptions,
-  partial: Omit<RunnerReceipt, "schemaVersion" | "parent" | "provider" | "model" | "effort" | "mode" | "cwd" | "promptPath" | "outputPath">
+  partial: Omit<RunnerReceipt, "schemaVersion" | "parent" | "app" | "model" | "effort" | "mode" | "cwd" | "promptPath" | "outputPath">
 ): RunnerReceipt {
   return {
     schemaVersion: 1,
     parent: options.parent,
-    provider: options.provider,
+    app: options.app,
     model: options.model,
     effort: options.effort,
     mode: options.mode,
@@ -483,13 +489,16 @@ function completeReceipt(
 }
 
 export function validateOptions(options: RunnerOptions): void {
-  if (options.parent === options.provider) {
+  if (options.app === "cursor") {
+    throw new UsageError("cursor is not supported by the runner");
+  }
+  if (options.parent === options.app) {
     throw new UsageError(
-      `provider ${options.provider} is native to parent ${options.parent}; use the parent subagent primitive`
+      `app ${options.app} is native to parent ${options.parent}; use the parent subagent primitive`
     );
   }
   if (options.model.trim().length === 0) throw new UsageError("model must not be empty");
-  const staleAlias = options.provider === "claude"
+  const staleAlias = options.app === "claude-code"
     ? versionedClaudeAlias(options.model)
     : null;
   if (staleAlias !== null) {
@@ -534,7 +543,7 @@ async function executeLane(
 ): Promise<RunResult> {
   const startedAt = new Date(started).toISOString();
   const prompt = readFileSync(options.promptPath, "utf8");
-  const env = childEnvironment(options.provider);
+  const env = childEnvironment(options.app);
   const executable = Bun.which(invocation.command, {
     PATH: env.PATH,
     cwd: options.cwd,
@@ -628,17 +637,17 @@ async function executeLane(
     cancellation
   );
   let rawPreflightEvidence = evidence(`${preflightResult.stdout}\n${preflightResult.stderr}`);
-  let passed = preflightPassed(options.provider, options.model, preflightResult);
+  let passed = preflightPassed(options.app, options.model, preflightResult);
   let preflightEvidence = passed
-    ? successfulPreflightEvidence(options.provider, options.model)
+    ? successfulPreflightEvidence(options.app, options.model)
     : rawPreflightEvidence;
 
   if (
-    options.provider === "grok" &&
+    options.app === "grok" &&
     !passed &&
     preflightResult.cancelledBy === null &&
     !preflightResult.timedOut &&
-    preflightFailureStatus(options.provider, options.model, rawPreflightEvidence) ===
+    preflightFailureStatus(options.app, options.model, rawPreflightEvidence) ===
       "unauthenticated"
   ) {
     preflightState = {
@@ -672,11 +681,11 @@ async function executeLane(
       cancellation
     );
     rawPreflightEvidence = evidence(`${preflightResult.stdout}\n${preflightResult.stderr}`);
-    passed = preflightPassed(options.provider, options.model, preflightResult);
+    passed = preflightPassed(options.app, options.model, preflightResult);
     preflightEvidence = retriedPreflightEvidence(
       firstPreflightEvidence,
       passed
-        ? successfulPreflightEvidence(options.provider, options.model)
+        ? successfulPreflightEvidence(options.app, options.model)
         : rawPreflightEvidence,
       passed
     );
@@ -698,7 +707,7 @@ async function executeLane(
   if (preflightState.status !== "passed") {
     const completed = Date.now();
     const preflightFailure = preflightFailureStatus(
-      options.provider,
+      options.app,
       options.model,
       rawPreflightEvidence
     );
@@ -799,20 +808,20 @@ async function executeLane(
   }
 
   try {
-    const parsed = parseProviderOutput(
-      options.provider,
+    const parsed = parseAppOutput(
+      options.app,
       result.stdout,
       result.stderr,
       options.model
     );
     const proof = modelProof(
-      options.provider,
+      options.app,
       options.model,
       parsed.reportedModel
     );
     if (!proof.modelVerified && proof.modelEvidence !== "pinned-argv") {
       throw new Error(
-        `requested model ${options.model} was not reported by ${options.provider}`
+        `requested model ${options.model} was not reported by ${options.app}`
       );
     }
     writeFileSync(options.outputPath, parsed.text, { encoding: "utf8", mode: 0o600 });
@@ -855,7 +864,7 @@ export async function runLane(
   validateOptions(options);
   const deadlineAt = options.timeoutMs === null ? null : started + options.timeoutMs;
   const invocation = invocationCommand(options);
-  const preflight = preflightCommand(options.provider);
+  const preflight = preflightCommand(options.app);
   const progress: LaneProgress = {
     executable: null,
     preflight: {

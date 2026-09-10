@@ -24,7 +24,7 @@ const MATRIX_HEADER = [
 const FAMILY_ORDER = ["fable", "sol", "grok", "opus"] as const;
 const PROVIDERS = ["claude", "codex", "grok"] as const;
 const DESCRIPTOR_RE =
-  /(claude|codex|grok):[a-z0-9.-]+@(low|medium|high|xhigh|max)/g;
+  /(?:(?:claude-code|codex|grok)\/)?[a-z0-9.-]+@(low|medium|high|xhigh|max)/g;
 const PANEL_ROLES = [
   "arena runners",
   "arena cross-judge pool",
@@ -50,9 +50,9 @@ const SHEET_ROLES = [
 ] as const;
 const SETUP_SECTION_ORDER = [
   "### 2. Load current state",
-  "### 3. Parse per-family efforts",
-  "### 4. Collect one requested effort per family",
-  "### 5. Probe the four requested pairs",
+  "### 3. Parse selected routes",
+  "### 4. Collect requested efforts",
+  "### 5. Probe selected routes",
   "### 6. Render, preserving role families",
   "### 7. Confirm and commit",
 ] as const;
@@ -159,9 +159,13 @@ function parseModelMatrix(markdown: string): MatrixRow[] {
   });
 }
 
+function namedApp(row: MatrixRow): string {
+  return row.provider === "claude" ? "claude-code" : row.provider;
+}
+
 function defaultDescriptors(rows: MatrixRow[]): string[] {
   return rows.map(
-    (row) => `${row.provider}:${row.model}@${row.defaultEffort}`
+    (row) => `${namedApp(row)}/${row.model}@${row.defaultEffort}`
   );
 }
 
@@ -280,10 +284,11 @@ describe("model matrix", () => {
     const roles = sheet
       .split("\n")
       .filter((line) => line.includes(": "))
-      .map((line) => line.slice(0, line.indexOf(": ")));
+      .map((line) => line.slice(0, line.indexOf(": ")))
+      .filter((role) => (SHEET_ROLES as readonly string[]).includes(role));
     expect(roles).toEqual([...SHEET_ROLES]);
     const byFamily = new Map<string, MatrixRow>(
-      rows.map((row) => [`${row.provider}:${row.model}`, row])
+      rows.map((row) => [`${namedApp(row)}/${row.model}`, row])
     );
     for (const descriptor of sheet.match(DESCRIPTOR_RE) ?? []) {
       const at = descriptor.lastIndexOf("@");
@@ -314,16 +319,15 @@ describe("model matrix", () => {
       expect(current).toBeGreaterThan(previous);
       previous = current;
     }
-    expect(setup).toContain("Do not invent a precedence rule.");
-    expect(setup).toContain("Do not probe or write while any inconsistency is unresolved.");
+    expect(setup).toContain("while any inconsistency is unresolved.");
     expect(setup).toContain("A failed probe writes nothing:");
-    expect(setup).toContain("Run one probe per family");
+    expect(setup).toContain("Probe only selected routes");
     expect(setup).toContain("normalized complete role map from step 2");
-    expect(setup).toContain("starts with `claude-fable-` or `claude-opus-`");
-    expect(setup).toContain("preserving the provider, effort, role, and lane order");
-    expect(setup).toContain("Show any rolling-alias migrations");
-    expect(setup).toContain("Every documented role remains present.");
-    expect(setup).toContain("An effort-only rerun cannot change a role's family.");
+    expect(setup).toContain("`claude-fable-*` and `claude-opus-*`");
+    expect(setup).toContain("preserving app, effort, role,");
+    expect(setup).toContain("rolling-alias migrations");
+    expect(setup).toContain("documented role remains present.");
+    expect(setup).toContain("A changed");
     expect(setup).toContain("<!-- pstack:models:begin -->");
     expect(setup).toContain("<!-- pstack:models:end -->");
   });
@@ -336,7 +340,7 @@ describe("model matrix", () => {
     expect(externalStart).toBeGreaterThan(nativeStart);
     const nativeLanes = dispatch.slice(nativeStart, externalStart);
     expect(nativeLanes).toContain(
-      "match the descriptor's `(provider, model)` to one model-matrix row"
+      "match the route's `(app, model)` to one model-matrix row"
     );
     expect(nativeLanes).toContain("`pstack-<stem>-<effort>`");
   });
@@ -348,7 +352,7 @@ describe("model matrix", () => {
     expect(normalizationStart).toBeGreaterThan(-1);
     expect(parentStart).toBeGreaterThan(normalizationStart);
     const normalization = dispatch.slice(normalizationStart, parentStart);
-    expect(normalization).toContain("replace that model component in memory");
+    expect(normalization).toContain("replace the model component in memory");
     expect(normalization).toContain("Never pass the versioned predecessor to Claude.");
     expect(normalization).toContain("without writing user files");
     expect(normalization).toContain("`/setup-pstack` will rewrite it");

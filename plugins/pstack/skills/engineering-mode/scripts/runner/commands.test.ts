@@ -4,8 +4,8 @@ import type { RunnerOptions } from "./types.ts";
 
 function options(overrides: Partial<RunnerOptions> = {}): RunnerOptions {
   return {
-    parent: "claude",
-    provider: "codex",
+    parent: "claude-code",
+    app: "codex",
     model: "gpt-5.6-sol",
     effort: "max",
     mode: "read-only",
@@ -53,7 +53,7 @@ describe("invocationCommand", () => {
     const spec = invocationCommand(
       options({
         parent: "codex",
-        provider: "claude",
+        app: "claude-code",
         model: "fable",
       })
     );
@@ -84,7 +84,7 @@ describe("invocationCommand", () => {
 
   it("limits Grok to the assigned cwd and disables recursive agents", () => {
     const spec = invocationCommand(
-      options({ provider: "grok", model: "grok-4.6", effort: "xhigh" })
+      options({ app: "grok", model: "grok-4.6", effort: "xhigh" })
     );
     expect(spec.command).toBe("grok");
     expect(spec.stdin).toBe("none");
@@ -119,7 +119,7 @@ describe("invocationCommand", () => {
       expect.arrayContaining(["--sandbox", "workspace-write"])
     );
     const grok = invocationCommand(
-      options({ provider: "grok", model: "grok-4.6", mode: "isolated-write" })
+      options({ app: "grok", model: "grok-4.6", mode: "isolated-write" })
     );
     expect(grok.args).toEqual(
       expect.arrayContaining([
@@ -134,7 +134,7 @@ describe("invocationCommand", () => {
     expect(grok.args).not.toContain("--always-approve");
 
     const claude = invocationCommand(
-      options({ provider: "claude", model: "fable", mode: "isolated-write" })
+      options({ app: "claude-code", model: "fable", mode: "isolated-write" })
     );
     expect(claude.args).toEqual(
       expect.arrayContaining([
@@ -149,12 +149,12 @@ describe("invocationCommand", () => {
   it("covers low, medium, and high for every external provider", () => {
     const cases = [
       {
-        provider: "claude" as const,
+        app: "claude-code" as const,
         model: "fable",
         flag: (effort: "low" | "medium" | "high") => ["--effort", effort],
       },
       {
-        provider: "codex" as const,
+        app: "codex" as const,
         model: "gpt-5.6-sol",
         flag: (effort: "low" | "medium" | "high") => [
           "--config",
@@ -162,7 +162,7 @@ describe("invocationCommand", () => {
         ],
       },
       {
-        provider: "grok" as const,
+        app: "grok" as const,
         model: "grok-4.6",
         flag: (effort: "low" | "medium" | "high") => [
           "--reasoning-effort",
@@ -170,9 +170,9 @@ describe("invocationCommand", () => {
         ],
       },
     ];
-    for (const { provider, model, flag } of cases) {
+    for (const { app, model, flag } of cases) {
       for (const effort of ["low", "medium", "high"] as const) {
-        const spec = invocationCommand(options({ provider, model, effort }));
+        const spec = invocationCommand(options({ app, model, effort }));
         expect(spec.args).toEqual(expect.arrayContaining(flag(effort)));
       }
     }
