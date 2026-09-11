@@ -2,6 +2,10 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## Fork-authored: rename poteto-agent to engineering-agent
+
+This fork renames upstream's `poteto-agent` to `engineering-agent` so the live spawn ID matches `/engineering-mode`. This is a fork delta, not a Cursor pstack sync. The live spawn ID is `engineering-agent`. No alias. README-UPSTREAM.md remains verbatim and still says `poteto-agent`.
+
 ## Fork-authored: Gentle AI `work-unit-commits` import
 
 Open Pstack imports `work-unit-commits` from [Gentleman-Programming/gentle-ai](https://github.com/Gentleman-Programming/gentle-ai/blob/main/skills/work-unit-commits/SKILL.md) under MIT (c) 2025 Gentleman Programming. This is an attributed Gentle AI import, not a Cursor pstack sync. Adaptations: SDD Relationship section, SDD workload guard, and SDD When-to-Use bullet removed because open-pstack SDD is opt-in; license set to MIT per the repo LICENSE; one sentence links the skill as the commit-shaping complement to `principle-sequence-verifiable-units`. `engineering-mode` loads it before commit splits; Opening a PR and Feature playbooks reference it alongside sequence-verifiable-units.
