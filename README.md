@@ -167,4 +167,4 @@ Read [UPSTREAM.md](UPSTREAM.md) before changing content brought over from Lauren
 
 ## License
 
-MIT. pstack was created by Lauren Tan. Open Pstack builds on Michael Denyer's [pstack-claude](https://github.com/michael-denyer/pstack-claude) port and includes attributed MIT-licensed work from Cursor Team Kit and Superpowers. See [NOTICE.md](NOTICE.md) and the preserved license files for details.
+MIT. pstack was created by Lauren Tan. Open Pstack builds on Michael Denyer's [pstack-claude](https://github.com/michael-denyer/pstack-claude) port and includes attributed MIT-licensed work from Cursor Team Kit, Gentle AI (Gentleman Programming), and Superpowers. See [NOTICE.md](NOTICE.md) and the preserved license files for details.

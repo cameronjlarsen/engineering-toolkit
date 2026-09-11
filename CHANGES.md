@@ -2,6 +2,10 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## Fork-authored: Gentle AI `work-unit-commits` import
+
+Open Pstack imports `work-unit-commits` from [Gentleman-Programming/gentle-ai](https://github.com/Gentleman-Programming/gentle-ai/blob/main/skills/work-unit-commits/SKILL.md) under MIT (c) 2025 Gentleman Programming. This is an attributed Gentle AI import, not a Cursor pstack sync. Adaptations: SDD Relationship section, SDD workload guard, and SDD When-to-Use bullet removed because open-pstack SDD is opt-in; license set to MIT per the repo LICENSE; one sentence links the skill as the commit-shaping complement to `principle-sequence-verifiable-units`. `engineering-mode` loads it before commit splits; Opening a PR and Feature playbooks reference it alongside sequence-verifiable-units.
+
 ## 1.4.1 syncs to Cursor pstack 0.15.1
 
 Open Pstack 1.4.1 tracks Cursor pstack 0.15.1 at `f8abeddd1862dc73704e3d719dd73df0d51b8c71`. Poteto-mode now requires each claim to include its evidence or a measured, inferred, or guess label in the same sentence. Agents also run any check they can run themselves instead of handing that check to the user. No playbook, model, runtime, or dependency changed.

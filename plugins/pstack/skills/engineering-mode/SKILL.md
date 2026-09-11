@@ -25,6 +25,7 @@ Remaining triggers:
 - Any prose surface → the **unslop** skill. Your reply is a prose surface. Write it per **Writing the reply**. Agent-facing prose also follows the **plugin-dev:skill-development** skill (Claude Code's authoring guidance for SKILL.md files).
 - Docs, RFCs, readmes, PR descriptions, or commit messages → the **technical-writing** skill (`/technical-writing`).
 - Before commit → the **deslop** skill (`/deslop`).
+- Shaping commits, splitting a PR, or building a stacked commit story → the **work-unit-commits** skill.
 - Before review → the **no-comments** skill (`/no-comments`).
 - Shipping UI / IDE / CLI → the driver skill (`run` for CLIs/TUIs, `verify` for UIs). Both ship as Claude Code built-ins. For bug fixes, reproduce first on the same surface yourself. Hand to the user only under the narrow Bug fix step 1 exception.
 - Any PR-status request → the **Babysit** playbook (`playbooks/babysit.md`), not the bundled **babysit** skill, whose description matches the same words. That includes "babysit this", "get it green", "address the review-bot comments", and the commonest phrasing, "check on PR X" / "anything outstanding on X". Never triggered by merely opening a PR. Declare its mode before polling. The playbook's step 1 owns the request-to-mode mapping. Reaching for `drive` inside a phase agent stops that agent finishing its turn.

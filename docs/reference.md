@@ -4,7 +4,7 @@ This page contains the full skill, dependency, runtime, and porting reference. F
 
 [Poteto](https://x.com/poteto)'s [pstack](https://github.com/cursor/plugins/tree/main/pstack), adapted to run in Claude Code and Codex without Cursor. One shared skill tree serves both harnesses; Grok remains available as a model-provider lane. Version 1.4.1 is synced to Cursor pstack v0.15.1 at `f8abeddd1862dc73704e3d719dd73df0d51b8c71`. See [UPSTREAM.md](../UPSTREAM.md) for the exact sync contract.
 
-Original by Lauren Tan. This distribution builds on Michael Denyer's [pstack-claude](https://github.com/michael-denyer/pstack-claude) port and retains its history and MIT attribution. It imports seven MIT-licensed skills from [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit): `deslop`, `thermo-nuclear-code-quality-review`, `make-pr-easy-to-review`, `fix-ci`, `fix-merge-conflicts`, `get-pr-comments`, `what-did-i-get-done`.
+Original by Lauren Tan. This distribution builds on Michael Denyer's [pstack-claude](https://github.com/michael-denyer/pstack-claude) port and retains its history and MIT attribution. It imports seven MIT-licensed skills from [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit): `deslop`, `thermo-nuclear-code-quality-review`, `make-pr-easy-to-review`, `fix-ci`, `fix-merge-conflicts`, `get-pr-comments`, `what-did-i-get-done`. It also imports one MIT-licensed skill from [Gentle AI](https://github.com/Gentleman-Programming/gentle-ai): `work-unit-commits`.
 
 > if you want to go fast, go deep first. pstack helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence.
 
@@ -59,7 +59,7 @@ The marketplace install is the normal user path. Direct links are only for testi
 ├── plugins/pstack/                   # the plugin itself
 │   ├── .claude-plugin/plugin.json    # Claude Code manifest
 │   ├── .codex-plugin/plugin.json     # Codex manifest (skills: ./skills/)
-│   ├── skills/                       # 54 skills shared by Claude Code and Codex
+│   ├── skills/                       # 55 skills shared by Claude Code and Codex
 │   │   ├── engineering-mode/references/{codex-tools,provider-dispatch}.md  # tool + provider routing
 │   │   └── engineering-mode/scripts/      # bun/bash/node tooling: watch-pr, orch, runner, check-plan.mjs, worktree-audit.sh
 │   ├── hooks/                        # SessionStart auto-fire: injects the engineering-mode mandate (Claude Code only)
@@ -67,6 +67,7 @@ The marketplace install is the normal user path. Direct links are only for testi
 ├── tests/skill-collision-repro.sh    # native-skill package invariants and Claude invocation checks
 ├── LICENSE                           # pstack upstream MIT
 ├── LICENSE-cursor-team-kit           # cursor-team-kit upstream MIT
+├── LICENSE-gentle-ai                 # Gentle AI upstream MIT (work-unit-commits)
 ├── LICENSE-superpowers               # superpowers upstream MIT (hook runner)
 ├── NOTICE.md                         # attribution table
 ├── UPSTREAM.md                       # current Cursor sync point and update procedure
@@ -151,6 +152,7 @@ The table uses the short upstream names. Claude Code exposes each native skill w
 | `/fix-merge-conflicts` | non-interactively resolve merge conflicts, validate, finalize |
 | `/get-pr-comments` | fetch and summarize review comments from the active PR |
 | `/what-did-i-get-done` | summarize authored commits over a user-chosen period |
+| `/work-unit-commits` | plan commits as reviewable work units before opening or splitting PRs |
 
 ## Subagents
 
@@ -174,6 +176,7 @@ The port is editorial, not mechanical. Anywhere upstream pstack assumed Cursor-s
 - **`skills/fix-merge-conflicts/`** — imported verbatim from `cursor-team-kit`. Pairs with `babysit` step 5.
 - **`skills/get-pr-comments/`** — imported verbatim from `cursor-team-kit`. Primitive for `babysit` step 4 and `reflect`.
 - **`skills/what-did-i-get-done/`** — imported verbatim from `cursor-team-kit`. Commit summary over a chosen period.
+- **`skills/work-unit-commits/`** — imported from Gentle AI with SDD sections removed. Commit-shaping complement to `principle-sequence-verifiable-units`.
 
 ### What's substituted in skill bodies
 
@@ -222,8 +225,9 @@ Editing skill bodies forks this from upstream. Re-syncing to a future pstack rel
 
 ## License
 
-MIT. Three upstream LICENSE files are preserved:
+MIT. Four upstream LICENSE files are preserved:
 
 - [LICENSE](../LICENSE) — pstack (Lauren Tan)
-- [LICENSE-cursor-team-kit](../LICENSE-cursor-team-kit) — Cursor (covers the `deslop` and `thermo-nuclear-code-quality-review` skills)
+- [LICENSE-cursor-team-kit](../LICENSE-cursor-team-kit) — Cursor (covers the seven cursor-team-kit skills)
+- [LICENSE-gentle-ai](../LICENSE-gentle-ai) — Gentle AI, Gentleman Programming (covers `work-unit-commits`)
 - [LICENSE-superpowers](../LICENSE-superpowers) — superpowers, Jesse Vincent (covers the vendored `hooks/run-hook.cmd`)
