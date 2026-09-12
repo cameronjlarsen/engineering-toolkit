@@ -11,14 +11,14 @@ destination does not publish a default, dispatch rejects the route.
 
 ## Model matrix
 
-| Family | Upstream pstack choice | Provider | Model | Default effort | Selectable efforts | Claude-native agent stem |
+| Family | Upstream pstack choice | Provider | Model | Default effort | Selectable efforts | Plugin-agent stem |
 |---|---|---|---|---|---|---|
 | fable | fable | claude | fable | max | low medium high xhigh max | fable |
 | sol | gpt-5.6-sol-max | codex | gpt-5.6-sol | max | low medium high xhigh max | - |
 | grok | grok-4.6-fast-xhigh | grok | grok-4.6 | xhigh | low medium high xhigh max | - |
 | opus | opus | claude | opus | xhigh | low medium high xhigh max | opus |
 
-The allowed effort universe is exactly `low`, `medium`, `high`, `xhigh`, `max`. First-run requested efforts are the Default effort cell of each row. A Claude-native agent stem of `-` means the family has no Claude-native agent. Otherwise the shipped agent name is `pstack-<stem>-<effort>`.
+The allowed effort universe is exactly `low`, `medium`, `high`, `xhigh`, `max`. First-run requested efforts are the Default effort cell of each row. A plugin-agent stem of `-` means the family has no plugin-agent. Otherwise the shipped agent name is `pstack-<stem>-<effort>`.
 
 `fable` and `opus` are Claude Code's rolling aliases. Claude resolves each
 alias to the latest available family revision. A runner receipt keeps the
@@ -53,8 +53,9 @@ choose a route, detect or reroute the harness, or spawn another model.
 
 | Parent | `claude-code` | `codex` | `grok` | `cursor` |
 |---|---|---|---|---|
-| Claude Code | native | external | external | external |
-| Codex | external | native | external | external |
+| Claude Code | native | external | external | unlistable |
+| Codex | external | native | external | unlistable |
+| Cursor | external | external | external | native |
 
 `inherit-parent` and `auto` remain parent-native bindings. Why and Reflect
 remain `inherit-parent` or `auto` because they require the parent's MCP
@@ -66,12 +67,18 @@ to `inherit-parent`.
 Native dispatch avoids a second CLI startup and its base context.
 
 - Claude Code: match the route's `(app, model)` to one model-matrix row, then
-  dispatch it through `pstack-<stem>-<effort>` using that row's Claude-native
-  agent stem and resolved effort. Pass the complete task, grounding paths,
+  dispatch it through `pstack-<stem>-<effort>` using that row's plugin-agent
+  stem and resolved effort. Pass the complete task, grounding paths,
   access mode, and unique output location in the `Agent` prompt.
 - Codex: call `spawn_agent` with the route's model and `reasoning_effort`,
   the complete task, grounding paths, access mode, and unique output location.
   Use an isolated worktree for a writer.
+- Cursor: match the route's `(app, model)` to one model-matrix row, then
+  dispatch it through `pstack-<stem>-<effort>` using that row's plugin-agent
+  stem and resolved effort. Pass the complete task, grounding paths, access
+  mode, and unique output location in the `Task` prompt. Do not pass a Cursor
+  host model slug onto a plugin-agent Task. `inherit-parent` uses
+  `engineering-agent`.
 
 Do not send a same-host route to the external runner. It is rejected with exit
 64 and no receipt; use the parent's native primitive.
@@ -82,8 +89,8 @@ The launcher lives at `skills/engineering-mode/scripts/runner/pstack-runner` und
 
 ```text
 pstack-runner \
-  --parent <claude-code|codex> \
-  --app <claude-code|codex|grok|cursor> \
+  --parent <claude-code|codex|cursor> \
+  --app <claude-code|codex|grok> \
   --model <real CLI model> \
   --effort <low|medium|high|xhigh|max> \
   --mode <read-only|isolated-write> \
@@ -97,8 +104,8 @@ pstack-runner \
 Pass arguments as an argv array or quote every path. Never interpolate prompt
 text into a shell command. The launcher preflights the selected app and
 authentication, invokes the model exactly once, and records app/model/effort.
-External lanes do not receive the parent's MCP surface. Cursor has no launch
-interface. The launcher never falls back.
+External lanes do not receive the parent's MCP surface. Cursor cannot be
+launched as a child. The launcher never falls back.
 
 Grok authentication preflight has one bounded retry. If the first `grok models` result would be classified as unauthenticated, the runner waits five seconds and tries the same preflight once more. A second failure is terminal. The delay and second attempt share the runner's absolute deadline and cancellation latch, and the receipt keeps evidence from both attempts. Model execution is never retried.
 
@@ -108,6 +115,7 @@ The parent invocation must itself be resumable background work:
 
 - Claude Code: call the launcher through a Bash tool invocation with `run_in_background: true` and retain its task ID. A foreground Bash tool call has an automatic ten-minute ceiling even when the runner's own timeout is longer. Shelling out with `&` and losing the task handle is not equivalent.
 - Codex: run the launcher in a persistent exec session that returns a session ID, then wait or poll that handle. Do not hold one foreground tool call open for the model's full runtime.
+- Cursor: call the launcher through a Shell tool invocation in the background and retain its handle. Do not lose the process by backgrounding it without a task id.
 
 Start the background process, continue launching the other lanes, then drain their handles. Native and external lanes belong in the same fan-out phase.
 

@@ -1,4 +1,11 @@
-import type { AppId, AppRecord, ModelOnApp, ModelSlug } from "./route.ts";
+import {
+  CLI_CHILD_APPS,
+  type AppId,
+  type AppRecord,
+  type CliChildApp,
+  type ModelOnApp,
+  type ModelSlug,
+} from "./route.ts";
 
 export type AppCatalog = ReadonlyMap<AppId, AppRecord>;
 
@@ -19,34 +26,31 @@ function model(
 }
 
 export function shippedCatalog(): AppCatalog {
+  const fable = model("fable", "anthropic", "fable");
+  const opus = model("opus", "anthropic", "opus");
+  const pluginAgents = new Map<ModelSlug, ModelOnApp>([
+    [fable.slug, fable],
+    [opus.slug, opus],
+  ]);
   const claudeCode: AppRecord = {
     id: "claude-code",
-    parentEligible: true,
     launch: "cli-auth",
-    models: new Map([
-      ["fable" as ModelSlug, model("fable", "anthropic", "fable")],
-      ["opus" as ModelSlug, model("opus", "anthropic", "opus")],
-    ]),
+    models: pluginAgents,
   };
   const codex: AppRecord = {
     id: "codex",
-    parentEligible: true,
     launch: "cli-auth",
-    models: new Map([
-      ["gpt-5.6-sol" as ModelSlug, model("gpt-5.6-sol", "openai", null)],
-    ]),
+    models: new Map([["gpt-5.6-sol" as ModelSlug, model("gpt-5.6-sol", "openai", null)]]),
   };
   const grok: AppRecord = {
     id: "grok",
-    parentEligible: false,
     launch: "cli-auth",
     models: new Map([["grok-4.6" as ModelSlug, model("grok-4.6", "xai", null)]]),
   };
   const cursor: AppRecord = {
     id: "cursor",
-    parentEligible: false,
     launch: "none",
-    models: new Map(),
+    models: pluginAgents,
   };
   return new Map<AppId, AppRecord>([
     ["claude-code", claudeCode],
@@ -54,4 +58,22 @@ export function shippedCatalog(): AppCatalog {
     ["grok", grok],
     ["cursor", cursor],
   ]);
+}
+
+export function launchableApps(): readonly CliChildApp[] {
+  return CLI_CHILD_APPS;
+}
+
+export function launchHome(
+  model: ModelSlug,
+  catalog: AppCatalog
+): CliChildApp | null {
+  const homes = [...catalog.values()].filter(
+    (app): app is AppRecord & { readonly id: CliChildApp; readonly launch: "cli-auth" } =>
+      app.launch === "cli-auth" &&
+      (CLI_CHILD_APPS as readonly string[]).includes(app.id) &&
+      app.models.has(model)
+  );
+  if (homes.length !== 1) return null;
+  return homes[0].id;
 }

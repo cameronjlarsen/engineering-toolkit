@@ -1,6 +1,6 @@
 ---
 name: pstack-opus-xhigh
-description: Native Claude lane for pstack roles configured as claude-code/opus@xhigh.
+description: Native plugin-agent lane for pstack roles configured as opus@xhigh.
 model: opus
 effort: xhigh
 background: true

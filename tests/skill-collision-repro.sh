@@ -37,7 +37,7 @@ verof() { { grep -m1 '"version"' "$1" || true; } | sed -E 's/.*"version"[[:space
 vc="$(verof "$repo/plugins/pstack/.claude-plugin/plugin.json")"
 vx="$(verof "$repo/plugins/pstack/.codex-plugin/plugin.json")"
 vm="$(verof "$repo/.claude-plugin/marketplace.json")"
-vu="$(sed -n 's/| open-pstack version | `\([^`]*\)` |/\1/p' "$repo/UPSTREAM.md")"
+vu="$(sed -n 's/| Open Pstack version at fork | `\([^`]*\)` |/\1/p' "$repo/UPSTREAM.md")"
 if [ -n "$vc" ] && [ "$vc" = "$vx" ] && [ "$vc" = "$vm" ] && [ "$vc" = "$vu" ]; then
   note "ok: open-pstack version matches across UPSTREAM.md and the 3 manifests ($vc)"
 else
@@ -72,11 +72,13 @@ else
   note "ok: active Fable and Opus configuration uses rolling aliases"
 fi
 
-# Static invariant (CHANGES maintenance note): provider-dispatch owns the default
-# app/model quad and the three panel skills plus setup-pstack copy it verbatim.
+# Static invariant (CHANGES maintenance note): provider-dispatch owns the named
+# app/model quad copied into the three panel skills. setup-pstack's first-run
+# sheet is the Claude Code / Cursor omit-when-served render of that same quad.
 setup="$repo/plugins/pstack/skills/setup-pstack/SKILL.md"
 dispatch="$repo/plugins/pstack/skills/engineering-mode/references/provider-dispatch.md"
 quad_of() { { grep -oE '(claude-code|codex|grok)/[a-z0-9.-]+@(low|medium|high|xhigh|max)' || true; } | tr '\n' ' ' | sed 's/ $//'; }
+omit_of() { { grep -oE '((claude-code|codex|grok)/)?[a-z0-9.-]+@(low|medium|high|xhigh|max)' || true; } | tr '\n' ' ' | sed 's/ $//'; }
 canon_quad="$(awk '
   $0 == "## Model matrix" { in_matrix = 1; next }
   in_matrix && /^## / { exit }
@@ -100,8 +102,32 @@ canon_quad="$(awk '
   }
   END { print out }
 ' "$dispatch")"
+omit_quad="$(awk '
+  $0 == "## Model matrix" { in_matrix = 1; next }
+  in_matrix && /^## / { exit }
+  in_matrix && /^\|/ {
+    line = $0
+    sub(/^\|/, "", line)
+    sub(/\|$/, "", line)
+    n = split(line, cells, "|")
+    for (i = 1; i <= n; i++) {
+      gsub(/^ +| +$/, "", cells[i])
+      gsub(/`/, "", cells[i])
+    }
+    family = cells[1]
+    if (family == "Family" || family ~ /^:?-+:?$/) next
+    provider = cells[3]
+    model = cells[4]
+    effort = cells[5]
+    descriptor = (provider == "claude") ? (model "@" effort) : (provider "/" model "@" effort)
+    if (out != "") out = out " "
+    out = out descriptor
+  }
+  END { print out }
+' "$dispatch")"
 quad_bad=""
 [ -n "$canon_quad" ] || quad_bad="could not read the canonical quad from $dispatch"$'\n'
+[ -n "$omit_quad" ] || quad_bad="${quad_bad}could not read the omit-when-served quad from $dispatch"$'\n'
 # Anchor on the quad's last slug rather than a hard-coded one, so a model swap in
 # setup-pstack cannot leave this check hunting for a slug nobody ships any more.
 anchor="${canon_quad##* }"
@@ -121,15 +147,15 @@ interrogate="$repo/plugins/pstack/skills/interrogate/SKILL.md"
 got="$(grep -E '^\| Reviewer [A-Z] \|' "$interrogate" | quad_of)"
 [ "$got" = "$canon_quad" ] || quad_bad="$quad_bad$interrogate reviewer table: [$got] != [$canon_quad]"$'\n'
 while IFS= read -r line; do
-  got="$(printf '%s\n' "$line" | quad_of)"
-  [ "$got" = "$canon_quad" ] || quad_bad="$quad_bad$setup role row: [$got] != [$canon_quad]"$'\n'
+  got="$(printf '%s\n' "$line" | omit_of)"
+  [ "$got" = "$omit_quad" ] || quad_bad="$quad_bad$setup role row: [$got] != [$omit_quad]"$'\n'
 done < <(grep -E '^(arena runners|arena cross-judge pool|architect runners|interrogate reviewers):' "$setup")
 if [ -n "$quad_bad" ]; then
   note "FAIL: the default model quad is not identical across provider dispatch, the panel skills, and setup-pstack:"
   note "$quad_bad"
   fail=1
 else
-  note "ok: default model quad identical across provider dispatch + 3 panel skills + setup-pstack ($canon_quad)"
+  note "ok: named quad in panel skills ($canon_quad); omit-when-served first-run in setup-pstack ($omit_quad)"
 fi
 
 plugin="$repo/plugins/pstack"

@@ -145,7 +145,7 @@ describe("dispatch", () => {
     expect(result).toEqual({ ok: false, error: { tag: "readiness-unknown", app: "grok" } });
   });
 
-  it("rejects cursor without substituting another app", () => {
+  it("rejects cursor as an unlistable child without substituting another app", () => {
     const result = planLane({
       parent: "claude-code",
       binding: routeBinding("fable", namedApp("cursor")),
@@ -157,7 +157,41 @@ describe("dispatch", () => {
     });
     expect(result).toEqual({
       ok: false,
-      error: { tag: "app-does-not-serve-model", app: "cursor", model: model("fable") },
+      error: { tag: "no-launch-interface", app: "cursor" },
     });
+  });
+
+  it("plans omitted-app fable as native on a cursor parent", () => {
+    const result = planLane({
+      parent: "cursor",
+      binding: routeBinding("fable"),
+      override: undefined,
+      catalog: shippedCatalog(),
+      inventory: [],
+      access,
+      role: "architect runners",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.kind).toBe("native");
+    if (result.value.kind === "native" && result.value.inherit !== true) {
+      expect(result.value.route.app).toBe("cursor");
+    }
+  });
+
+  it("plans named claude-code fable as external from a cursor parent", () => {
+    const result = planLane({
+      parent: "cursor",
+      binding: routeBinding("fable", namedApp("claude-code")),
+      override: undefined,
+      catalog: shippedCatalog(),
+      inventory: [inventory("claude-code", { kind: "launch-ready" })],
+      access,
+      role: "architect runners",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.kind).toBe("external");
+    if (result.value.kind === "external") expect(result.value.launch.app).toBe("claude-code");
   });
 });

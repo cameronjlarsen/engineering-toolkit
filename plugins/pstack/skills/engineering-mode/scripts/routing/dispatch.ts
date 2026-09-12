@@ -16,6 +16,7 @@ import {
   type Route,
   type RoutePatch,
   type WorkerPolicy,
+  isCliChildApp,
   route,
 } from "./route.ts";
 import type { AppCatalog } from "./catalog.ts";
@@ -186,7 +187,10 @@ export function planLane(input: {
           worker: WORKER,
         },
       };
-    case "external":
+    case "external": {
+      if (!isCliChildApp(resolved.value.app)) {
+        return { ok: false, error: { tag: "no-launch-interface", app: resolved.value.app } };
+      }
       return {
         ok: true,
         value: {
@@ -207,6 +211,7 @@ export function planLane(input: {
           worker: WORKER,
         },
       };
+    }
     default: {
       const _exhaustive: never = resolved.value.lane;
       return _exhaustive;

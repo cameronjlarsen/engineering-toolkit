@@ -18,7 +18,7 @@ const MATRIX_HEADER = [
   "Model",
   "Default effort",
   "Selectable efforts",
-  "Claude-native agent stem",
+  "Plugin-agent stem",
 ] as const;
 
 const FAMILY_ORDER = ["fable", "sol", "grok", "opus"] as const;
@@ -64,7 +64,7 @@ interface MatrixRow {
   model: string;
   defaultEffort: Effort;
   selectableEfforts: Effort[];
-  claudeNativeAgentStem: string | null;
+  pluginAgentStem: string | null;
 }
 
 function splitRow(line: string): string[] {
@@ -136,11 +136,11 @@ function parseModelMatrix(markdown: string): MatrixRow[] {
       throw new Error(`invalid provider: ${provider}`);
     }
     const selectableEfforts = selectableRaw.split(/\s+/).map(asEffort);
-    const claudeNativeAgentStem = stemRaw === "-" ? null : stemRaw;
-    if (claudeNativeAgentStem !== null && !/^[a-z0-9-]+$/.test(claudeNativeAgentStem)) {
-      throw new Error(`invalid Claude-native agent stem: ${stemRaw}`);
+    const pluginAgentStem = stemRaw === "-" ? null : stemRaw;
+    if (pluginAgentStem !== null && !/^[a-z0-9-]+$/.test(pluginAgentStem)) {
+      throw new Error(`invalid plugin-agent stem: ${stemRaw}`);
     }
-    if ((provider === "claude") !== (claudeNativeAgentStem !== null)) {
+    if ((provider === "claude") !== (pluginAgentStem !== null)) {
       throw new Error(`${family} stem must be present iff provider is claude`);
     }
     const defaultEffort = asEffort(defaultEffortRaw);
@@ -154,7 +154,7 @@ function parseModelMatrix(markdown: string): MatrixRow[] {
       model,
       defaultEffort,
       selectableEfforts,
-      claudeNativeAgentStem,
+      pluginAgentStem,
     };
   });
 }
@@ -163,10 +163,13 @@ function namedApp(row: MatrixRow): string {
   return row.provider === "claude" ? "claude-code" : row.provider;
 }
 
+function firstRunDescriptor(row: MatrixRow): string {
+  if (row.provider === "claude") return `${row.model}@${row.defaultEffort}`;
+  return `${namedApp(row)}/${row.model}@${row.defaultEffort}`;
+}
+
 function defaultDescriptors(rows: MatrixRow[]): string[] {
-  return rows.map(
-    (row) => `${namedApp(row)}/${row.model}@${row.defaultEffort}`
-  );
+  return rows.map(firstRunDescriptor);
 }
 
 function parseFrontmatter(text: string): {
@@ -239,7 +242,7 @@ describe("model matrix", () => {
     const expected = new Set<string>();
     const familyBodies = new Map<string, string>();
     for (const row of rows) {
-      const stem = row.claudeNativeAgentStem;
+      const stem = row.pluginAgentStem;
       if (stem === null) {
         continue;
       }
@@ -250,7 +253,7 @@ describe("model matrix", () => {
         const { fields, body } = parseFrontmatter(text);
         expect(fields).toEqual({
           name,
-          description: `Native Claude lane for pstack roles configured as ${namedApp(row)}/${row.model}@${effort}.`,
+          description: `Native plugin-agent lane for pstack roles configured as ${row.model}@${effort}.`,
           model: row.model,
           effort,
           background: "true",
@@ -267,7 +270,7 @@ describe("model matrix", () => {
     const declaredCount = rows.reduce(
       (count, row) =>
         count +
-        (row.claudeNativeAgentStem === null
+        (row.pluginAgentStem === null
           ? 0
           : row.selectableEfforts.length),
       0
@@ -288,7 +291,10 @@ describe("model matrix", () => {
       .filter((role) => (SHEET_ROLES as readonly string[]).includes(role));
     expect(roles).toEqual([...SHEET_ROLES]);
     const byFamily = new Map<string, MatrixRow>(
-      rows.map((row) => [`${namedApp(row)}/${row.model}`, row])
+      rows.flatMap((row) => [
+        [`${namedApp(row)}/${row.model}`, row],
+        [row.model, row],
+      ])
     );
     for (const descriptor of sheet.match(DESCRIPTOR_RE) ?? []) {
       const at = descriptor.lastIndexOf("@");

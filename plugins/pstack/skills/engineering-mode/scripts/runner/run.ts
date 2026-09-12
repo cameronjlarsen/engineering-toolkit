@@ -9,6 +9,8 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { parentIdentityKeys } from "../routing/parent.ts";
+import { PARENT_HOSTS } from "../routing/route.ts";
 import { invocationCommand, preflightCommand, type CommandSpec } from "./commands.ts";
 import { versionedClaudeAlias } from "./model-aliases.ts";
 import { parseAppOutput, reportedModelMatches } from "./parse-output.ts";
@@ -112,34 +114,16 @@ function installRunCancellation(): RunCancellation {
   };
 }
 
-const CODEX_IDENTITY = [
-  "CODEX_THREAD_ID",
-  "CODEX_SESSION_ID",
-  "CODEX_CI",
-  "CODEX_SHELL",
-  "CODEX_SANDBOX",
-  "CODEX_SANDBOX_NETWORK_DISABLED",
-  "CODEX_INTERNAL_ORIGINATOR_OVERRIDE",
-] as const;
-
-const CLAUDE_IDENTITY = [
-  "CLAUDECODE",
-  "CLAUDE_CODE_CHILD_SESSION",
-  "CLAUDE_CODE_SESSION_ID",
-  "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS",
-] as const;
-
 export function childEnvironment(
   app: App,
   source: NodeJS.ProcessEnv = process.env
 ): NodeJS.ProcessEnv {
   const result = { ...source };
-  const remove = app === "claude-code"
-    ? CODEX_IDENTITY
-    : app === "codex"
-      ? CLAUDE_IDENTITY
-      : [...CODEX_IDENTITY, ...CLAUDE_IDENTITY];
-  for (const key of remove) delete result[key];
+  const keys = parentIdentityKeys();
+  for (const host of PARENT_HOSTS) {
+    if (host === app) continue;
+    for (const key of keys[host]) delete result[key];
+  }
   return result;
 }
 
@@ -370,8 +354,6 @@ function preflightPassed(app: App, model: string, result: ProcessResult): boolea
       return /logged in/i.test(combined);
     case "grok":
       return /logged in/i.test(combined) && combined.includes(model);
-    case "cursor":
-      throw new Error("cursor is not launchable");
     default: {
       const neverApp: never = app;
       throw new Error(`unsupported app: ${neverApp}`);
@@ -489,9 +471,6 @@ function completeReceipt(
 }
 
 export function validateOptions(options: RunnerOptions): void {
-  if (options.app === "cursor") {
-    throw new UsageError("cursor is not supported by the runner");
-  }
   if (options.parent === options.app) {
     throw new UsageError(
       `app ${options.app} is native to parent ${options.parent}; use the parent subagent primitive`

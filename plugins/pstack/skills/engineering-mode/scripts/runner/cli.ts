@@ -13,7 +13,7 @@ import {
   UsageError,
 } from "./types.ts";
 
-const HELP = `Usage: pstack-runner --parent <claude-code|codex> --app <claude-code|codex|grok|cursor> \\
+const HELP = `Usage: pstack-runner --parent <claude-code|codex|cursor> --app <claude-code|codex|grok> \\
   --model <slug> --effort <level> --mode <read-only|isolated-write> \\
   --prompt <file> --cwd <dir> --output <file> --receipt <file> [--timeout <seconds>]
 

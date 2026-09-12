@@ -1,6 +1,6 @@
 ---
 name: pstack-fable-xhigh
-description: Native Claude lane for pstack roles configured as claude-code/fable@xhigh.
+description: Native plugin-agent lane for pstack roles configured as fable@xhigh.
 model: fable
 effort: xhigh
 background: true

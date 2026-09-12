@@ -27,8 +27,6 @@ export function preflightCommand(app: App): CommandSpec {
       };
     case "grok":
       return { command: "grok", args: ["models"], stdin: "none" };
-    case "cursor":
-      throw new Error("cursor does not have a launch interface");
     default: {
       const neverApp: never = app;
       throw new Error(`unsupported app: ${neverApp}`);
@@ -152,8 +150,6 @@ export function invocationCommand(options: RunnerOptions): CommandSpec {
         ],
         stdin: "none",
       };
-    case "cursor":
-      throw new Error("cursor does not have a launch interface");
     default: {
       const neverApp: never = options.app;
       throw new Error(`unsupported app: ${neverApp}`);

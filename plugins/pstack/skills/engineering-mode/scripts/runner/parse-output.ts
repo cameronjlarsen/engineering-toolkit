@@ -170,8 +170,6 @@ export function parseAppOutput(
       return parseCodex(stdout);
     case "grok":
       return parseGrok(stdout, requestedModel);
-    case "cursor":
-      throw new Error("cursor output is unsupported");
     default: {
       const neverApp: never = app;
       throw new Error(`unsupported app: ${neverApp}`);

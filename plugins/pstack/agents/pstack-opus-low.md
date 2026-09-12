@@ -1,6 +1,6 @@
 ---
 name: pstack-opus-low
-description: Native Claude lane for pstack roles configured as claude-code/opus@low.
+description: Native plugin-agent lane for pstack roles configured as opus@low.
 model: opus
 effort: low
 background: true

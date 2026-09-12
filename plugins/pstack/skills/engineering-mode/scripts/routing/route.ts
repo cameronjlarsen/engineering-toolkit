@@ -1,10 +1,13 @@
-export const PARENT_HOSTS = ["claude-code", "codex"] as const;
+export const PARENT_HOSTS = ["claude-code", "codex", "cursor"] as const;
 export const APP_IDS = ["claude-code", "codex", "cursor", "grok"] as const;
+export const CLI_CHILD_APPS = ["claude-code", "codex", "grok"] as const;
 export const EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
 
 export type ParentHost = (typeof PARENT_HOSTS)[number];
 export type AppId = (typeof APP_IDS)[number];
+export type CliChildApp = (typeof CLI_CHILD_APPS)[number];
 export type Effort = (typeof EFFORTS)[number];
+export type ChildLaunch = "cli-auth" | "none";
 export type ModelSlug = string & { readonly __modelSlug: unique symbol };
 export type VendorId = "anthropic" | "openai" | "xai" | "unknown";
 
@@ -88,7 +91,7 @@ export interface WorkerPolicy {
 }
 
 export interface CliLaunchSpec {
-  readonly app: AppId;
+  readonly app: CliChildApp;
   readonly model: ModelSlug;
   readonly effort: Effort;
 }
@@ -139,8 +142,7 @@ export interface ModelOnApp {
 
 export interface AppRecord {
   readonly id: AppId;
-  readonly parentEligible: boolean;
-  readonly launch: "native-delegation" | "cli-auth" | "none";
+  readonly launch: ChildLaunch;
   readonly models: ReadonlyMap<ModelSlug, ModelOnApp>;
 }
 
@@ -153,7 +155,6 @@ export type ResolveError =
   | { readonly tag: "readiness-unknown"; readonly app: AppId }
   | { readonly tag: "not-launch-ready"; readonly app: AppId; readonly readiness: Readiness }
   | { readonly tag: "no-launch-interface"; readonly app: AppId }
-  | { readonly tag: "cursor-not-a-parent" }
   | { readonly tag: "invalid-model-slug"; readonly raw: string };
 
 export type Result<T, E> =
@@ -187,6 +188,14 @@ export function currentHost(): AppRef {
 
 export function namedApp(app: AppId): AppRef {
   return { kind: "named", app };
+}
+
+export function isParentHost(id: AppId): id is ParentHost {
+  return (PARENT_HOSTS as readonly string[]).includes(id);
+}
+
+export function isCliChildApp(id: AppId): id is CliChildApp {
+  return (CLI_CHILD_APPS as readonly string[]).includes(id);
 }
 
 export function destinationDefault(): EffortRef {

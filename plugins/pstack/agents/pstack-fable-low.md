@@ -1,6 +1,6 @@
 ---
 name: pstack-fable-low
-description: Native Claude lane for pstack roles configured as claude-code/fable@low.
+description: Native plugin-agent lane for pstack roles configured as fable@low.
 model: fable
 effort: low
 background: true

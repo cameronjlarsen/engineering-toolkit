@@ -1,6 +1,6 @@
 ---
 name: pstack-fable-max
-description: Native Claude lane for pstack roles configured as claude-code/fable@max.
+description: Native plugin-agent lane for pstack roles configured as fable@max.
 model: fable
 effort: max
 background: true

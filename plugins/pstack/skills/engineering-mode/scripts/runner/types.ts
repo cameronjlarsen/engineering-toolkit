@@ -1,25 +1,26 @@
 import {
-  APP_IDS,
+  CLI_CHILD_APPS,
   PARENT_HOSTS,
   type AppId as RouteAppId,
+  type CliChildApp,
   type Effort as RouteEffort,
   type ParentHost,
 } from "../routing/route.ts";
 
 export const PARENTS = PARENT_HOSTS;
-export const APPS = APP_IDS;
+export const APPS = CLI_CHILD_APPS;
 export const EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
 export const ACCESS_MODES = ["read-only", "isolated-write"] as const;
 
 export type Parent = ParentHost;
 export type AppId = RouteAppId;
-export type App = AppId;
+export type App = CliChildApp;
 export type Effort = RouteEffort;
 export type AccessMode = (typeof ACCESS_MODES)[number];
 
 export interface RunnerOptions {
   readonly parent: Parent;
-  readonly app: AppId;
+  readonly app: App;
   readonly model: string;
   readonly effort: Effort;
   readonly mode: AccessMode;
@@ -61,7 +62,7 @@ export interface RunnerReceipt {
   readonly schemaVersion: 1;
   readonly status: ReceiptStatus;
   readonly parent: Parent;
-  readonly app: AppId;
+  readonly app: App;
   readonly model: string;
   readonly effort: Effort;
   readonly mode: AccessMode;

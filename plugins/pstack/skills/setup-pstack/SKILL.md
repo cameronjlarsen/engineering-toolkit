@@ -24,11 +24,13 @@ Codex writes `~/.codex/pstack-models.md`. Codex has no `@` include, so mirror th
 <!-- pstack:models:end -->
 ```
 
+Cursor writes `~/.cursor/rules/pstack-models.mdc`. YAML frontmatter is harness wiring (`alwaysApply: true`). The body after the closing `---` is the same grammar 2 sheet. There is no companion `.md` file and no Task-slug grammar. If that path already holds an upstream Task-slug rule, stop as inconsistent state instead of rewriting it silently.
+
 ## Steps
 
 ### 1. Establish the parent
 
-Use the harness and tool surface running this skill: Claude Code or Codex. Environment markers may corroborate that top-level answer, but do not launch a child and ask it to detect where it came from. Record the parent because an omitted app means the current host.
+Use the harness and tool surface running this skill: Claude Code, Codex, or Cursor. Environment markers may corroborate that top-level answer, but do not launch a child and ask it to detect where it came from. Record the parent because an omitted app means the current host. Task without `spawn_agent` is Cursor. `Agent` without Task is Claude Code. `spawn_agent` is Codex. Two strong matches is ambiguous. Write nothing until the parent is known.
 
 ### 2. Load current state
 
@@ -69,17 +71,17 @@ launch-ready, and unknown. A failed probe writes nothing: report the failing
 route and keep the active sheet plus parent integration bytes unchanged. A
 failed first run creates neither artifact.
 
-| Family | Pair source | Claude parent route | Codex parent route | Availability proof |
-|---|---|---|---|---|
-| Fable | Fable matrix row + selected effort | native Agent `pstack-fable-<effort>` | Claude CLI | native one-turn probe or `claude auth status --json` plus one-turn probe |
-| Sol | Sol matrix row + selected effort | `codex exec` | native `spawn_agent` | `codex login status` plus one-turn probe or native one-turn probe |
-| Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | `grok models` must list the requested model; one-turn probe |
-| Opus | Opus matrix row + selected effort | native Agent `pstack-opus-<effort>` | Claude CLI | native one-turn probe or `claude auth status --json` plus one-turn probe |
+| Family | Pair source | Claude parent | Codex parent | Cursor parent | Availability proof |
+|---|---|---|---|---|---|
+| Fable | Fable matrix row + selected effort | native Agent `pstack-fable-<effort>` | Claude CLI | native Task `pstack-fable-<effort>` | native one-turn probe or `claude auth status --json` plus one-turn probe |
+| Sol | Sol matrix row + selected effort | `codex exec` | native `spawn_agent` | Codex CLI | `codex login status` plus one-turn probe or native one-turn probe |
+| Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | Grok CLI | `grok models` must list the requested model; one-turn probe |
+| Opus | Opus matrix row + selected effort | native Agent `pstack-opus-<effort>` | Claude CLI | native Task `pstack-opus-<effort>` | native one-turn probe or `claude auth status --json` plus one-turn probe |
 
 Use a tiny read-only probe that returns a unique marker. A login-status
 command alone proves credentials, not that the selected model and effort run.
 Record native and external results separately. Never call the external
-launcher for a same-host route. Cursor has no launch interface.
+launcher for a same-host route. Cursor cannot be launched as a child.
 
 Receipts and native transcripts prove the requested effort and route. They do
 not prove hidden applied reasoning depth. There is no implicit timeout,
@@ -118,31 +120,34 @@ After the operator confirms, write the in-memory render from step 6. Never paste
 
 Descriptor grammar: 2
 
-Route choices. First-run names the app so the same seed is native on Claude
-Code and external on Codex. Omit effort for the destination default. Every
-documented role remains present. `inherit-parent` and `auto` use the parent
-model natively and still count as one panel lane.
+Route choices. First-run omits the app when the live parent already serves
+that model, and names the unique CLI home otherwise. The example below is
+the Claude Code render. On Cursor, Fable and Opus omit the app. On Codex,
+Sol omits the app and Fable and Opus name `claude-code`. Omit effort for the
+destination default. Every documented role remains present.
+`inherit-parent` and `auto` use the parent model natively and still count as
+one panel lane.
 
 feature, refactoring: grok/grok-4.6@xhigh
 bug-fix: codex/gpt-5.6-sol@max
 perf-issue: codex/gpt-5.6-sol@max
 hillclimb: codex/gpt-5.6-sol@max
-judgment and prose: claude-code/fable@max
-hardest tasks: claude-code/fable@max
+judgment and prose: fable@max
+hardest tasks: fable@max
 how explorer: grok/grok-4.6@xhigh
-how explainer: claude-code/fable@max
+how explainer: fable@max
 why investigators, synthesizer: inherit-parent
 reflect tooling, judgment, divergent, synthesizer: inherit-parent
-arena runners: claude-code/fable@max, codex/gpt-5.6-sol@max, grok/grok-4.6@xhigh, claude-code/opus@xhigh
-arena cross-judge pool: claude-code/fable@max, codex/gpt-5.6-sol@max, grok/grok-4.6@xhigh, claude-code/opus@xhigh
+arena runners: fable@max, codex/gpt-5.6-sol@max, grok/grok-4.6@xhigh, opus@xhigh
+arena cross-judge pool: fable@max, codex/gpt-5.6-sol@max, grok/grok-4.6@xhigh, opus@xhigh
 swarm workers: grok/grok-4.6@xhigh
-architect runners: claude-code/fable@max, codex/gpt-5.6-sol@max, grok/grok-4.6@xhigh, claude-code/opus@xhigh
-interrogate reviewers: claude-code/fable@max, codex/gpt-5.6-sol@max, grok/grok-4.6@xhigh, claude-code/opus@xhigh
+architect runners: fable@max, codex/gpt-5.6-sol@max, grok/grok-4.6@xhigh, opus@xhigh
+interrogate reviewers: fable@max, codex/gpt-5.6-sol@max, grok/grok-4.6@xhigh, opus@xhigh
 ```
 
 ### 8. Wire it in
 
-Render the parent integration in memory before either write. On Claude, the integration is the single `@~/.claude/pstack-models.md` include in `~/.claude/CLAUDE.md`. On Codex, it is the exact sheet bytes between one `<!-- pstack:models:begin -->` and `<!-- pstack:models:end -->` pair in `~/.codex/AGENTS.md`. Replace that whole bounded block on a rerun. Insert one block at the end on first run. If either marker is missing, duplicated, or reversed, stop and report inconsistent state instead of guessing a boundary.
+Render the parent integration in memory before either write. On Claude, the integration is the single `@~/.claude/pstack-models.md` include in `~/.claude/CLAUDE.md`. On Codex, it is the exact sheet bytes between one `<!-- pstack:models:begin -->` and `<!-- pstack:models:end -->` pair in `~/.codex/AGENTS.md`. Replace that whole bounded block on a rerun. Insert one block at the end on first run. If either marker is missing, duplicated, or reversed, stop and report inconsistent state instead of guessing a boundary. On Cursor, the `.mdc` is both the sheet and the load hook. Wrap `printRoleMap` in the canonical always-apply frontmatter. Read back the grammar 2 body, not the YAML wrapper.
 
 Snapshot every target's current bytes. Write the sheet and parent integration
 only after all selected probes pass and the operator confirms. Read both

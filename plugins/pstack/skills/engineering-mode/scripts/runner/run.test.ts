@@ -14,7 +14,7 @@ import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import { childEnvironment, runLane } from "./run.ts";
 import { main } from "./cli.ts";
-import type { AppId, RunnerOptions, RunnerReceipt } from "./types.ts";
+import type { App, RunnerOptions, RunnerReceipt } from "./types.ts";
 
 let scratch = "";
 let bin = "";
@@ -135,7 +135,7 @@ function makeExecutable(name: string): void {
   chmodSync(path, 0o755);
 }
 
-function options(app: AppId, suffix: string = app): RunnerOptions {
+function options(app: App, suffix: string = app): RunnerOptions {
   const parent = app === "codex" ? "claude-code" : "codex";
   const model =
     app === "claude-code"
@@ -914,6 +914,7 @@ describe("childEnvironment", () => {
       CODEX_CI: "1",
       CLAUDECODE: "1",
       CLAUDE_CODE_CHILD_SESSION: "1",
+      CURSOR_AGENT: "1",
       KEEP_ME: "yes",
     };
     expect(childEnvironment("claude-code", source)).toEqual({
