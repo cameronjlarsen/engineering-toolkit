@@ -1,13 +1,13 @@
 {
-  "name": "pstack",
-  "displayName": "pstack",
+  "name": "eng",
+  "displayName": "Engineering Toolkit",
   "version": "1.4.1",
-  "description": "if you want to go fast, go deep first. pstack helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence. Ported from cursor/plugins/pstack for Claude Code and Codex.",
+  "description": "if you want to go fast, go deep first. Engineering Toolkit is a fork of Open Pstack. It helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence.",
   "author": {
     "name": "Lauren Tan"
   },
-  "homepage": "https://github.com/ericlitman/open-pstack",
-  "repository": "https://github.com/ericlitman/open-pstack",
+  "homepage": "https://github.com/cameronjlarsen/engineering-toolkit",
+  "repository": "https://github.com/cameronjlarsen/engineering-toolkit",
   "license": "MIT",
   "keywords": [
     "pstack",

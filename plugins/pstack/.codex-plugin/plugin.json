@@ -1,12 +1,12 @@
 {
-  "name": "pstack",
+  "name": "eng",
   "version": "1.4.1",
-  "description": "if you want to go fast, go deep first. pstack helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence. Codex port of the Claude Code plugin; skills are shared, tool names resolve via skills/engineering-mode/references/codex-tools.md.",
+  "description": "if you want to go fast, go deep first. Engineering Toolkit is a fork of Open Pstack. Skills are shared. Tool names resolve via skills/engineering-mode/references/codex-tools.md.",
   "author": {
     "name": "Lauren Tan"
   },
-  "homepage": "https://github.com/ericlitman/open-pstack",
-  "repository": "https://github.com/ericlitman/open-pstack",
+  "homepage": "https://github.com/cameronjlarsen/engineering-toolkit",
+  "repository": "https://github.com/cameronjlarsen/engineering-toolkit",
   "license": "MIT",
   "keywords": [
     "pstack",
@@ -20,10 +20,10 @@
   "skills": "./skills/",
   "interface": {
     "logo": "./assets/logo.png",
-    "displayName": "pstack",
+    "displayName": "Engineering Toolkit",
     "shortDescription": "Rigorous, parallelizable agent workflows: go deep first, write less, verify everything",
-    "longDescription": "pstack guides agent work through engineering-mode's principles, parallel design exploration (architect/arena), adversarial multi-model review (interrogate), root-cause debugging, prose deslopping, and verified delivery. Skills are shared with the Claude Code build; on Codex, tool names resolve via the codex-tools mapping.",
-    "developerName": "Lauren Tan (original), open-pstack maintainers",
+    "longDescription": "Engineering Toolkit guides agent work through engineering-mode's principles, parallel design exploration (architect/arena), adversarial multi-model review (interrogate), root-cause debugging, prose deslopping, and verified delivery. The workflows came from pstack. Skills are shared across Cursor, Claude Code, and Codex. On Codex, tool names resolve via the codex-tools mapping.",
+    "developerName": "Lauren Tan (original), Open Pstack, Cameron Larsen",
     "category": "Developer Tools",
     "capabilities": [
       "Interactive",
@@ -34,7 +34,7 @@
       "Work on this in engineering-mode.",
       "Interrogate this diff with multiple models."
     ],
-    "websiteURL": "https://github.com/ericlitman/open-pstack",
+    "websiteURL": "https://github.com/cameronjlarsen/engineering-toolkit",
     "brandColor": "#7C3AED"
   }
 }

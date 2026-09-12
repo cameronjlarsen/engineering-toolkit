@@ -36,13 +36,81 @@ fi
 verof() { { grep -m1 '"version"' "$1" || true; } | sed -E 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/'; }
 vc="$(verof "$repo/plugins/pstack/.claude-plugin/plugin.json")"
 vx="$(verof "$repo/plugins/pstack/.codex-plugin/plugin.json")"
+vr="$(verof "$repo/plugins/pstack/.cursor-plugin/plugin.json")"
 vm="$(verof "$repo/.claude-plugin/marketplace.json")"
 vu="$(sed -n 's/| Open Pstack version at fork | `\([^`]*\)` |/\1/p' "$repo/UPSTREAM.md")"
-if [ -n "$vc" ] && [ "$vc" = "$vx" ] && [ "$vc" = "$vm" ] && [ "$vc" = "$vu" ]; then
-  note "ok: open-pstack version matches across UPSTREAM.md and the 3 manifests ($vc)"
+if [ -n "$vc" ] && [ "$vc" = "$vx" ] && [ "$vc" = "$vr" ] && [ "$vc" = "$vm" ] && [ "$vc" = "$vu" ]; then
+  note "ok: open-pstack version matches across UPSTREAM.md and the 4 manifests ($vc)"
 else
-  note "FAIL: open-pstack version differs: upstream=$vu claude-plugin=$vc codex-plugin=$vx marketplace=$vm"
+  note "FAIL: open-pstack version differs: upstream=$vu claude-plugin=$vc codex-plugin=$vx cursor-plugin=$vr marketplace=$vm"
   fail=1
+fi
+
+# Public identity contract. Marketplace, plugin slash, card title, and GitHub
+# remote are Engineering Toolkit / eng. The skill directory stays plugins/pstack.
+json_field() { { grep -m1 "\"$2\"" "$1" || true; } | sed -E "s/.*\"$2\"[[:space:]]*:[[:space:]]*\"([^\"]+)\".*/\1/"; }
+identity_bad=""
+want_marketplace="engineering-toolkit"
+want_plugin="eng"
+want_display="Engineering Toolkit"
+want_repo="https://github.com/cameronjlarsen/engineering-toolkit"
+for manifest in \
+  "$repo/plugins/pstack/.claude-plugin/plugin.json" \
+  "$repo/plugins/pstack/.cursor-plugin/plugin.json"
+do
+  [ "$(json_field "$manifest" name)" = "$want_plugin" ] || identity_bad="$identity_bad$manifest name=$(json_field "$manifest" name)"$'\n'
+  [ "$(json_field "$manifest" displayName)" = "$want_display" ] || identity_bad="$identity_bad$manifest displayName=$(json_field "$manifest" displayName)"$'\n'
+  [ "$(json_field "$manifest" homepage)" = "$want_repo" ] || identity_bad="$identity_bad$manifest homepage=$(json_field "$manifest" homepage)"$'\n'
+  [ "$(json_field "$manifest" repository)" = "$want_repo" ] || identity_bad="$identity_bad$manifest repository=$(json_field "$manifest" repository)"$'\n'
+done
+codex_manifest="$repo/plugins/pstack/.codex-plugin/plugin.json"
+[ "$(json_field "$codex_manifest" name)" = "$want_plugin" ] || identity_bad="$identity_bad$codex_manifest name=$(json_field "$codex_manifest" name)"$'\n'
+[ "$(json_field "$codex_manifest" displayName)" = "$want_display" ] || identity_bad="$identity_bad$codex_manifest displayName=$(json_field "$codex_manifest" displayName)"$'\n'
+[ "$(json_field "$codex_manifest" homepage)" = "$want_repo" ] || identity_bad="$identity_bad$codex_manifest homepage=$(json_field "$codex_manifest" homepage)"$'\n'
+[ "$(json_field "$codex_manifest" repository)" = "$want_repo" ] || identity_bad="$identity_bad$codex_manifest repository=$(json_field "$codex_manifest" repository)"$'\n'
+[ "$(json_field "$codex_manifest" websiteURL)" = "$want_repo" ] || identity_bad="$identity_bad$codex_manifest websiteURL=$(json_field "$codex_manifest" websiteURL)"$'\n'
+for market in \
+  "$repo/.claude-plugin/marketplace.json" \
+  "$repo/.agents/plugins/marketplace.json"
+do
+  [ "$(json_field "$market" name)" = "$want_marketplace" ] || identity_bad="$identity_bad$market catalog=$(json_field "$market" name)"$'\n'
+  plugin_entry="$(awk '
+    $0 ~ /"plugins"/ { in_plugins = 1 }
+    in_plugins && $0 ~ /"name"/ {
+      if (match($0, /"name"[[:space:]]*:[[:space:]]*"[^"]+"/)) {
+        name = substr($0, RSTART, RLENGTH)
+        sub(/^"name"[[:space:]]*:[[:space:]]*"/, "", name)
+        sub(/"$/, "", name)
+        print name
+        exit
+      }
+    }
+  ' "$market")"
+  [ "$plugin_entry" = "$want_plugin" ] || identity_bad="$identity_bad$market plugin=$plugin_entry"$'\n'
+done
+[ -d "$repo/plugins/pstack" ] || identity_bad="$identity_bad missing skill directory plugins/pstack"$'\n'
+if grep -q 'cameronjlarsen/open-pstack' \
+  "$repo/README.md" \
+  "$repo/AGENTS.md" \
+  "$repo/docs/reference.md" \
+  "$repo/plugins/pstack/.claude-plugin/plugin.json" \
+  "$repo/plugins/pstack/.cursor-plugin/plugin.json" \
+  "$repo/plugins/pstack/.codex-plugin/plugin.json" \
+  "$repo/.claude-plugin/marketplace.json" \
+  "$repo/.agents/plugins/marketplace.json"
+then
+  identity_bad="$identity_bad live docs still cite cameronjlarsen/open-pstack"$'\n'
+fi
+readme_h1="$(sed -n '1p' "$repo/README.md")"
+[ "$readme_h1" = "# Engineering Toolkit" ] || identity_bad="$identity_bad README h1=$readme_h1"$'\n'
+grep -q '/eng:engineering-mode' "$repo/README.md" || identity_bad="$identity_bad README missing /eng:engineering-mode"$'\n'
+grep -q '/eng:setup-pstack' "$repo/README.md" || identity_bad="$identity_bad README missing /eng:setup-pstack"$'\n'
+if [ -n "$identity_bad" ]; then
+  note "FAIL: public identity is not Engineering Toolkit / eng:"
+  note "$identity_bad"
+  fail=1
+else
+  note "ok: public identity is Engineering Toolkit, plugin eng, repo cameronjlarsen/engineering-toolkit"
 fi
 
 # Active configuration must use Claude's rolling family aliases. Concrete

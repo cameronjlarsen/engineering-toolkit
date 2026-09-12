@@ -1,19 +1,19 @@
 {
-  "name": "open-pstack",
+  "name": "engineering-toolkit",
   "owner": {
-    "name": "Eric Litman"
+    "name": "Cameron Larsen"
   },
-  "description": "Pstack for Claude Code and Codex, tracking Cursor's upstream pstack.",
+  "description": "Engineering Toolkit. Fork of Open Pstack. One skill tree for Cursor, Claude Code, and Codex.",
   "plugins": [
     {
-      "name": "pstack",
+      "name": "eng",
       "source": "./plugins/pstack",
-      "description": "if you want to go fast, go deep first. pstack helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence.",
+      "description": "if you want to go fast, go deep first. Engineering Toolkit helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence.",
       "version": "1.4.1",
       "author": {
         "name": "Lauren Tan (original)"
       },
-      "homepage": "https://github.com/ericlitman/open-pstack",
+      "homepage": "https://github.com/cameronjlarsen/engineering-toolkit",
       "license": "MIT",
       "keywords": [
         "pstack",

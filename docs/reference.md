@@ -1,54 +1,48 @@
-# open-pstack technical reference
+# Engineering Toolkit technical reference
 
 This page contains the full skill, dependency, runtime, and porting reference. For the plain-English introduction and quick start, see the [main README](../README.md).
 
-[Poteto](https://x.com/poteto)'s [pstack](https://github.com/cursor/plugins/tree/main/pstack), adapted to run in Claude Code and Codex without Cursor. One shared skill tree serves both harnesses; Grok remains available as a model-provider lane. Version 1.4.1 is synced to Cursor pstack v0.15.1 at `f8abeddd1862dc73704e3d719dd73df0d51b8c71`. See [UPSTREAM.md](../UPSTREAM.md) for the exact sync contract.
+This repository is a fork of [Open Pstack](https://github.com/ericlitman/open-pstack). Open Pstack adapted [Poteto](https://x.com/poteto)'s [pstack](https://github.com/cursor/plugins/tree/main/pstack) for Claude Code and Codex. This fork uses that port as a base. One skill tree can parent on Cursor, Claude Code, and Codex, and later other coding agents. Grok remains a model-provider lane. Version 1.4.1 is the Open Pstack sync this checkout started from. It tracks Cursor pstack v0.15.1 at `f8abeddd1862dc73704e3d719dd73df0d51b8c71`. See [UPSTREAM.md](../UPSTREAM.md) for the tracked sources.
 
 Original by Lauren Tan. This distribution builds on Michael Denyer's [pstack-claude](https://github.com/michael-denyer/pstack-claude) port and retains its history and MIT attribution. It imports seven MIT-licensed skills from [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit): `deslop`, `thermo-nuclear-code-quality-review`, `make-pr-easy-to-review`, `fix-ci`, `fix-merge-conflicts`, `get-pr-comments`, `what-did-i-get-done`. It also imports one MIT-licensed skill from [Gentle AI](https://github.com/Gentleman-Programming/gentle-ai): `work-unit-commits`.
 
 > if you want to go fast, go deep first. pstack helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence.
 
-This is not a verbatim copy. Skill bodies have been edited so every Cursor-specific primitive resolves to its Claude Code or Codex equivalent — see [Differences from upstream](#differences-from-upstream) for the full list. The exhaustive per-skill audit lives in [CHANGES.md](../CHANGES.md); license attribution lives in [NOTICE.md](../NOTICE.md); the upstream README is preserved verbatim at [README-UPSTREAM.md](../README-UPSTREAM.md).
+This is not a verbatim copy of Cursor pstack. Open Pstack edited skill bodies so Cursor-specific primitives resolve in Claude Code and Codex. See [Differences from upstream](#differences-from-upstream). This fork keeps that shared tree and adds Cursor as a parent with grammar 2 model sheets. The exhaustive per-skill audit lives in [CHANGES.md](../CHANGES.md). License attribution lives in [NOTICE.md](../NOTICE.md). The Cursor pstack README is preserved verbatim at [README-UPSTREAM.md](../README-UPSTREAM.md).
 
 ## Install
 
+Until [cameronjlarsen/engineering-toolkit](https://github.com/cameronjlarsen/engineering-toolkit) is published, install from this checkout. The skill tree stays at `plugins/pstack`. Do not install `ericlitman/open-pstack` or Lauren's original pstack as a stand-in for this fork.
+
+### Cursor
+
+Point Cursor at `plugins/pstack` (the `.cursor-plugin` manifest). Then run `/setup-pstack`.
+
 ### Claude Code
 
-This repo ships as a Claude Code marketplace containing one plugin (`pstack`).
+This checkout ships as a Claude Code marketplace containing one plugin (`eng`). Add the checkout as a local marketplace, install `eng@engineering-toolkit`, and reload plugins.
 
-```text
-/plugin marketplace add ericlitman/open-pstack
-/plugin install pstack@open-pstack
-/reload-plugins
-```
-
-The plugin auto-fires through a `SessionStart` hook on startup, `/clear`, and post-compact. The hook injects a small mandate that routes non-trivial engineering work into `engineering-mode`; the full skill loads only when invoked. Dispatched subagents ignore the mandate, and explicit user instructions take precedence. To opt out, delete `hooks/hooks.json` from the installed copy at `~/.claude/plugins/cache/open-pstack/pstack/<version>/hooks/hooks.json`; a plugin update restores it.
+The plugin auto-fires through a `SessionStart` hook on startup, `/clear`, and post-compact. The hook injects a small mandate that routes non-trivial engineering work into `engineering-mode`. The full skill loads only when invoked. Dispatched subagents ignore the mandate, and explicit user instructions take precedence. To opt out, delete `hooks/hooks.json` from the installed copy. A plugin update restores it.
 
 ### Codex
 
-The same plugin carries a `.codex-plugin/plugin.json` manifest and a root `.agents/plugins/marketplace.json`. Install it through the Codex marketplace:
+The same plugin carries a `.codex-plugin/plugin.json` manifest and a root `.agents/plugins/marketplace.json`. Add this checkout as a local Codex marketplace, then add `eng`.
 
-```shell
-codex plugin marketplace add ericlitman/open-pstack --ref main
-codex plugin add pstack@open-pstack
-```
-
-Codex discovers the plugin skills under the `pstack` namespace, so they list as `pstack:engineering-mode`, `pstack:tdd`, and so on. The namespace comes from `plugins/pstack/.codex-plugin/plugin.json`. To enable the multi-model and parallel-subagent skills (`interrogate`, `arena`, `how`, `why`, `reflect`, `architect`), turn on subagents in `~/.codex/config.toml`:
+Codex discovers the plugin skills under the `eng` namespace, so they list as `eng:engineering-mode`, `eng:tdd`, and so on. The namespace comes from `plugins/pstack/.codex-plugin/plugin.json`. To enable the multi-model and parallel-subagent skills (`interrogate`, `arena`, `how`, `why`, `reflect`, `architect`), turn on subagents in `~/.codex/config.toml`:
 
 ```toml
 [features]
 multi_agent = true
 ```
 
-For local plugin development, you can clone the repository and link its skills directly:
+For local plugin development, you can link this checkout's skills directly:
 
 ```shell
-git clone https://github.com/ericlitman/open-pstack
-cd open-pstack
+cd /path/to/this/checkout
 for s in plugins/pstack/skills/*/; do ln -s "$PWD/$s" ~/.agents/skills/"$(basename "$s")"; done
 ```
 
-The marketplace install is the normal user path. Direct links are only for testing a checkout before publishing it. Remove the linked skill directories when the test is over.
+Direct links are only for testing a checkout before publishing it. Remove the linked skill directories when the test is over.
 
 ## Layout
 
@@ -59,8 +53,9 @@ The marketplace install is the normal user path. Direct links are only for testi
 ├── plugins/pstack/                   # the plugin itself
 │   ├── .claude-plugin/plugin.json    # Claude Code manifest
 │   ├── .codex-plugin/plugin.json     # Codex manifest (skills: ./skills/)
-│   ├── skills/                       # 55 skills shared by Claude Code and Codex
-│   │   ├── engineering-mode/references/{codex-tools,provider-dispatch}.md  # tool + provider routing
+│   ├── .cursor-plugin/plugin.json    # Cursor manifest (skills and agents)
+│   ├── skills/                       # shared skills for Cursor, Claude Code, and Codex
+│   │   ├── engineering-mode/references/{codex-tools,cursor-tools,provider-dispatch}.md  # tool + provider routing
 │   │   └── engineering-mode/scripts/      # bun/bash/node tooling: watch-pr, orch, runner, check-plan.mjs, worktree-audit.sh
 │   ├── hooks/                        # SessionStart auto-fire: injects the engineering-mode mandate (Claude Code only)
 │   └── agents/                       # Claude subagents, including native Fable and Opus lanes at each selectable effort
@@ -70,7 +65,7 @@ The marketplace install is the normal user path. Direct links are only for testi
 ├── LICENSE-gentle-ai                 # Gentle AI upstream MIT (work-unit-commits)
 ├── LICENSE-superpowers               # superpowers upstream MIT (hook runner)
 ├── NOTICE.md                         # attribution table
-├── UPSTREAM.md                       # current Cursor sync point and update procedure
+├── UPSTREAM.md                       # Cursor pstack and Open Pstack tracked sources
 ├── CHANGES.md                        # per-skill substitution audit
 ├── README.md                         # plain-English introduction and quick start
 └── docs/reference.md                 # this technical reference
@@ -80,16 +75,16 @@ Plugin-internal `skills/<name>/` path references in the docs below are relative 
 
 ## Running on Codex
 
-The Codex build shares one `skills/` tree with the Claude Code build. Nothing is forked or generated. Two narrow references keep runtime translation separate: `codex-tools.md` maps harness primitives and `provider-dispatch.md` maps model providers. pstack otherwise keeps the upstream Claude-native prose and adds a one-line Platform note to each skill that names a Claude primitive, so the port stays in lockstep with upstream sync.
+The Codex build shares one `skills/` tree with the Claude Code build. Nothing is forked or generated. Two narrow references keep runtime translation separate: `codex-tools.md` maps harness primitives and `provider-dispatch.md` maps model providers. Engineering Toolkit otherwise keeps the upstream Claude-native prose and adds a one-line Platform note to each skill that names a Claude primitive, so the port stays in lockstep with upstream sync.
 
-- **Skill invocation.** Codex loads `SKILL.md` natively. There is no `Skill` tool. You invoke a skill by name (ask for it, or pick `pstack:engineering-mode` from the list).
+- **Skill invocation.** Codex loads `SKILL.md` natively. There is no `Skill` tool. You invoke a skill by name (ask for it, or pick `eng:engineering-mode` from the list).
 - **Package surface.** The native `skills/` tree is the only workflow source. The plugin ships no `commands/` layer and does not link prompts into `~/.codex/prompts/`. Codex would migrate such files into duplicate source-command skills while loading the native skill tree. The 23 `principle-*` leaves declare `user-invocable: false`. Claude keeps them out of its user picker; Codex 0.149.0 currently shows them despite that metadata ([#8](https://github.com/ericlitman/open-pstack/issues/8)).
 - **Tool and built-in mapping.** Claude tool names and built-in skills resolve through [`codex-tools.md`](../plugins/pstack/skills/engineering-mode/references/codex-tools.md). Model execution resolves separately through [`provider-dispatch.md`](../plugins/pstack/skills/engineering-mode/references/provider-dispatch.md), so Codex can keep Sol native while invoking Claude and Grok externally.
 - **Subagents.** The `Agent` tool maps to Codex `spawn_agent` / `wait_agent`, enabled by `multi_agent = true`. Parallel fan-out is multiple `spawn_agent` calls in one turn. If the native Codex lane is unavailable, record that lane as a dropout; external Claude and Grok lanes still run, and no provider is silently substituted. There is no `engineering-agent` subagent type on Codex; route ad-hoc subagents by dispatching a `spawn_agent` told to read `engineering-mode` first.
-- **Auto-fire.** The `hooks/` SessionStart injection is Claude Code-only; Codex has no plugin hook runtime. Enter `pstack:engineering-mode` by name, or add a standing instruction to `~/.codex/AGENTS.md` if you want the same always-on routing.
+- **Auto-fire.** The `hooks/` SessionStart injection is Claude Code-only; Codex has no plugin hook runtime. Enter `eng:engineering-mode` by name, or add a standing instruction to `~/.codex/AGENTS.md` if you want the same always-on routing.
 - **Models.** `/setup-pstack` writes typed Route values and `app/model@effort` wire values and asks one requested effort per frontier family (`low`, `medium`, `high`, `xhigh`, `max`). The first-run panel is Fable max, GPT-5.6 Sol max, Grok 4.6 xhigh, and Opus xhigh. Fable and Opus use Claude's rolling aliases. Runtime dispatch normalizes older versioned descriptors in memory, so an installed sheet stops pinning immediately. A setup rerun persists that migration while keeping each role's family and effort. In Codex, Sol uses native `spawn_agent`; Claude and Grok use the deterministic external runner. In Claude Code, Fable and Opus use native agents; Sol and Grok use the runner. Children never detect the parent or reroute themselves. The `bug-fix`, `perf-issue`, and `hillclimb` roles stay on GPT-5.6 Sol max instead of upstream's Fable default because Sol costs less for these frequent delegated code roles.
 
-Verified in fresh installed Claude Code and Codex sessions: the user-facing skills are discovered and namespaced under `pstack`; both parents fan out the frontier quad through the documented native/external route table, retain long-running handles without a default timeout, and cross-judge only after every candidate is terminal. The `principle-*` leaves remain available for `engineering-mode` to read by path. Claude honors their `user-invocable: false` metadata; Codex 0.149.0 does not ([#8](https://github.com/ericlitman/open-pstack/issues/8)).
+Verified in fresh installed Claude Code and Codex sessions: the user-facing skills are discovered and namespaced under `eng`; both parents fan out the frontier quad through the documented native/external route table, retain long-running handles without a default timeout, and cross-judge only after every candidate is terminal. The `principle-*` leaves remain available for `engineering-mode` to read by path. Claude honors their `user-invocable: false` metadata; Codex 0.149.0 does not ([#8](https://github.com/ericlitman/open-pstack/issues/8)).
 
 ## Dependencies
 
@@ -117,7 +112,7 @@ No third-party plugins. The harsher-critique escape hatch lives in the bundled `
 
 ## Skills
 
-The table uses the short upstream names. Claude Code exposes each native skill with a `/pstack:` prefix, such as `/pstack:engineering-mode`. In Codex, ask for the namespaced skill, such as `pstack:engineering-mode`.
+The table uses the short upstream names. Claude Code exposes each native skill with a `/eng:` prefix, such as `/eng:engineering-mode`. In Codex, ask for the namespaced skill, such as `eng:engineering-mode`.
 
 | skill | use it when |
 | --- | --- |
@@ -195,12 +190,12 @@ The port is editorial, not mechanical. Anywhere upstream pstack assumed Cursor-s
 | Cursor cloud agents (`environment: "cloud"`, `cloud_base_branch`) | Local background subagents (`run_in_background: true`), isolated by git worktree |
 | Cursor's `/goal` (standing objective across turns) | The program objective written into the run's standing orders and restated in the todolist |
 | The Cursor agent store (path in the system prompt) | `~/.claude/orchestrate/<project-slug>/`, which survives the session restarts a multi-day program expects |
-| Model rule `~/.cursor/rules/pstack-models.mdc` | Override sheet `~/.claude/pstack-models.md`, included from `CLAUDE.md` |
+| Model rule `~/.cursor/rules/pstack-models.mdc` | This fork keeps grammar 2 in that `.mdc` (always-apply wrapper). Claude Code writes `~/.claude/pstack-models.md`, included from `CLAUDE.md`. Upstream Task slugs are not a second grammar. |
 | Multi-model panels (arena, architect, interrogate) | Provider dispatch restores the upstream frontier quad: `claude-code/fable@max`, `codex/gpt-5.6-sol@max`, `grok/grok-4.6@xhigh`, `claude-code/opus@xhigh`. Same-provider lanes stay native; external lanes use the bundled runner. |
 
 ### Cross-vendor dispatch
 
-The earlier port collapsed panels to Claude-only models. The bundled runner restores upstream's cross-provider judgment signal without adding a daemon or model-router service. Claude Code shells out to Codex and Grok; Codex shells out to Claude and Grok. The top-level parent chooses every route and each external process receives a complete task directly, so there is no supervising model invocation and no child-side harness detection.
+The earlier Open Pstack port collapsed panels to Claude-only models. The bundled runner restores cross-provider judgment without adding a daemon or model-router service. A Cursor parent runs Fable and Opus as native plugin-agent Tasks and shells out to Claude, Codex, and Grok. Claude Code shells out to Codex and Grok. Codex shells out to Claude and Grok. The top-level parent chooses every route and each external process receives a complete task directly, so there is no supervising model invocation and no child-side harness detection.
 
 ### What's deliberately kept
 

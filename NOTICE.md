@@ -1,6 +1,6 @@
 # NOTICE
 
-This plugin is a port of upstream MIT-licensed work. All upstream copyright notices and license terms are preserved. The open-pstack history begins from `michael-denyer/pstack-claude` through proven import commit `053ed78732e3b71826933170eafe7f7782dda844`.
+This distribution is Engineering Toolkit, a fork of Open Pstack (`ericlitman/open-pstack`). Open Pstack is a port of upstream MIT-licensed work. All upstream copyright notices and license terms are preserved. The Open Pstack history begins from `michael-denyer/pstack-claude` through proven import commit `053ed78732e3b71826933170eafe7f7782dda844`.
 
 ## Upstream sources
 
@@ -30,7 +30,7 @@ Summary of structural changes:
 
 - Plugin content lives at `plugins/pstack/` (with its own `.claude-plugin/plugin.json`). The repo root holds `.claude-plugin/marketplace.json` and the LICENSE / NOTICE / README / CHANGES docs.
 - `.claude-plugin/marketplace.json` added at repo root so the repo is installable via `/plugin marketplace add`. The marketplace's single plugin entry sources from `./plugins/pstack`.
-- The native `plugins/pstack/skills/` tree is the only user-facing workflow surface. Claude Code and Codex invoke those skills directly.
+- The native `plugins/pstack/skills/` tree is the only user-facing workflow surface. Cursor, Claude Code, and Codex invoke those skills directly.
 - Seven skills imported from `cursor-team-kit`: `deslop`, `thermo-nuclear-code-quality-review`, `make-pr-easy-to-review`, `fix-ci`, `fix-merge-conflicts`, `get-pr-comments`, `what-did-i-get-done`. All copied verbatim — no rewiring needed.
 - One skill imported from Gentle AI: `work-unit-commits`. SDD sections removed because open-pstack SDD is opt-in; this skill is everyday commit shaping and the commit-split complement to `principle-sequence-verifiable-units`.
 - `plugins/pstack/skills/babysit/` is independently authored as the Claude Code analog of Cursor's `/babysit` built-in. It has no upstream pstack equivalent; its workflow is informed by Cursor's public `/babysit` behavior. No code or prose was copied from any source.

@@ -19,7 +19,7 @@ Resolve in this order:
 3. **GitHub.** Else if the intended PR base remote is GitHub (`github.com`, including `git@github.com:` and `ssh://git@github.com/`), set `forge = github { baseRepo, ...existing gh fields }`. Capture canonical `<base-repo>` and pass `--repo "$base_repo"` to every `gh pr` command. When the head repository is a fork, validate its identity and record `<fork-owner>` and `<head-name>`.
 4. **Fail closed.** If the remote URL is empty or is not Origin, Azure DevOps, or GitHub, stop. Do not guess. Do not fall back to another forge.
 
-Dry check. Run `git remote -v`. A GitHub remote such as `https://github.com/cameronjlarsen/open-pstack.git` resolves to `github` when Origin is absent or cannot resolve the repository. An Azure remote such as `https://absinc.visualstudio.com/Net/_git/MyRepo` resolves to `azure-devops` when Origin is absent or cannot resolve the repository. A GitLab, Bitbucket, or other host fails closed.
+Dry check. Run `git remote -v`. A GitHub remote such as `https://github.com/cameronjlarsen/engineering-toolkit.git` resolves to `github` when Origin is absent or cannot resolve the repository. An Azure remote such as `https://absinc.visualstudio.com/Net/_git/MyRepo` resolves to `azure-devops` when Origin is absent or cannot resolve the repository. A GitLab, Bitbucket, or other host fails closed.
 
 **Watch and merge.** Watch, land, and merge on `github`, `origin`, and `azure-devops` follow `playbooks/shipping.md`. Never silently use `gh`, GitHub GraphQL, or `skills/engineering-mode/scripts/watch-pr/watch-pr` for an Azure DevOps repository.
 
