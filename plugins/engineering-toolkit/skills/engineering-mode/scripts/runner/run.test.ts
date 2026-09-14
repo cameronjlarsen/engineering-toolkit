@@ -180,9 +180,24 @@ function runnerArgs(input: RunnerOptions): string[] {
   return args;
 }
 
-async function waitFor(path: string): Promise<void> {
+function isolatedLauncher(): string {
+  const root = join(scratch, "isolated-scripts");
+  mkdirSync(root);
+  cpSync(import.meta.dir, join(root, "runner"), { recursive: true });
+  cpSync(join(import.meta.dir, "..", "routing"), join(root, "routing"), {
+    recursive: true,
+  });
+  return join(root, "runner", "pstack-runner");
+}
+
+async function waitFor(path: string, child?: Bun.Subprocess): Promise<void> {
   for (let attempt = 0; attempt < 200; attempt += 1) {
     if (existsSync(path)) return;
+    if (child !== undefined && (child.exitCode !== null || child.signalCode !== null)) {
+      throw new Error(
+        `process exited (${child.exitCode}, ${child.signalCode}) before ${path} appeared`,
+      );
+    }
     await Bun.sleep(10);
   }
   throw new Error(`timed out waiting for ${path}`);
@@ -409,7 +424,7 @@ describe("runLane", () => {
     });
     const stdout = new Response(runner.stdout).text();
     const stderr = new Response(runner.stderr).text();
-    await waitFor(transientMarker);
+    await waitFor(transientMarker, runner);
     await waitForExit(Number(readFileSync(transientMarker, "utf8")));
     await Bun.sleep(200);
     runner.kill("SIGTERM");
@@ -642,7 +657,7 @@ describe("runLane", () => {
     });
     const stdout = new Response(runner.stdout).text();
     const stderr = new Response(runner.stderr).text();
-    await waitFor(modelExiting);
+    await waitFor(modelExiting, runner);
     await waitForExit(Number(readFileSync(modelExiting, "utf8")));
     runner.kill("SIGTERM");
 
@@ -676,15 +691,39 @@ describe("runLane", () => {
     expect(receipt(input.receiptPath).status).toBe("complete");
   });
 
+  it("loads routing from beside an isolated launcher copy", async () => {
+    const missingPrompt = join(scratch, "missing-prompt.md");
+    const runner = Bun.spawn([
+      process.execPath,
+      isolatedLauncher(),
+      "--parent", "codex",
+      "--app", "claude-code",
+      "--model", "fable",
+      "--effort", "max",
+      "--mode", "read-only",
+      "--prompt", missingPrompt,
+      "--cwd", scratch,
+      "--output", join(scratch, "isolated-load.out"),
+      "--receipt", join(scratch, "isolated-load.receipt.json"),
+    ], {
+      cwd: scratch,
+      env: { ...process.env },
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const stderr = await new Response(runner.stderr).text();
+    expect(await runner.exited).toBe(64);
+    expect(stderr).toContain("prompt is not a file");
+    expect(stderr).not.toContain("Cannot find module");
+  });
+
   it("cancels a preflight with SIGINT and writes a terminal receipt", async () => {
     const input = options("claude-code", "preflight-cancelled");
     const started = join(scratch, "preflight-child.started");
     const terminated = join(scratch, "preflight-child.terminated");
-    const isolatedRunner = join(scratch, "isolated-runner");
-    cpSync(import.meta.dir, isolatedRunner, { recursive: true });
     const runner = Bun.spawn([
       process.execPath,
-      join(isolatedRunner, "pstack-runner"),
+      isolatedLauncher(),
       ...runnerArgs(input).slice(1),
     ], {
       cwd: scratch,
@@ -699,7 +738,7 @@ describe("runLane", () => {
     });
     const stdout = new Response(runner.stdout).text();
     const stderr = new Response(runner.stderr).text();
-    await waitFor(started);
+    await waitFor(started, runner);
     runner.kill("SIGINT");
 
     expect(await exitWithin(runner, 3_000)).toBe(130);
@@ -731,7 +770,7 @@ describe("runLane", () => {
     });
     const stdout = new Response(runner.stdout).text();
     const stderr = new Response(runner.stderr).text();
-    await waitFor(started);
+    await waitFor(started, runner);
     const childPid = Number(readFileSync(started, "utf8"));
     runner.kill("SIGTERM");
     await Bun.sleep(100);
@@ -766,7 +805,7 @@ describe("runLane", () => {
     });
     const stdout = new Response(runner.stdout).text();
     const stderr = new Response(runner.stderr).text();
-    await waitFor(started);
+    await waitFor(started, runner);
     runner.kill("SIGTERM");
 
     expect(await runner.exited).toBe(130);
