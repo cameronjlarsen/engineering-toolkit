@@ -16,13 +16,13 @@ The skill tree stays at `plugins/engineering-toolkit`. Do not install `ericlitma
 
 ### Cursor
 
-Clone the repository.
+This repository ships as a Cursor marketplace containing one plugin (`eng`). Add it from the GitHub URL:
 
-```shell
-git clone https://github.com/cameronjlarsen/engineering-toolkit.git
+```text
+/add-plugin https://github.com/cameronjlarsen/engineering-toolkit
 ```
 
-Point Cursor at `plugins/engineering-toolkit` (the `.cursor-plugin` manifest). Run `/setup-engineering-toolkit`.
+Install `eng` from the marketplace panel. Run `/setup-engineering-toolkit`. The root `.cursor-plugin/marketplace.json` lists that plugin at `./plugins/engineering-toolkit`. For local plugin development, clone the repository and point Cursor at `plugins/engineering-toolkit`.
 
 ### Claude Code
 
@@ -68,6 +68,7 @@ The marketplace install is the normal user path. Direct links are only for testi
 .
 ├── .claude-plugin/marketplace.json   # Claude Code marketplace manifest (repo root)
 ├── .agents/plugins/marketplace.json  # Codex marketplace manifest (repo root)
+├── .cursor-plugin/marketplace.json   # Cursor marketplace manifest (repo root)
 ├── plugins/engineering-toolkit/                   # the plugin itself
 │   ├── .claude-plugin/plugin.json    # Claude Code manifest
 │   ├── .codex-plugin/plugin.json     # Codex manifest (skills: ./skills/)

@@ -36,13 +36,13 @@ The skill tree stays at `plugins/engineering-toolkit`. That directory holds the 
 
 ### Cursor
 
-Clone the repository.
+Run this command in Agent chat:
 
-```shell
-git clone https://github.com/cameronjlarsen/engineering-toolkit.git
+```text
+/add-plugin https://github.com/cameronjlarsen/engineering-toolkit
 ```
 
-Do not install Lauren's original pstack alongside it. Install `plugins/engineering-toolkit` from that checkout (the `.cursor-plugin` manifest). Run `/setup-engineering-toolkit`. Setup writes grammar 2 into `~/.cursor/rules/engineering-toolkit-models.mdc`. It does not write upstream Task slugs.
+Do not install Lauren's original pstack alongside it. Install `eng` from the marketplace panel. Run `/setup-engineering-toolkit`. Setup writes grammar 2 into `~/.cursor/rules/engineering-toolkit-models.mdc`. It does not write upstream Task slugs.
 
 ### Claude Code
 

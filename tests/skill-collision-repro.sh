@@ -38,11 +38,12 @@ vc="$(verof "$repo/plugins/engineering-toolkit/.claude-plugin/plugin.json")"
 vx="$(verof "$repo/plugins/engineering-toolkit/.codex-plugin/plugin.json")"
 vr="$(verof "$repo/plugins/engineering-toolkit/.cursor-plugin/plugin.json")"
 vm="$(verof "$repo/.claude-plugin/marketplace.json")"
+vcm="$(verof "$repo/.cursor-plugin/marketplace.json")"
 vu="$(sed -n 's/| Open Pstack version at fork | `\([^`]*\)` |/\1/p' "$repo/UPSTREAM.md")"
-if [ -n "$vc" ] && [ "$vc" = "$vx" ] && [ "$vc" = "$vr" ] && [ "$vc" = "$vm" ] && [ "$vc" = "$vu" ]; then
-  note "ok: open-pstack version matches across UPSTREAM.md and the 4 manifests ($vc)"
+if [ -n "$vc" ] && [ "$vc" = "$vx" ] && [ "$vc" = "$vr" ] && [ "$vc" = "$vm" ] && [ "$vc" = "$vcm" ] && [ "$vc" = "$vu" ]; then
+  note "ok: open-pstack version matches across UPSTREAM.md and the 6 versioned files ($vc)"
 else
-  note "FAIL: open-pstack version differs: upstream=$vu claude-plugin=$vc codex-plugin=$vx cursor-plugin=$vr marketplace=$vm"
+  note "FAIL: open-pstack version differs: upstream=$vu claude-plugin=$vc codex-plugin=$vx cursor-plugin=$vr marketplace=$vm cursor-marketplace=$vcm"
   fail=1
 fi
 
@@ -69,7 +70,8 @@ codex_manifest="$repo/plugins/engineering-toolkit/.codex-plugin/plugin.json"
 [ "$(json_field "$codex_manifest" websiteURL)" = "$want_repo" ] || identity_bad="$identity_bad$codex_manifest websiteURL=$(json_field "$codex_manifest" websiteURL)"$'\n'
 for market in \
   "$repo/.claude-plugin/marketplace.json" \
-  "$repo/.agents/plugins/marketplace.json"
+  "$repo/.agents/plugins/marketplace.json" \
+  "$repo/.cursor-plugin/marketplace.json"
 do
   [ "$(json_field "$market" name)" = "$want_marketplace" ] || identity_bad="$identity_bad$market catalog=$(json_field "$market" name)"$'\n'
   plugin_entry="$(awk '
@@ -92,6 +94,7 @@ legacy_plugin_leaf="pstack"
 [ -e "$repo/plugins/$legacy_plugin_leaf" ] && identity_bad="$identity_bad leftover skill directory plugins/$legacy_plugin_leaf"$'\n'
 grep -Fq "./$want_plugin_dir" "$repo/.claude-plugin/marketplace.json" || identity_bad="$identity_bad Claude marketplace source is not ./$want_plugin_dir"$'\n'
 grep -Fq "./$want_plugin_dir" "$repo/.agents/plugins/marketplace.json" || identity_bad="$identity_bad Codex marketplace source is not ./$want_plugin_dir"$'\n'
+grep -Fq "./$want_plugin_dir" "$repo/.cursor-plugin/marketplace.json" || identity_bad="$identity_bad Cursor marketplace source is not ./$want_plugin_dir"$'\n'
 if grep -q 'cameronjlarsen/open-pstack' \
   "$repo/README.md" \
   "$repo/AGENTS.md" \
@@ -100,7 +103,8 @@ if grep -q 'cameronjlarsen/open-pstack' \
   "$repo/plugins/engineering-toolkit/.cursor-plugin/plugin.json" \
   "$repo/plugins/engineering-toolkit/.codex-plugin/plugin.json" \
   "$repo/.claude-plugin/marketplace.json" \
-  "$repo/.agents/plugins/marketplace.json"
+  "$repo/.agents/plugins/marketplace.json" \
+  "$repo/.cursor-plugin/marketplace.json"
 then
   identity_bad="$identity_bad live docs still cite cameronjlarsen/open-pstack"$'\n'
 fi
@@ -108,6 +112,7 @@ readme_h1="$(sed -n '1p' "$repo/README.md")"
 [ "$readme_h1" = "# Engineering Toolkit" ] || identity_bad="$identity_bad README h1=$readme_h1"$'\n'
 grep -q '/eng:engineering-mode' "$repo/README.md" || identity_bad="$identity_bad README missing /eng:engineering-mode"$'\n'
 grep -q '/eng:setup-engineering-toolkit' "$repo/README.md" || identity_bad="$identity_bad README missing /eng:setup-engineering-toolkit"$'\n'
+grep -Fq '/add-plugin https://github.com/cameronjlarsen/engineering-toolkit' "$repo/README.md" || identity_bad="$identity_bad README missing Cursor /add-plugin GitHub URL"$'\n'
 [ -e "$repo/plugins/engineering-toolkit/skills/setup-pstack" ] && identity_bad="$identity_bad leftover skills/setup-pstack"$'\n'
 grep -Fq '~/.cursor/rules/engineering-toolkit-models.mdc' "$repo/plugins/engineering-toolkit/skills/setup-engineering-toolkit/SKILL.md" || identity_bad="$identity_bad setup skill lost Cursor sheet path"$'\n'
 grep -Fq 'engineering-toolkit-models.mdc' "$repo/plugins/engineering-toolkit/skills/engineering-mode/scripts/routing/parent.ts" || identity_bad="$identity_bad parent.ts lost Cursor sheet path"$'\n'
