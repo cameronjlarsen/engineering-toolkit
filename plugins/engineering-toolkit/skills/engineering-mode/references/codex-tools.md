@@ -1,11 +1,11 @@
-# Codex tool mapping for pstack
+# Codex tool mapping for Engineering Toolkit
 
-pstack skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuestion`) in shared prose. On Codex the files are the same; only those tool names resolve differently. Model execution is not translated here. Read [`provider-dispatch.md`](provider-dispatch.md) for the parent-owned Claude/Codex/Grok route table and typed Route values written as `app/model@effort`.
+Shared skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuestion`) in shared prose. On Codex the files are the same; only those tool names resolve differently. Model execution is not translated here. Read [`provider-dispatch.md`](provider-dispatch.md) for the parent-owned Claude/Codex/Grok route table and typed Route values written as `app/model@effort`.
 
 ## Tool actions
 
-| pstack / Claude action | Codex equivalent |
-|------------------------|------------------|
+| Shared skill / Claude action | Codex equivalent |
+|------------------------------|------------------|
 | Read a file | `shell` (`cat`, `head`, `tail`) |
 | Create / edit / delete a file | `apply_patch` |
 | Run a shell command | `shell` |
@@ -13,7 +13,7 @@ pstack skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuesti
 | Fetch a URL | `shell` with `curl` / `wget` |
 | Search the web | `web_search` |
 | Invoke a skill (the `Skill` tool, `/command`) | Skills load natively. Follow the instructions presented. |
-| `paths` frontmatter scopes automatic loading | Claude Code only. On Codex, invoke `pstack:typescript-best-practices` by name. |
+| `paths` frontmatter scopes automatic loading | Claude Code only. On Codex, invoke `eng:typescript-best-practices` by name. |
 | Dispatch a subagent (the `Agent`/`Task` tool) | `spawn_agent` |
 | Dispatch N parallel subagents in one turn | N `spawn_agent` calls in one response |
 | Wait for a subagent result | `wait_agent` |
@@ -42,14 +42,14 @@ engineering-mode's Subagents section sets Claude-specific defaults (`subagent_ty
 
 ## Models and providers
 
-Do not replace every configured entry with a Codex model. `/setup-pstack` writes named-app values such as `claude-code/fable@max`, `codex/gpt-5.6-sol@max`, and `grok/grok-4.6@xhigh`. In a Codex parent, only `codex/...` is native. Route Claude and Grok values through the external launcher exactly as `provider-dispatch.md` specifies. The current default panel intentionally keeps four-provider frontier diversity and contains no older GPT or Claude substitute.
+Do not replace every configured entry with a Codex model. `/setup-engineering-toolkit` writes named-app values such as `claude-code/fable@max`, `codex/gpt-5.6-sol@max`, and `grok/grok-4.6@xhigh`. In a Codex parent, only `codex/...` is native. Route Claude and Grok values through the external launcher exactly as `provider-dispatch.md` specifies. The current default panel intentionally keeps four-provider frontier diversity and contains no older GPT or Claude substitute.
 
-## Claude built-in skills pstack references
+## Claude built-in skills these skills reference
 
-Some triggers name skills that ship with Claude Code, not pstack. They do not exist on Codex. Substitute the behavior:
+Some triggers name skills that ship with Claude Code, not this plugin. They do not exist on Codex. Substitute the behavior:
 
-| Claude built-in named in pstack | On Codex |
-|---------------------------------|----------|
+| Claude built-in named in these skills | On Codex |
+|---------------------------------------|----------|
 | `run` (drive a CLI/TUI to see a change work) | Run the app yourself via `shell` and observe the real output. |
 | `verify` (drive a UI to confirm a fix) | Drive the UI with whatever automation you have, or hand the user a concrete manual check. Do not claim done without observing the artifact. |
 | `plugin-dev:skill-development` (Claude's SKILL.md authoring guidance) | Follow your platform's skill-authoring guidance; the `writing-skills` skill if present. Keep `name` + `description` frontmatter and progressive disclosure. |
@@ -61,4 +61,4 @@ Some triggers name skills that ship with Claude Code, not pstack. They do not ex
 
 ## Instructions file
 
-Where a pstack skill says "your instructions file", on Codex that is `AGENTS.md` (project root, plus `~/.codex/AGENTS.md` global). On Claude Code it is `CLAUDE.md`.
+Where a skill says "your instructions file", on Codex that is `AGENTS.md` (project root, plus `~/.codex/AGENTS.md` global). On Claude Code it is `CLAUDE.md`.

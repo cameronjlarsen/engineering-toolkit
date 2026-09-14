@@ -111,6 +111,36 @@ grep -q '/eng:setup-engineering-toolkit' "$repo/README.md" || identity_bad="$ide
 [ -e "$repo/plugins/engineering-toolkit/skills/setup-pstack" ] && identity_bad="$identity_bad leftover skills/setup-pstack"$'\n'
 grep -Fq '~/.cursor/rules/engineering-toolkit-models.mdc' "$repo/plugins/engineering-toolkit/skills/setup-engineering-toolkit/SKILL.md" || identity_bad="$identity_bad setup skill lost Cursor sheet path"$'\n'
 grep -Fq 'engineering-toolkit-models.mdc' "$repo/plugins/engineering-toolkit/skills/engineering-mode/scripts/routing/parent.ts" || identity_bad="$identity_bad parent.ts lost Cursor sheet path"$'\n'
+hook="$repo/plugins/engineering-toolkit/hooks/session-start-context.md"
+grep -Fq 'You have Engineering Toolkit.' "$hook" || identity_bad="$identity_bad SessionStart hook lost Engineering Toolkit greeting"$'\n'
+grep -Fq '`eng:engineering-mode`' "$hook" || identity_bad="$identity_bad SessionStart hook lost eng:engineering-mode"$'\n'
+grep -Fq '`eng:tdd`' "$hook" || identity_bad="$identity_bad SessionStart hook lost eng:tdd"$'\n'
+if grep -Fq 'You have pstack.' "$hook"; then
+  identity_bad="$identity_bad leftover You have pstack in SessionStart hook"$'\n'
+fi
+if grep -Fq 'pstack:' "$hook"; then
+  identity_bad="$identity_bad leftover pstack: skill namespace in SessionStart hook"$'\n'
+fi
+codex_map="$repo/plugins/engineering-toolkit/skills/engineering-mode/references/codex-tools.md"
+cursor_map="$repo/plugins/engineering-toolkit/skills/engineering-mode/references/cursor-tools.md"
+grep -Fq '# Codex tool mapping for Engineering Toolkit' "$codex_map" || identity_bad="$identity_bad Codex mapping title is not Engineering Toolkit"$'\n'
+grep -Fq 'eng:typescript-best-practices' "$codex_map" || identity_bad="$identity_bad Codex mapping lost eng:typescript-best-practices"$'\n'
+if grep -Fq 'pstack:typescript-best-practices' "$codex_map"; then
+  identity_bad="$identity_bad leftover pstack:typescript-best-practices in Codex mapping"$'\n'
+fi
+grep -Fq '# Cursor tool mapping for Engineering Toolkit' "$cursor_map" || identity_bad="$identity_bad Cursor mapping title is not Engineering Toolkit"$'\n'
+if grep -Fq '# Cursor tool mapping for pstack' "$cursor_map"; then
+  identity_bad="$identity_bad leftover Cursor mapping title for pstack"$'\n'
+fi
+grep -Fq 'Engineering Toolkit helps you write less' "$repo/docs/reference.md" || identity_bad="$identity_bad reference tagline lost Engineering Toolkit"$'\n'
+if grep -Fq 'pstack helps you write less' "$repo/docs/reference.md"; then
+  identity_bad="$identity_bad leftover pstack tagline in docs/reference.md"$'\n'
+fi
+grep -Fq 'assets/engineering-toolkit-workflow.png' "$repo/README.md" || identity_bad="$identity_bad README lost engineering-toolkit-workflow.png"$'\n'
+[ -e "$repo/assets/engineering-toolkit-workflow.png" ] || identity_bad="$identity_bad missing assets/engineering-toolkit-workflow.png"$'\n'
+if [ -e "$repo/assets/pstack-workflow.png" ]; then
+  identity_bad="$identity_bad leftover assets/pstack-workflow.png"$'\n'
+fi
 if [ -n "$identity_bad" ]; then
   note "FAIL: public identity is not Engineering Toolkit / eng:"
   note "$identity_bad"

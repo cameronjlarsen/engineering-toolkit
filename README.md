@@ -24,7 +24,7 @@ The normal entry point is `engineering-mode`. You give it a task in plain langua
 - runs the code and checks real behavior instead of stopping at “the tests pass”; and
 - carries the work through review, continuous integration (CI), and a ready-to-merge pull request when asked.
 
-![How Engineering Toolkit routes a task through focused skills, real-app proof, and a review-ready pull request](assets/pstack-workflow.png)
+![How Engineering Toolkit routes a task through focused skills, real-app proof, and a review-ready pull request](assets/engineering-toolkit-workflow.png)
 
 Engineering Toolkit does not ask you to trust an agent on day one. It helps the agent leave evidence you can inspect. Start with supervised work. Let it run more work in parallel only after its checks have earned that trust in your own repositories.
 
