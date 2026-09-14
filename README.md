@@ -32,11 +32,11 @@ Engineering Toolkit does not ask you to trust an agent on day one. It helps the 
 
 You need a current Cursor, Claude Code, or Codex installation. For the full four-model review, install and sign in to the Claude Code, Codex, and Grok command-line tools. [Bun](https://bun.sh) runs the small local tool that starts models outside the app you are using. You can still use the core workflows with fewer models.
 
-Until [cameronjlarsen/engineering-toolkit](https://github.com/cameronjlarsen/engineering-toolkit) is published, install from this checkout. The skill tree stays at `plugins/pstack`. That directory holds the Cursor, Claude Code, and Codex manifests.
+Until [cameronjlarsen/engineering-toolkit](https://github.com/cameronjlarsen/engineering-toolkit) is published, install from this checkout. The skill tree stays at `plugins/engineering-toolkit`. That directory holds the Cursor, Claude Code, and Codex manifests.
 
 ### Cursor
 
-Install `plugins/pstack` from this checkout (the `.cursor-plugin` manifest). Do not install Lauren's original pstack alongside it. Then run `/setup-pstack`. Setup writes grammar 2 into `~/.cursor/rules/pstack-models.mdc`. It does not write upstream Task slugs.
+Install `plugins/engineering-toolkit` from this checkout (the `.cursor-plugin` manifest). Do not install Lauren's original pstack alongside it. Then run `/setup-engineering-toolkit`. Setup writes grammar 2 into `~/.cursor/rules/engineering-toolkit-models.mdc`. It does not write upstream Task slugs.
 
 ### Claude Code
 
@@ -64,19 +64,19 @@ Lauren's original setup has two steps. This fork keeps the same flow.
 In Claude Code, run:
 
 ```text
-/eng:setup-pstack
+/eng:setup-engineering-toolkit
 ```
 
 In Codex, ask:
 
 ```text
-Use eng:setup-pstack to configure Engineering Toolkit.
+Use eng:setup-engineering-toolkit to configure Engineering Toolkit.
 ```
 
 In Cursor, run:
 
 ```text
-/setup-pstack
+/setup-engineering-toolkit
 ```
 
 Setup checks the models you can actually run, shows how each one will start, and asks before saving the choices. The current default group uses Fable, GPT-5.6 Sol, Grok 4.6, and Opus.
@@ -129,11 +129,11 @@ Claude Code prefixes plugin skills with `/eng:`. In Claude Code, invoke a native
 
 Some Engineering Toolkit workflows use one model. Skills such as `architect`, `arena`, and `interrogate` can run several models in parallel. Each model run uses the subscription and token allowance of its own command-line tool.
 
-`setup-pstack` lets you choose the models, one requested effort per model family, and how many run in parallel. A model from the app you are using runs inside that app. Other models run through their own command-line tools. This fork does not quietly replace a failed model with a weaker one.
+`setup-engineering-toolkit` lets you choose the models, one requested effort per model family, and how many run in parallel. A model from the app you are using runs inside that app. Other models run through their own command-line tools. This fork does not quietly replace a failed model with a weaker one.
 
 ## Claude Code, Codex, and Cursor
 
-All three apps read the same skills from `plugins/pstack`. Only the way they start those skills and models is different.
+All three apps read the same skills from `plugins/engineering-toolkit`. Only the way they start those skills and models is different.
 
 | | Claude Code | Codex | Cursor |
 | --- | --- | --- | --- |

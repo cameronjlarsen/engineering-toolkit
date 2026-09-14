@@ -1,30 +1,30 @@
 ---
-name: setup-pstack
-description: Configure pstack's typed model routes per role. Discovers apps, probes selected routes, and writes the parent sheet. Use for /setup-pstack, "configure pstack models", or changing pstack's model choices.
+name: setup-engineering-toolkit
+description: Configure Engineering Toolkit's typed model routes per role. Discovers apps, probes selected routes, and writes the parent sheet. Use for /setup-engineering-toolkit, "configure Engineering Toolkit models", or changing model choices.
 ---
 
-# Setup pstack
+# Setup Engineering Toolkit
 
 Configure one model sheet for the current parent harness. Read [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md) before probing or writing anything. Its model matrix, grammar 2 wire format, and Route contract are authoritative. Discover apps, but discovery does not enable them. Do not add a second configuration file, a setup binary, or a weaker-model fallback.
 
 There is no setup binary. This agent procedure discovers, probes, and writes
 the parent sheet after confirmation.
 
-Claude Code writes `~/.claude/pstack-models.md` and loads it from `~/.claude/CLAUDE.md` with:
+Claude Code writes `~/.claude/engineering-toolkit-models.md` and loads it from `~/.claude/CLAUDE.md` with:
 
 ```text
-@~/.claude/pstack-models.md
+@~/.claude/engineering-toolkit-models.md
 ```
 
-Codex writes `~/.codex/pstack-models.md`. Codex has no `@` include, so mirror the sheet's exact bytes inside one bounded block in `~/.codex/AGENTS.md` and retain the sheet as the editable source of truth:
+Codex writes `~/.codex/engineering-toolkit-models.md`. Codex has no `@` include, so mirror the sheet's exact bytes inside one bounded block in `~/.codex/AGENTS.md` and retain the sheet as the editable source of truth:
 
 ```text
-<!-- pstack:models:begin -->
-<exact contents of ~/.codex/pstack-models.md>
-<!-- pstack:models:end -->
+<!-- engineering-toolkit:models:begin -->
+<exact contents of ~/.codex/engineering-toolkit-models.md>
+<!-- engineering-toolkit:models:end -->
 ```
 
-Cursor writes `~/.cursor/rules/pstack-models.mdc`. YAML frontmatter is harness wiring (`alwaysApply: true`). The body after the closing `---` is the same grammar 2 sheet. There is no companion `.md` file and no Task-slug grammar. If that path already holds an upstream Task-slug rule, stop as inconsistent state instead of rewriting it silently.
+Cursor writes `~/.cursor/rules/engineering-toolkit-models.mdc`. YAML frontmatter is harness wiring (`alwaysApply: true`). The body after the closing `---` is the same grammar 2 sheet. There is no companion `.md` file and no Task-slug grammar. If that path already holds an upstream Task-slug rule, stop as inconsistent state instead of rewriting it silently.
 
 ## Steps
 
@@ -38,8 +38,9 @@ Read the current parent-specific sheet when it exists. It is grammar 2. The
 old `claude:fable@max` form is accepted as inbound migration to named
 `claude-code`; new writes never emit it. Normalize rolling aliases
 `claude-fable-*` and `claude-opus-*` in memory, preserving app, effort, role,
-and lane order. Record migrations for confirmation. If the sheet is missing,
-use the complete first-run role map below.
+and lane order. Record migrations for confirmation. If the current sheet is
+missing, read the previous `pstack-models` path for that parent as inbound
+migration. If that is also missing, use the complete first-run role map below.
 
 Discover the catalog's apps and classify each as installed, launch-ready, or
 unknown. Discovery does not enable apps. A duplicate or unknown role row is
@@ -60,7 +61,7 @@ write while any inconsistency is unresolved.
 Ask for efforts only for selected routes. If first-run still proposes the four
 matrix families, ask once for those selected rows and use their capability
 metadata. An omitted effort remains destination-default; do not fill it with a
-pstack family default.
+family default.
 
 ### 5. Probe selected routes
 
@@ -116,7 +117,7 @@ roles, one lane runs per entry. The list length is the fan-out count.
 After the operator confirms, write the in-memory render from step 6. Never paste the example below as the result. It is only the complete first-run role map used to seed step 2; selected efforts and explicit role changes always replace its example values before writing.
 
 ```markdown
-# pstack model configuration
+# Engineering Toolkit model configuration
 
 Descriptor grammar: 2
 
@@ -147,7 +148,9 @@ interrogate reviewers: fable@max, codex/gpt-5.6-sol@max, grok/grok-4.6@xhigh, op
 
 ### 8. Wire it in
 
-Render the parent integration in memory before either write. On Claude, the integration is the single `@~/.claude/pstack-models.md` include in `~/.claude/CLAUDE.md`. On Codex, it is the exact sheet bytes between one `<!-- pstack:models:begin -->` and `<!-- pstack:models:end -->` pair in `~/.codex/AGENTS.md`. Replace that whole bounded block on a rerun. Insert one block at the end on first run. If either marker is missing, duplicated, or reversed, stop and report inconsistent state instead of guessing a boundary. On Cursor, the `.mdc` is both the sheet and the load hook. Wrap `printRoleMap` in the canonical always-apply frontmatter. Read back the grammar 2 body, not the YAML wrapper.
+Render the parent integration in memory before either write. On Claude, the integration is the single `@~/.claude/engineering-toolkit-models.md` include in `~/.claude/CLAUDE.md`. On Codex, it is the exact sheet bytes between one `<!-- engineering-toolkit:models:begin -->` and `<!-- engineering-toolkit:models:end -->` pair in `~/.codex/AGENTS.md`. Replace that whole bounded block on a rerun. Insert one block at the end on first run. If either marker is missing, duplicated, or reversed, stop and report inconsistent state instead of guessing a boundary. On Cursor, the `.mdc` is both the sheet and the load hook. Wrap `printRoleMap` in the canonical always-apply frontmatter. Read back the grammar 2 body, not the YAML wrapper.
+
+After a confirmed write and readback, delete the previous `pstack-models` sheet for this parent. On Claude, replace `@~/.claude/pstack-models.md` with the new include. On Codex, replace a `pstack:models` marker pair with the new markers in the same write. Do not leave both sheets.
 
 Snapshot every target's current bytes. Write the sheet and parent integration
 only after all selected probes pass and the operator confirms. Read both

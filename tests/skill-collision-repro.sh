@@ -6,7 +6,7 @@ fail=0
 
 note() { printf '%s\n' "$*"; }
 
-legacy_command_dir="$repo/plugins/pstack/commands"
+legacy_command_dir="$repo/plugins/engineering-toolkit/commands"
 if [ -e "$legacy_command_dir" ]; then
   note "FAIL: legacy command layer still exists: $legacy_command_dir"
   find "$legacy_command_dir" -mindepth 1 -print 2>/dev/null || true
@@ -16,7 +16,7 @@ else
 fi
 
 bad_principle=""
-for skill in "$repo"/plugins/pstack/skills/principle-*/SKILL.md; do
+for skill in "$repo"/plugins/engineering-toolkit/skills/principle-*/SKILL.md; do
   if [ ! -f "$skill" ]; then
     bad_principle="no principle-* leaves found"$'\n'
     break
@@ -34,9 +34,9 @@ else
 fi
 
 verof() { { grep -m1 '"version"' "$1" || true; } | sed -E 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/'; }
-vc="$(verof "$repo/plugins/pstack/.claude-plugin/plugin.json")"
-vx="$(verof "$repo/plugins/pstack/.codex-plugin/plugin.json")"
-vr="$(verof "$repo/plugins/pstack/.cursor-plugin/plugin.json")"
+vc="$(verof "$repo/plugins/engineering-toolkit/.claude-plugin/plugin.json")"
+vx="$(verof "$repo/plugins/engineering-toolkit/.codex-plugin/plugin.json")"
+vr="$(verof "$repo/plugins/engineering-toolkit/.cursor-plugin/plugin.json")"
 vm="$(verof "$repo/.claude-plugin/marketplace.json")"
 vu="$(sed -n 's/| Open Pstack version at fork | `\([^`]*\)` |/\1/p' "$repo/UPSTREAM.md")"
 if [ -n "$vc" ] && [ "$vc" = "$vx" ] && [ "$vc" = "$vr" ] && [ "$vc" = "$vm" ] && [ "$vc" = "$vu" ]; then
@@ -46,8 +46,6 @@ else
   fail=1
 fi
 
-# Public identity contract. Marketplace, plugin slash, card title, and GitHub
-# remote are Engineering Toolkit / eng. The skill directory stays plugins/pstack.
 json_field() { { grep -m1 "\"$2\"" "$1" || true; } | sed -E "s/.*\"$2\"[[:space:]]*:[[:space:]]*\"([^\"]+)\".*/\1/"; }
 identity_bad=""
 want_marketplace="engineering-toolkit"
@@ -55,15 +53,15 @@ want_plugin="eng"
 want_display="Engineering Toolkit"
 want_repo="https://github.com/cameronjlarsen/engineering-toolkit"
 for manifest in \
-  "$repo/plugins/pstack/.claude-plugin/plugin.json" \
-  "$repo/plugins/pstack/.cursor-plugin/plugin.json"
+  "$repo/plugins/engineering-toolkit/.claude-plugin/plugin.json" \
+  "$repo/plugins/engineering-toolkit/.cursor-plugin/plugin.json"
 do
   [ "$(json_field "$manifest" name)" = "$want_plugin" ] || identity_bad="$identity_bad$manifest name=$(json_field "$manifest" name)"$'\n'
   [ "$(json_field "$manifest" displayName)" = "$want_display" ] || identity_bad="$identity_bad$manifest displayName=$(json_field "$manifest" displayName)"$'\n'
   [ "$(json_field "$manifest" homepage)" = "$want_repo" ] || identity_bad="$identity_bad$manifest homepage=$(json_field "$manifest" homepage)"$'\n'
   [ "$(json_field "$manifest" repository)" = "$want_repo" ] || identity_bad="$identity_bad$manifest repository=$(json_field "$manifest" repository)"$'\n'
 done
-codex_manifest="$repo/plugins/pstack/.codex-plugin/plugin.json"
+codex_manifest="$repo/plugins/engineering-toolkit/.codex-plugin/plugin.json"
 [ "$(json_field "$codex_manifest" name)" = "$want_plugin" ] || identity_bad="$identity_bad$codex_manifest name=$(json_field "$codex_manifest" name)"$'\n'
 [ "$(json_field "$codex_manifest" displayName)" = "$want_display" ] || identity_bad="$identity_bad$codex_manifest displayName=$(json_field "$codex_manifest" displayName)"$'\n'
 [ "$(json_field "$codex_manifest" homepage)" = "$want_repo" ] || identity_bad="$identity_bad$codex_manifest homepage=$(json_field "$codex_manifest" homepage)"$'\n'
@@ -88,14 +86,19 @@ do
   ' "$market")"
   [ "$plugin_entry" = "$want_plugin" ] || identity_bad="$identity_bad$market plugin=$plugin_entry"$'\n'
 done
-[ -d "$repo/plugins/pstack" ] || identity_bad="$identity_bad missing skill directory plugins/pstack"$'\n'
+want_plugin_dir="plugins/engineering-toolkit"
+legacy_plugin_leaf="pstack"
+[ -d "$repo/$want_plugin_dir" ] || identity_bad="$identity_bad missing skill directory $want_plugin_dir"$'\n'
+[ -e "$repo/plugins/$legacy_plugin_leaf" ] && identity_bad="$identity_bad leftover skill directory plugins/$legacy_plugin_leaf"$'\n'
+grep -Fq "./$want_plugin_dir" "$repo/.claude-plugin/marketplace.json" || identity_bad="$identity_bad Claude marketplace source is not ./$want_plugin_dir"$'\n'
+grep -Fq "./$want_plugin_dir" "$repo/.agents/plugins/marketplace.json" || identity_bad="$identity_bad Codex marketplace source is not ./$want_plugin_dir"$'\n'
 if grep -q 'cameronjlarsen/open-pstack' \
   "$repo/README.md" \
   "$repo/AGENTS.md" \
   "$repo/docs/reference.md" \
-  "$repo/plugins/pstack/.claude-plugin/plugin.json" \
-  "$repo/plugins/pstack/.cursor-plugin/plugin.json" \
-  "$repo/plugins/pstack/.codex-plugin/plugin.json" \
+  "$repo/plugins/engineering-toolkit/.claude-plugin/plugin.json" \
+  "$repo/plugins/engineering-toolkit/.cursor-plugin/plugin.json" \
+  "$repo/plugins/engineering-toolkit/.codex-plugin/plugin.json" \
   "$repo/.claude-plugin/marketplace.json" \
   "$repo/.agents/plugins/marketplace.json"
 then
@@ -104,7 +107,10 @@ fi
 readme_h1="$(sed -n '1p' "$repo/README.md")"
 [ "$readme_h1" = "# Engineering Toolkit" ] || identity_bad="$identity_bad README h1=$readme_h1"$'\n'
 grep -q '/eng:engineering-mode' "$repo/README.md" || identity_bad="$identity_bad README missing /eng:engineering-mode"$'\n'
-grep -q '/eng:setup-pstack' "$repo/README.md" || identity_bad="$identity_bad README missing /eng:setup-pstack"$'\n'
+grep -q '/eng:setup-engineering-toolkit' "$repo/README.md" || identity_bad="$identity_bad README missing /eng:setup-engineering-toolkit"$'\n'
+[ -e "$repo/plugins/engineering-toolkit/skills/setup-pstack" ] && identity_bad="$identity_bad leftover skills/setup-pstack"$'\n'
+grep -Fq '~/.cursor/rules/engineering-toolkit-models.mdc' "$repo/plugins/engineering-toolkit/skills/setup-engineering-toolkit/SKILL.md" || identity_bad="$identity_bad setup skill lost Cursor sheet path"$'\n'
+grep -Fq 'engineering-toolkit-models.mdc' "$repo/plugins/engineering-toolkit/skills/engineering-mode/scripts/routing/parent.ts" || identity_bad="$identity_bad parent.ts lost Cursor sheet path"$'\n'
 if [ -n "$identity_bad" ]; then
   note "FAIL: public identity is not Engineering Toolkit / eng:"
   note "$identity_bad"
@@ -120,7 +126,7 @@ legacy_model_pins="$(
   grep -REn \
     --include='*.md' --include='*.ts' --include='*.sh' \
     'claude:claude-(fable|opus)-[0-9]|^model: claude-(fable|opus)-[0-9]|--model claude-(fable|opus)-[0-9]' \
-    "$repo/plugins/pstack" "$repo/tests" "$repo/README.md" "$repo/docs/reference.md" \
+    "$repo/plugins/engineering-toolkit" "$repo/tests" "$repo/README.md" "$repo/docs/reference.md" \
     2>/dev/null || true
 )"
 standalone_code_pins="$(
@@ -128,7 +134,7 @@ standalone_code_pins="$(
     --include='*.ts' --include='*.js' \
     --exclude='*.test.ts' --exclude='*.test.js' \
     "['\"]claude-(fable|opus)-[0-9]" \
-    "$repo/plugins/pstack" \
+    "$repo/plugins/engineering-toolkit" \
     2>/dev/null || true
 )"
 if [ -n "$legacy_model_pins" ] || [ -n "$standalone_code_pins" ]; then
@@ -140,11 +146,8 @@ else
   note "ok: active Fable and Opus configuration uses rolling aliases"
 fi
 
-# Static invariant (CHANGES maintenance note): provider-dispatch owns the named
-# app/model quad copied into the three panel skills. setup-pstack's first-run
-# sheet is the Claude Code / Cursor omit-when-served render of that same quad.
-setup="$repo/plugins/pstack/skills/setup-pstack/SKILL.md"
-dispatch="$repo/plugins/pstack/skills/engineering-mode/references/provider-dispatch.md"
+setup="$repo/plugins/engineering-toolkit/skills/setup-engineering-toolkit/SKILL.md"
+dispatch="$repo/plugins/engineering-toolkit/skills/engineering-mode/references/provider-dispatch.md"
 quad_of() { { grep -oE '(claude-code|codex|grok)/[a-z0-9.-]+@(low|medium|high|xhigh|max)' || true; } | tr '\n' ' ' | sed 's/ $//'; }
 omit_of() { { grep -oE '((claude-code|codex|grok)/)?[a-z0-9.-]+@(low|medium|high|xhigh|max)' || true; } | tr '\n' ' ' | sed 's/ $//'; }
 canon_quad="$(awk '
@@ -197,12 +200,12 @@ quad_bad=""
 [ -n "$canon_quad" ] || quad_bad="could not read the canonical quad from $dispatch"$'\n'
 [ -n "$omit_quad" ] || quad_bad="${quad_bad}could not read the omit-when-served quad from $dispatch"$'\n'
 # Anchor on the quad's last slug rather than a hard-coded one, so a model swap in
-# setup-pstack cannot leave this check hunting for a slug nobody ships any more.
+# setup-engineering-toolkit cannot leave this check hunting for a slug nobody ships any more.
 anchor="${canon_quad##* }"
 # arena and architect each state the quad on one line; interrogate lists it
 # as one slug per row of its Reviewer A/B/C/D table (upstream #167).
 for name in arena architect; do
-  skill="$repo/plugins/pstack/skills/$name/SKILL.md"
+  skill="$repo/plugins/engineering-toolkit/skills/$name/SKILL.md"
   n="$(grep -Fc "$anchor" "$skill" || true)"
   if [ "$n" != "1" ]; then
     quad_bad="$quad_bad$skill: expected exactly 1 default-quad line, found $n"$'\n'
@@ -211,7 +214,7 @@ for name in arena architect; do
   got="$(grep -F "$anchor" "$skill" | quad_of)"
   [ "$got" = "$canon_quad" ] || quad_bad="$quad_bad$skill: [$got] != [$canon_quad]"$'\n'
 done
-interrogate="$repo/plugins/pstack/skills/interrogate/SKILL.md"
+interrogate="$repo/plugins/engineering-toolkit/skills/interrogate/SKILL.md"
 got="$(grep -E '^\| Reviewer [A-Z] \|' "$interrogate" | quad_of)"
 [ "$got" = "$canon_quad" ] || quad_bad="$quad_bad$interrogate reviewer table: [$got] != [$canon_quad]"$'\n'
 while IFS= read -r line; do
@@ -219,14 +222,14 @@ while IFS= read -r line; do
   [ "$got" = "$omit_quad" ] || quad_bad="$quad_bad$setup role row: [$got] != [$omit_quad]"$'\n'
 done < <(grep -E '^(arena runners|arena cross-judge pool|architect runners|interrogate reviewers):' "$setup")
 if [ -n "$quad_bad" ]; then
-  note "FAIL: the default model quad is not identical across provider dispatch, the panel skills, and setup-pstack:"
+  note "FAIL: the default model quad is not identical across provider dispatch, the panel skills, and setup-engineering-toolkit:"
   note "$quad_bad"
   fail=1
 else
-  note "ok: named quad in panel skills ($canon_quad); omit-when-served first-run in setup-pstack ($omit_quad)"
+  note "ok: named quad in panel skills ($canon_quad); omit-when-served first-run in setup-engineering-toolkit ($omit_quad)"
 fi
 
-plugin="$repo/plugins/pstack"
+plugin="$repo/plugins/engineering-toolkit"
 canon="$plugin/skills/engineering-mode/references/bugbot-triage.md"
 skill="$plugin/skills/babysit/SKILL.md"
 playbook="$plugin/skills/engineering-mode/playbooks/babysit.md"

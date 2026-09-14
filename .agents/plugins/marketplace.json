@@ -8,7 +8,7 @@
       "name": "eng",
       "source": {
         "source": "local",
-        "path": "./plugins/pstack"
+        "path": "./plugins/engineering-toolkit"
       },
       "policy": {
         "installation": "AVAILABLE",

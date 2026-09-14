@@ -5,7 +5,7 @@ This fork tracks two sources.
 1. [Cursor's pstack](https://github.com/cursor/plugins/tree/main/pstack) is Lauren Tan's original plugin.
 2. [Open Pstack](https://github.com/ericlitman/open-pstack) is the Claude Code and Codex port that this checkout started from.
 
-Do not open issues on Open Pstack for work that belongs in this fork. Keep one shared `plugins/pstack/skills/` tree. Put harness translation in `codex-tools.md`, `cursor-tools.md`, and `provider-dispatch.md`. Do not fork a skill per parent app.
+Do not open issues on Open Pstack for work that belongs in this fork. Keep one shared `plugins/engineering-toolkit/skills/` tree. Put harness translation in `codex-tools.md`, `cursor-tools.md`, and `provider-dispatch.md`. Do not fork a skill per parent app.
 
 ## Current Cursor pstack sync point
 
@@ -58,7 +58,7 @@ No output means the tracked pstack tree has not changed. This comparison does no
 
 1. Track the work in this fork. Do not file it on `ericlitman/open-pstack`.
 2. Read each incoming commit in order. Bring over its intent and content. Then apply only the substitutions documented in `CHANGES.md`, plus this fork's Cursor-parent mapping.
-3. Keep one shared `plugins/pstack/skills/` tree.
+3. Keep one shared `plugins/engineering-toolkit/skills/` tree.
 4. Update the commit and version in this file, the affected provenance rows in `NOTICE.md`, and `README-UPSTREAM.md` when Cursor pstack changes it.
 5. Run CI-equivalent checks locally. Then run the installed Cursor, Claude Code, and Codex behavioral lanes required by the changed surface. Unit tests alone are not a release gate.
 6. Merge the reviewed change before tagging a release of this fork.

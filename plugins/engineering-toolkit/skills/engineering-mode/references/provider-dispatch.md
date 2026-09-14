@@ -1,12 +1,12 @@
 # Provider dispatch
 
-pstack model choices are typed `Route` values. The sheet is only their wire
+Engineering Toolkit model choices are typed `Route` values. The sheet is only their wire
 format; the domain does not contain a provider field.
 
 A role is `inherit-parent`, `auto`, or a `Route`. A `Route` contains a model,
 an optional app, and an optional effort. An omitted app means the current
 host. The model vendor never selects the app. An omitted effort means the
-destination's default; pstack family defaults are not filled in. If the
+destination's default; family defaults are not filled in. If the
 destination does not publish a default, dispatch rejects the route.
 
 ## Model matrix
@@ -37,7 +37,7 @@ runner argv. Never pass the versioned predecessor to Claude.
 
 This read-time rule makes an older installed sheet use the latest family
 revision immediately without writing user files. Once per parent run, report
-that the persisted sheet is stale and that `/setup-pstack` will rewrite it
+that the persisted sheet is stale and that `/setup-engineering-toolkit` will rewrite it
 after its normal probes and confirmation. Unknown versioned Claude models
 remain invalid. The external runner rejects a missed Fable or Opus version pin
 instead of silently executing it.

@@ -248,7 +248,7 @@ function printBinding(binding: RoleBinding): string {
 }
 
 export function printRoleMap(roles: RoleMap): string {
-  const lines = ["# pstack model configuration", "", "Descriptor grammar: 2", ""];
+  const lines = ["# Engineering Toolkit model configuration", "", "Descriptor grammar: 2", ""];
   for (const role of SINGLE_ROLE_IDS) {
     lines.push(`${role}: ${printBinding(roles[role])}`);
   }

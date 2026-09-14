@@ -8,7 +8,7 @@ const DISPATCH_PATH = join(
   PLUGIN_ROOT,
   "skills/engineering-mode/references/provider-dispatch.md"
 );
-const SETUP_PATH = join(PLUGIN_ROOT, "skills/setup-pstack/SKILL.md");
+const SETUP_PATH = join(PLUGIN_ROOT, "skills/setup-engineering-toolkit/SKILL.md");
 const AGENTS_DIR = join(PLUGIN_ROOT, "agents");
 
 const MATRIX_HEADER = [
@@ -196,10 +196,10 @@ function parseFrontmatter(text: string): {
 
 function firstRunSheet(setup: string): string {
   const match = setup.match(
-    /```markdown\n(# pstack model configuration\n[\s\S]*?)```/
+    /```markdown\n(# Engineering Toolkit model configuration\n[\s\S]*?)```/
   );
   if (!match) {
-    throw new Error("setup-pstack is missing the first-run sheet fence");
+    throw new Error("setup-engineering-toolkit is missing the first-run sheet fence");
   }
   return match[1];
 }
@@ -334,8 +334,8 @@ describe("model matrix", () => {
     expect(setup).toContain("rolling-alias migrations");
     expect(setup).toContain("documented role remains present.");
     expect(setup).toContain("A changed");
-    expect(setup).toContain("<!-- pstack:models:begin -->");
-    expect(setup).toContain("<!-- pstack:models:end -->");
+    expect(setup).toContain("<!-- engineering-toolkit:models:begin -->");
+    expect(setup).toContain("<!-- engineering-toolkit:models:end -->");
     expect(setup).toContain(
       "| Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | native Task host-spawn |"
     );
@@ -365,7 +365,7 @@ describe("model matrix", () => {
     expect(normalization).toContain("replace the model component in memory");
     expect(normalization).toContain("Never pass the versioned predecessor to Claude.");
     expect(normalization).toContain("without writing user files");
-    expect(normalization).toContain("`/setup-pstack` will rewrite it");
+    expect(normalization).toContain("`/setup-engineering-toolkit` will rewrite it");
     expect(normalization).toContain("runner rejects a missed Fable or Opus version pin");
   });
 });

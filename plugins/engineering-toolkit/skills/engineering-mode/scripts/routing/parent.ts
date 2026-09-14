@@ -52,8 +52,8 @@ export interface ParentProfile {
     | {
         readonly kind: "bounded-block";
         readonly path: string;
-        readonly begin: "<!-- pstack:models:begin -->";
-        readonly end: "<!-- pstack:models:end -->";
+        readonly begin: "<!-- engineering-toolkit:models:begin -->";
+        readonly end: "<!-- engineering-toolkit:models:end -->";
       }
     | { readonly kind: "mdc-sheet" };
 }
@@ -83,7 +83,7 @@ const CODEX_IDENTITY = [
 const CURSOR_IDENTITY = ["CURSOR_AGENT"] as const;
 
 const MDC_FRONTMATTER = `---
-description: pstack model configuration
+description: Engineering Toolkit model configuration
 alwaysApply: true
 ---
 `;
@@ -198,7 +198,7 @@ export function detectParent(
 export function parentProfile(parent: ParentHost): ParentProfile {
   const home = homedir();
   if (parent === "claude-code") {
-    const sheetPath = join(home, ".claude", "pstack-models.md");
+    const sheetPath = join(home, ".claude", "engineering-toolkit-models.md");
     return {
       parent,
       sheetPath,
@@ -207,12 +207,12 @@ export function parentProfile(parent: ParentHost): ParentProfile {
       integration: {
         kind: "at-include",
         path: join(home, ".claude", "CLAUDE.md"),
-        line: "@~/.claude/pstack-models.md",
+        line: "@~/.claude/engineering-toolkit-models.md",
       },
     };
   }
   if (parent === "codex") {
-    const sheetPath = join(home, ".codex", "pstack-models.md");
+    const sheetPath = join(home, ".codex", "engineering-toolkit-models.md");
     return {
       parent,
       sheetPath,
@@ -221,14 +221,14 @@ export function parentProfile(parent: ParentHost): ParentProfile {
       integration: {
         kind: "bounded-block",
         path: join(home, ".codex", "AGENTS.md"),
-        begin: "<!-- pstack:models:begin -->",
-        end: "<!-- pstack:models:end -->",
+        begin: "<!-- engineering-toolkit:models:begin -->",
+        end: "<!-- engineering-toolkit:models:end -->",
       },
     };
   }
   return {
     parent,
-    sheetPath: join(home, ".cursor", "rules", "pstack-models.mdc"),
+    sheetPath: join(home, ".cursor", "rules", "engineering-toolkit-models.mdc"),
     identityKeys: CURSOR_IDENTITY,
     mappingDoc: "cursor-tools.md",
     integration: { kind: "mdc-sheet" },

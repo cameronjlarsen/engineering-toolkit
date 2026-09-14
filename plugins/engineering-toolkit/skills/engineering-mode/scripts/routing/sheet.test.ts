@@ -29,7 +29,7 @@ const roles = [
 
 function sheet(values: Partial<Record<(typeof roles)[number], string>> = {}): string {
   return [
-    "# pstack model configuration",
+    "# Engineering Toolkit model configuration",
     "Descriptor grammar: 2",
     ...roles.map((role) => `${role}: ${values[role] ?? "inherit-parent"}`),
   ].join("\n");
@@ -90,7 +90,7 @@ describe("sheet grammar 2", () => {
 
 describe("sheet grammar 1 migration", () => {
   const v1 = [
-    "# pstack model configuration",
+    "# Engineering Toolkit model configuration",
     "feature, refactoring: grok:grok-4.6@xhigh",
     "bug-fix: codex:gpt-5.6-sol@max",
     "perf-issue: codex:gpt-5.6-sol@max",

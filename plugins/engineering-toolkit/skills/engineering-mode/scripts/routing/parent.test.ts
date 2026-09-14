@@ -170,7 +170,7 @@ describe("parent files", () => {
   it("persists Cursor as one always-apply grammar 2 mdc", () => {
     const profile = parentProfile("cursor");
     expect(profile.sheetPath).toBe(
-      join(homedir(), ".cursor", "rules", "pstack-models.mdc")
+      join(homedir(), ".cursor", "rules", "engineering-toolkit-models.mdc")
     );
     expect(profile.mappingDoc).toBe("cursor-tools.md");
     const sheet = printRoleMap(firstRunRoleMap("cursor", shippedCatalog()));
@@ -201,7 +201,7 @@ Use grok-4.6-fast-xhigh for arena.
     const claude = applyIntegrationPatch("# notes\n", {
       kind: "ensure-line",
       path: "CLAUDE.md",
-      line: "@~/.claude/pstack-models.md",
+      line: "@~/.claude/engineering-toolkit-models.md",
     });
     expect(claude.ok).toBe(true);
     if (!claude.ok) return;
@@ -209,16 +209,16 @@ Use grok-4.6-fast-xhigh for arena.
       applyIntegrationPatch(claude.value, {
         kind: "ensure-line",
         path: "CLAUDE.md",
-        line: "@~/.claude/pstack-models.md",
+        line: "@~/.claude/engineering-toolkit-models.md",
       })
     ).toEqual(claude);
 
-    const sheet = "# pstack model configuration\n\nDescriptor grammar: 2\n";
+    const sheet = "# Engineering Toolkit model configuration\n\nDescriptor grammar: 2\n";
     const first = applyIntegrationPatch("prefix\n", {
       kind: "replace-bounded-block",
       path: "AGENTS.md",
-      begin: "<!-- pstack:models:begin -->",
-      end: "<!-- pstack:models:end -->",
+      begin: "<!-- engineering-toolkit:models:begin -->",
+      end: "<!-- engineering-toolkit:models:end -->",
       body: sheet,
     });
     expect(first.ok).toBe(true);
@@ -227,8 +227,8 @@ Use grok-4.6-fast-xhigh for arena.
       applyIntegrationPatch(first.value, {
         kind: "replace-bounded-block",
         path: "AGENTS.md",
-        begin: "<!-- pstack:models:begin -->",
-        end: "<!-- pstack:models:end -->",
+        begin: "<!-- engineering-toolkit:models:begin -->",
+        end: "<!-- engineering-toolkit:models:end -->",
         body: sheet,
       })
     ).toEqual(first);

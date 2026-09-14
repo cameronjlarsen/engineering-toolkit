@@ -12,11 +12,11 @@ This is not a verbatim copy of Cursor pstack. Open Pstack edited skill bodies so
 
 ## Install
 
-Until [cameronjlarsen/engineering-toolkit](https://github.com/cameronjlarsen/engineering-toolkit) is published, install from this checkout. The skill tree stays at `plugins/pstack`. Do not install `ericlitman/open-pstack` or Lauren's original pstack as a stand-in for this fork.
+Until [cameronjlarsen/engineering-toolkit](https://github.com/cameronjlarsen/engineering-toolkit) is published, install from this checkout. The skill tree stays at `plugins/engineering-toolkit`. Do not install `ericlitman/open-pstack` or Lauren's original pstack as a stand-in for this fork.
 
 ### Cursor
 
-Point Cursor at `plugins/pstack` (the `.cursor-plugin` manifest). Then run `/setup-pstack`.
+Point Cursor at `plugins/engineering-toolkit` (the `.cursor-plugin` manifest). Then run `/setup-engineering-toolkit`.
 
 ### Claude Code
 
@@ -28,7 +28,7 @@ The plugin auto-fires through a `SessionStart` hook on startup, `/clear`, and po
 
 The same plugin carries a `.codex-plugin/plugin.json` manifest and a root `.agents/plugins/marketplace.json`. Add this checkout as a local Codex marketplace, then add `eng`.
 
-Codex discovers the plugin skills under the `eng` namespace, so they list as `eng:engineering-mode`, `eng:tdd`, and so on. The namespace comes from `plugins/pstack/.codex-plugin/plugin.json`. To enable the multi-model and parallel-subagent skills (`interrogate`, `arena`, `how`, `why`, `reflect`, `architect`), turn on subagents in `~/.codex/config.toml`:
+Codex discovers the plugin skills under the `eng` namespace, so they list as `eng:engineering-mode`, `eng:tdd`, and so on. The namespace comes from `plugins/engineering-toolkit/.codex-plugin/plugin.json`. To enable the multi-model and parallel-subagent skills (`interrogate`, `arena`, `how`, `why`, `reflect`, `architect`), turn on subagents in `~/.codex/config.toml`:
 
 ```toml
 [features]
@@ -39,7 +39,7 @@ For local plugin development, you can link this checkout's skills directly:
 
 ```shell
 cd /path/to/this/checkout
-for s in plugins/pstack/skills/*/; do ln -s "$PWD/$s" ~/.agents/skills/"$(basename "$s")"; done
+for s in plugins/engineering-toolkit/skills/*/; do ln -s "$PWD/$s" ~/.agents/skills/"$(basename "$s")"; done
 ```
 
 Direct links are only for testing a checkout before publishing it. Remove the linked skill directories when the test is over.
@@ -50,7 +50,7 @@ Direct links are only for testing a checkout before publishing it. Remove the li
 .
 ├── .claude-plugin/marketplace.json   # Claude Code marketplace manifest (repo root)
 ├── .agents/plugins/marketplace.json  # Codex marketplace manifest (repo root)
-├── plugins/pstack/                   # the plugin itself
+├── plugins/engineering-toolkit/                   # the plugin itself
 │   ├── .claude-plugin/plugin.json    # Claude Code manifest
 │   ├── .codex-plugin/plugin.json     # Codex manifest (skills: ./skills/)
 │   ├── .cursor-plugin/plugin.json    # Cursor manifest (skills and agents)
@@ -71,7 +71,7 @@ Direct links are only for testing a checkout before publishing it. Remove the li
 └── docs/reference.md                 # this technical reference
 ```
 
-Plugin-internal `skills/<name>/` path references in the docs below are relative to `plugins/pstack/`.
+Plugin-internal `skills/<name>/` path references in the docs below are relative to `plugins/engineering-toolkit/`.
 
 ## Running on Codex
 
@@ -79,10 +79,10 @@ The Codex build shares one `skills/` tree with the Claude Code build. Nothing is
 
 - **Skill invocation.** Codex loads `SKILL.md` natively. There is no `Skill` tool. You invoke a skill by name (ask for it, or pick `eng:engineering-mode` from the list).
 - **Package surface.** The native `skills/` tree is the only workflow source. The plugin ships no `commands/` layer and does not link prompts into `~/.codex/prompts/`. Codex would migrate such files into duplicate source-command skills while loading the native skill tree. The 23 `principle-*` leaves declare `user-invocable: false`. Claude keeps them out of its user picker; Codex 0.149.0 currently shows them despite that metadata ([#8](https://github.com/ericlitman/open-pstack/issues/8)).
-- **Tool and built-in mapping.** Claude tool names and built-in skills resolve through [`codex-tools.md`](../plugins/pstack/skills/engineering-mode/references/codex-tools.md). Model execution resolves separately through [`provider-dispatch.md`](../plugins/pstack/skills/engineering-mode/references/provider-dispatch.md), so Codex can keep Sol native while invoking Claude and Grok externally.
+- **Tool and built-in mapping.** Claude tool names and built-in skills resolve through [`codex-tools.md`](../plugins/engineering-toolkit/skills/engineering-mode/references/codex-tools.md). Model execution resolves separately through [`provider-dispatch.md`](../plugins/engineering-toolkit/skills/engineering-mode/references/provider-dispatch.md), so Codex can keep Sol native while invoking Claude and Grok externally.
 - **Subagents.** The `Agent` tool maps to Codex `spawn_agent` / `wait_agent`, enabled by `multi_agent = true`. Parallel fan-out is multiple `spawn_agent` calls in one turn. If the native Codex lane is unavailable, record that lane as a dropout; external Claude and Grok lanes still run, and no provider is silently substituted. There is no `engineering-agent` subagent type on Codex; route ad-hoc subagents by dispatching a `spawn_agent` told to read `engineering-mode` first.
 - **Auto-fire.** The `hooks/` SessionStart injection is Claude Code-only; Codex has no plugin hook runtime. Enter `eng:engineering-mode` by name, or add a standing instruction to `~/.codex/AGENTS.md` if you want the same always-on routing.
-- **Models.** `/setup-pstack` writes typed Route values and `app/model@effort` wire values and asks one requested effort per frontier family (`low`, `medium`, `high`, `xhigh`, `max`). The first-run panel is Fable max, GPT-5.6 Sol max, Grok 4.6 xhigh, and Opus xhigh. Fable and Opus use Claude's rolling aliases. Runtime dispatch normalizes older versioned descriptors in memory, so an installed sheet stops pinning immediately. A setup rerun persists that migration while keeping each role's family and effort. In Codex, Sol uses native `spawn_agent`; Claude and Grok use the deterministic external runner. In Claude Code, Fable and Opus use native agents; Sol and Grok use the runner. Children never detect the parent or reroute themselves. The `bug-fix`, `perf-issue`, and `hillclimb` roles stay on GPT-5.6 Sol max instead of upstream's Fable default because Sol costs less for these frequent delegated code roles.
+- **Models.** `/setup-engineering-toolkit` writes typed Route values and `app/model@effort` wire values and asks one requested effort per frontier family (`low`, `medium`, `high`, `xhigh`, `max`). The first-run panel is Fable max, GPT-5.6 Sol max, Grok 4.6 xhigh, and Opus xhigh. Fable and Opus use Claude's rolling aliases. Runtime dispatch normalizes older versioned descriptors in memory, so an installed sheet stops pinning immediately. A setup rerun persists that migration while keeping each role's family and effort. In Codex, Sol uses native `spawn_agent`; Claude and Grok use the deterministic external runner. In Claude Code, Fable and Opus use native agents; Sol and Grok use the runner. Children never detect the parent or reroute themselves. The `bug-fix`, `perf-issue`, and `hillclimb` roles stay on GPT-5.6 Sol max instead of upstream's Fable default because Sol costs less for these frequent delegated code roles.
 
 Verified in fresh installed Claude Code and Codex sessions: the user-facing skills are discovered and namespaced under `eng`; both parents fan out the frontier quad through the documented native/external route table, retain long-running handles without a default timeout, and cross-judge only after every candidate is terminal. The `principle-*` leaves remain available for `engineering-mode` to read by path. Claude honors their `user-invocable: false` metadata; Codex 0.149.0 does not ([#8](https://github.com/ericlitman/open-pstack/issues/8)).
 
@@ -134,7 +134,7 @@ The table uses the short upstream names. Claude Code exposes each native skill w
 | `/show-me-your-work` | log decisions to a reviewable tsv decision trail |
 | `/blast-radius` | find what a change could break beyond the diff and prove safety by running code |
 | `/recall` | catch up on recent working context from chat history, live state, and the shared record |
-| `/setup-pstack` | configure pstack per-role model choices and per-family requested effort |
+| `/setup-engineering-toolkit` | configure Engineering Toolkit per-role model choices and per-family requested effort |
 | `/unslop` | clean up writing by removing AI tells |
 | `/no-comments` | strip comments before review via the `comment-sicko` subagent, then fix what it finds |
 | `/create-verification-skill` | generate a project-local verification skill and feature map |
@@ -190,7 +190,7 @@ The port is editorial, not mechanical. Anywhere upstream pstack assumed Cursor-s
 | Cursor cloud agents (`environment: "cloud"`, `cloud_base_branch`) | Local background subagents (`run_in_background: true`), isolated by git worktree |
 | Cursor's `/goal` (standing objective across turns) | The program objective written into the run's standing orders and restated in the todolist |
 | The Cursor agent store (path in the system prompt) | `~/.claude/orchestrate/<project-slug>/`, which survives the session restarts a multi-day program expects |
-| Model rule `~/.cursor/rules/pstack-models.mdc` | This fork keeps grammar 2 in that `.mdc` (always-apply wrapper). Claude Code writes `~/.claude/pstack-models.md`, included from `CLAUDE.md`. Upstream Task slugs are not a second grammar. |
+| Model rule `~/.cursor/rules/engineering-toolkit-models.mdc` | This fork keeps grammar 2 in that `.mdc` (always-apply wrapper). Claude Code writes `~/.claude/engineering-toolkit-models.md`, included from `CLAUDE.md`. Upstream Task slugs are not a second grammar. |
 | Multi-model panels (arena, architect, interrogate) | Provider dispatch restores the upstream frontier quad: `claude-code/fable@max`, `codex/gpt-5.6-sol@max`, `grok/grok-4.6@xhigh`, `claude-code/opus@xhigh`. Same-provider lanes stay native; external lanes use the bundled runner. |
 
 ### Cross-vendor dispatch

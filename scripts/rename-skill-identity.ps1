@@ -1,8 +1,8 @@
 $ErrorActionPreference = "Stop"
 
 $repo = (Get-Location).Path
-$oldRel = "plugins/pstack/skills/poteto-mode"
-$newRel = "plugins/pstack/skills/engineering-mode"
+$oldRel = "plugins/engineering-toolkit/skills/poteto-mode"
+$newRel = "plugins/engineering-toolkit/skills/engineering-mode"
 $oldDir = Join-Path $repo $oldRel
 $newDir = Join-Path $repo $newRel
 
@@ -13,7 +13,7 @@ if (Test-Path -LiteralPath $oldDir) {
 }
 
 $replacements = [ordered]@{
-    "plugins/pstack/skills/poteto-mode" = "plugins/pstack/skills/engineering-mode"
+    "plugins/engineering-toolkit/skills/poteto-mode" = "plugins/engineering-toolkit/skills/engineering-mode"
     "skills/poteto-mode" = "skills/engineering-mode"
     "../poteto-mode" = "../engineering-mode"
     "/pstack:poteto-mode" = "/pstack:engineering-mode"
