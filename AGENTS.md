@@ -1,6 +1,6 @@
 # Engineering Toolkit
 
-This repository is a fork of Open Pstack (`ericlitman/open-pstack`). The intended GitHub remote is `cameronjlarsen/engineering-toolkit`. Track durable work in this repository's GitHub Issues after that remote is published. Do not open issues on Open Pstack for this fork's work. Do not create a parallel Linear queue. Read `UPSTREAM.md` before changing content derived from Cursor pstack or Open Pstack.
+This repository is a fork of Open Pstack (`ericlitman/open-pstack`). The GitHub remote is `cameronjlarsen/engineering-toolkit`. Track durable work in this repository's GitHub Issues. Do not open issues on Open Pstack for this fork's work. Do not create a parallel Linear queue. Read `UPSTREAM.md` before changing content derived from Cursor pstack or Open Pstack.
 
 Cursor's `cursor/plugins/pstack` tree is the original plugin. Open Pstack adapted it for Claude Code and Codex. This fork keeps one shared `plugins/engineering-toolkit/skills/` tree for Cursor, Claude Code, and Codex, and aims to parent on other coding agents the same way. Adapt harness primitives at the existing mapping boundaries instead of forking skills or adding compatibility layers. The parent harness resolves provider routing once. Children do not detect or reroute themselves.
 

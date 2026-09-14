@@ -1,0 +1,17 @@
+{
+  "name": "engineering-toolkit",
+  "owner": {
+    "name": "Cameron Larsen"
+  },
+  "metadata": {
+    "description": "Engineering Toolkit. Fork of Open Pstack. One skill tree for Cursor, Claude Code, and Codex.",
+    "version": "1.4.1"
+  },
+  "plugins": [
+    {
+      "name": "eng",
+      "source": "./plugins/engineering-toolkit",
+      "description": "if you want to go fast, go deep first. Engineering Toolkit helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence."
+    }
+  ]
+}
