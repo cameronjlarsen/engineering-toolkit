@@ -78,10 +78,13 @@ describe("firstRunRoleMap", () => {
     expect(cursor).toContain("judgment and prose: fable@max");
     expect(cursor).toContain("hardest tasks: fable@max");
     expect(cursor).toContain(
-      "arena runners: fable@max, codex/gpt-5.6-sol@max, grok/grok-4.6@xhigh, opus@xhigh"
+      "arena runners: fable@max, codex/gpt-5.6-sol@max, grok-4.6@xhigh, opus@xhigh"
     );
     expect(cursor).not.toContain("claude-code/fable");
-    expect(claude).toBe(cursor);
+    expect(cursor).not.toContain("grok/grok-4.6");
+    expect(claude).toContain(
+      "arena runners: fable@max, codex/gpt-5.6-sol@max, grok/grok-4.6@xhigh, opus@xhigh"
+    );
 
     const codex = printRoleMap(firstRunRoleMap("codex", catalog));
     expect(codex).toContain("bug-fix: gpt-5.6-sol@max");
@@ -115,6 +118,32 @@ describe("nativeHandle", () => {
     expect(nativeHandle(planned.value, shippedCatalog())).toEqual({
       kind: "plugin-agent",
       name: pluginAgentName("fable", "max"),
+    });
+  });
+
+  it("maps omitted-app grok on cursor to host-spawn", () => {
+    const planned = planLane({
+      parent: "cursor",
+      binding: {
+        kind: "route",
+        route: route({
+          model: slug("grok-4.6"),
+          app: currentHost(),
+          effort: explicitEffort("xhigh"),
+        }),
+      },
+      override: undefined,
+      catalog: shippedCatalog(),
+      inventory: [],
+      access,
+      role: "feature, refactoring",
+    });
+    expect(planned.ok).toBe(true);
+    if (!planned.ok || planned.value.kind !== "native") return;
+    expect(nativeHandle(planned.value, shippedCatalog())).toEqual({
+      kind: "host-spawn",
+      model: slug("grok-4.6"),
+      effort: "xhigh",
     });
   });
 

@@ -10,12 +10,16 @@ describe("shipped catalog", () => {
     expect(shippedCatalog().get("grok")?.models.has("fable" as never)).toBe(false);
   });
 
-  it("makes cursor a parent that serves plugin agents and cannot be launched", () => {
-    const cursor = shippedCatalog().get("cursor");
-    const claude = shippedCatalog().get("claude-code");
+  it("makes cursor a parent that serves plugin agents and grok natively and cannot be launched", () => {
+    const catalog = shippedCatalog();
+    const cursor = catalog.get("cursor");
+    const claude = catalog.get("claude-code");
+    const grok = catalog.get("grok")?.models.get("grok-4.6" as never);
     expect(cursor?.launch).toBe("none");
     expect(cursor?.models.get("fable" as never)).toEqual(claude?.models.get("fable" as never));
     expect(cursor?.models.get("opus" as never)).toEqual(claude?.models.get("opus" as never));
+    expect(cursor?.models.get("grok-4.6" as never)).toEqual(grok);
+    expect(grok?.nativeStem).toBeNull();
   });
 
   it("exposes only CLI children as launchable apps", () => {

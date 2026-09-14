@@ -42,15 +42,16 @@ export function shippedCatalog(): AppCatalog {
     launch: "cli-auth",
     models: new Map([["gpt-5.6-sol" as ModelSlug, model("gpt-5.6-sol", "openai", null)]]),
   };
+  const grokModel = model("grok-4.6", "xai", null);
   const grok: AppRecord = {
     id: "grok",
     launch: "cli-auth",
-    models: new Map([["grok-4.6" as ModelSlug, model("grok-4.6", "xai", null)]]),
+    models: new Map([[grokModel.slug, grokModel]]),
   };
   const cursor: AppRecord = {
     id: "cursor",
     launch: "none",
-    models: pluginAgents,
+    models: new Map([...pluginAgents, [grokModel.slug, grokModel]]),
   };
   return new Map<AppId, AppRecord>([
     ["claude-code", claudeCode],

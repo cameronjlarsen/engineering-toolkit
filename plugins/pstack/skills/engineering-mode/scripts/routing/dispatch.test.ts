@@ -179,6 +179,40 @@ describe("dispatch", () => {
     }
   });
 
+  it("plans omitted-app grok as native on a cursor parent", () => {
+    const result = planLane({
+      parent: "cursor",
+      binding: routeBinding("grok-4.6", currentHost(), explicitEffort("xhigh")),
+      override: undefined,
+      catalog: shippedCatalog(),
+      inventory: [],
+      access,
+      role: "feature, refactoring",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.kind).toBe("native");
+    if (result.value.kind === "native" && result.value.inherit !== true) {
+      expect(result.value.route.app).toBe("cursor");
+    }
+  });
+
+  it("plans named grok as external from a cursor parent", () => {
+    const result = planLane({
+      parent: "cursor",
+      binding: routeBinding("grok-4.6", namedApp("grok"), explicitEffort("xhigh")),
+      override: undefined,
+      catalog: shippedCatalog(),
+      inventory: [inventory("grok", { kind: "launch-ready" })],
+      access,
+      role: "arena runners",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.kind).toBe("external");
+    if (result.value.kind === "external") expect(result.value.launch.app).toBe("grok");
+  });
+
   it("plans named claude-code fable as external from a cursor parent", () => {
     const result = planLane({
       parent: "cursor",

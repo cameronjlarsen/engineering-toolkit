@@ -21,7 +21,11 @@ pstack skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuesti
 
 ## Native lanes
 
-A Cursor parent plans native plugin-agent routes as `pstack-<stem>-<effort>`. Call `Task` with that value as `subagent_type`. Do not set `Task` `model` to a Cursor host slug such as `cursor-grok-4.6-high` or `gpt-5.6-sol-medium`. `inherit-parent` and `auto` use `engineering-agent` with `model` omitted or `inherit`.
+A Cursor parent plans native routes from `nativeHandle`.
+
+- plugin-agent: Call `Task` with `subagent_type` `pstack-<stem>-<effort>`. Do not set `Task` `model` to a Cursor host slug such as `cursor-grok-4.6-high` or `gpt-5.6-sol-medium`.
+- host-spawn: Call `Task` with `model` set to a live Cursor selector for the route's model and effort. Confirm the slug against this session's Task model list. Grok's historical selector is `grok-4.6-fast-<effort>`; current Cursor lists `cursor-grok-4.6-<effort>`. Do not use a plugin-agent `subagent_type`. Do not invoke Grok CLI for a same-host `grok-4.6` route.
+- `inherit-parent` and `auto`: `engineering-agent` with `model` omitted or `inherit`.
 
 Writers get a worktree or a unique output directory. Plugin-agent definitions already forbid nested `Agent` and `Task`.
 

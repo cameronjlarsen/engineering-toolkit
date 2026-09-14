@@ -42,7 +42,7 @@ after its normal probes and confirmation. Unknown versioned Claude models
 remain invalid. The external runner rejects a missed Fable or Opus version pin
 instead of silently executing it.
 
-`fast` is part of Cursor's Grok selector, not a Grok Build CLI model or effort flag. The portable Grok route pins the current CLI model `grok-4.6`. The first-run Grok effort is `xhigh`.
+`fast` is part of Cursor's Grok selector, not a Grok Build CLI model or effort flag. The portable Grok route pins the current CLI model `grok-4.6`. The first-run Grok effort is `xhigh`. Cursor also serves `grok-4.6` natively. An omitted-app Grok route is parent-native host-spawn. Named `grok/...` remains the Grok CLI and stays external.
 
 ## The parent owns the route
 
@@ -56,6 +56,9 @@ choose a route, detect or reroute the harness, or spawn another model.
 | Claude Code | native | external | external | unlistable |
 | Codex | external | native | external | unlistable |
 | Cursor | external | external | external | native |
+
+The `grok` column is the Grok CLI app. Cursor native Grok is the `cursor` app
+serving `grok-4.6`, not a same-host reinterpretation of named `grok/...`.
 
 `inherit-parent` and `auto` remain parent-native bindings. Why and Reflect
 remain `inherit-parent` or `auto` because they require the parent's MCP
@@ -73,12 +76,13 @@ Native dispatch avoids a second CLI startup and its base context.
 - Codex: call `spawn_agent` with the route's model and `reasoning_effort`,
   the complete task, grounding paths, access mode, and unique output location.
   Use an isolated worktree for a writer.
-- Cursor: match the route's `(app, model)` to one model-matrix row, then
-  dispatch it through `pstack-<stem>-<effort>` using that row's plugin-agent
-  stem and resolved effort. Pass the complete task, grounding paths, access
-  mode, and unique output location in the `Task` prompt. Do not pass a Cursor
-  host model slug onto a plugin-agent Task. `inherit-parent` uses
-  `engineering-agent`.
+- Cursor: match the route's `(app, model)` to one model-matrix row. A row with
+  a plugin-agent stem dispatches through `pstack-<stem>-<effort>`. Do not pass
+  a Cursor host model slug onto a plugin-agent Task. A row with stem `-`
+  dispatches through host-spawn: `Task` with `model` set to a live Cursor
+  selector for that model and effort. Pass the complete task, grounding paths,
+  access mode, and unique output location in the `Task` prompt.
+  `inherit-parent` uses `engineering-agent`.
 
 Do not send a same-host route to the external runner. It is rejected with exit
 64 and no receipt; use the parent's native primitive.

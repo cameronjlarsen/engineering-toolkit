@@ -75,7 +75,7 @@ failed first run creates neither artifact.
 |---|---|---|---|---|---|
 | Fable | Fable matrix row + selected effort | native Agent `pstack-fable-<effort>` | Claude CLI | native Task `pstack-fable-<effort>` | native one-turn probe or `claude auth status --json` plus one-turn probe |
 | Sol | Sol matrix row + selected effort | `codex exec` | native `spawn_agent` | Codex CLI | `codex login status` plus one-turn probe or native one-turn probe |
-| Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | Grok CLI | `grok models` must list the requested model; one-turn probe |
+| Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | native Task host-spawn | native one-turn probe or `grok models` plus one-turn probe |
 | Opus | Opus matrix row + selected effort | native Agent `pstack-opus-<effort>` | Claude CLI | native Task `pstack-opus-<effort>` | native one-turn probe or `claude auth status --json` plus one-turn probe |
 
 Use a tiny read-only probe that returns a unique marker. A login-status
@@ -122,9 +122,9 @@ Descriptor grammar: 2
 
 Route choices. First-run omits the app when the live parent already serves
 that model, and names the unique CLI home otherwise. The example below is
-the Claude Code render. On Cursor, Fable and Opus omit the app. On Codex,
-Sol omits the app and Fable and Opus name `claude-code`. Omit effort for the
-destination default. Every documented role remains present.
+the Claude Code render. On Cursor, Fable, Opus, and Grok omit the app. On
+Codex, Sol omits the app and Fable and Opus name `claude-code`. Omit effort
+for the destination default. Every documented role remains present.
 `inherit-parent` and `auto` use the parent model natively and still count as
 one panel lane.
 

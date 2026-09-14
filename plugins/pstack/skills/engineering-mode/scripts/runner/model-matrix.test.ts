@@ -336,6 +336,9 @@ describe("model matrix", () => {
     expect(setup).toContain("A changed");
     expect(setup).toContain("<!-- pstack:models:begin -->");
     expect(setup).toContain("<!-- pstack:models:end -->");
+    expect(setup).toContain(
+      "| Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | native Task host-spawn |"
+    );
   });
 
   it("binds Claude-native dispatch to the matrix mapping", () => {
@@ -349,6 +352,7 @@ describe("model matrix", () => {
       "match the route's `(app, model)` to one model-matrix row"
     );
     expect(nativeLanes).toContain("`pstack-<stem>-<effort>`");
+    expect(nativeLanes).toContain("host-spawn");
   });
 
   it("normalizes old rolling-family pins before any runtime route", () => {
