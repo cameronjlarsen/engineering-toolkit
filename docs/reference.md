@@ -12,21 +12,38 @@ This is not a verbatim copy of Cursor pstack. Open Pstack edited skill bodies so
 
 ## Install
 
-Until [cameronjlarsen/engineering-toolkit](https://github.com/cameronjlarsen/engineering-toolkit) is published, install from this checkout. The skill tree stays at `plugins/engineering-toolkit`. Do not install `ericlitman/open-pstack` or Lauren's original pstack as a stand-in for this fork.
+The skill tree stays at `plugins/engineering-toolkit`. Do not install `ericlitman/open-pstack` or Lauren's original pstack as a stand-in for this fork.
 
 ### Cursor
 
-Point Cursor at `plugins/engineering-toolkit` (the `.cursor-plugin` manifest). Then run `/setup-engineering-toolkit`.
+Clone the repository.
+
+```shell
+git clone https://github.com/cameronjlarsen/engineering-toolkit.git
+```
+
+Point Cursor at `plugins/engineering-toolkit` (the `.cursor-plugin` manifest). Run `/setup-engineering-toolkit`.
 
 ### Claude Code
 
-This checkout ships as a Claude Code marketplace containing one plugin (`eng`). Add the checkout as a local marketplace, install `eng@engineering-toolkit`, and reload plugins.
+This repository ships as a Claude Code marketplace containing one plugin (`eng`).
+
+```text
+/plugin marketplace add cameronjlarsen/engineering-toolkit
+/plugin install eng@engineering-toolkit
+/reload-plugins
+```
 
 The plugin auto-fires through a `SessionStart` hook on startup, `/clear`, and post-compact. The hook injects a small mandate that routes non-trivial engineering work into `engineering-mode`. The full skill loads only when invoked. Dispatched subagents ignore the mandate, and explicit user instructions take precedence. To opt out, delete `hooks/hooks.json` from the installed copy. A plugin update restores it.
 
 ### Codex
 
-The same plugin carries a `.codex-plugin/plugin.json` manifest and a root `.agents/plugins/marketplace.json`. Add this checkout as a local Codex marketplace, then add `eng`.
+The same plugin carries a `.codex-plugin/plugin.json` manifest and a root `.agents/plugins/marketplace.json`. Install it through the Codex marketplace:
+
+```shell
+codex plugin marketplace add cameronjlarsen/engineering-toolkit --ref main
+codex plugin add eng@engineering-toolkit
+```
 
 Codex discovers the plugin skills under the `eng` namespace, so they list as `eng:engineering-mode`, `eng:tdd`, and so on. The namespace comes from `plugins/engineering-toolkit/.codex-plugin/plugin.json`. To enable the multi-model and parallel-subagent skills (`interrogate`, `arena`, `how`, `why`, `reflect`, `architect`), turn on subagents in `~/.codex/config.toml`:
 
@@ -35,14 +52,15 @@ Codex discovers the plugin skills under the `eng` namespace, so they list as `en
 multi_agent = true
 ```
 
-For local plugin development, you can link this checkout's skills directly:
+For local plugin development, you can clone the repository and link its skills directly:
 
 ```shell
-cd /path/to/this/checkout
+git clone https://github.com/cameronjlarsen/engineering-toolkit.git
+cd engineering-toolkit
 for s in plugins/engineering-toolkit/skills/*/; do ln -s "$PWD/$s" ~/.agents/skills/"$(basename "$s")"; done
 ```
 
-Direct links are only for testing a checkout before publishing it. Remove the linked skill directories when the test is over.
+The marketplace install is the normal user path. Direct links are only for testing a checkout. Remove the linked skill directories when the test is over.
 
 ## Layout
 
