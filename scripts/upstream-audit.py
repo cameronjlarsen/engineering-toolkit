@@ -28,7 +28,7 @@ def port_path(path):
     if relative == "README.md":
         return "README-UPSTREAM.md"
     if relative.startswith(("skills/", "agents/", "assets/")):
-        return "plugins/pstack/" + relative
+        return "plugins/engineering-toolkit/" + relative
     return None
 
 
@@ -47,7 +47,7 @@ base = match.group(1)
 subprocess.run(["git", "merge-base", "--is-ancestor", base, target], cwd=ROOT, check=True)
 before = tree(base, "pstack/")
 after = tree(target, "pstack/")
-local = tree(port, "plugins/pstack/") | tree(port, "README-UPSTREAM.md")
+local = tree(port, "plugins/engineering-toolkit/") | tree(port, "README-UPSTREAM.md")
 
 changes = []
 for path in sorted(before.keys() | after.keys()):
@@ -92,13 +92,13 @@ for line in git("log", "--reverse", "--format=%H%x09%cs%x09%s", base + ".." + ta
 report = {
     "port_commit": port, "upstream_base": base, "upstream_target": target,
     "upstream_version": json.loads(git("show", target + ":pstack/.cursor-plugin/plugin.json"))["version"],
-    "port_version": json.loads(git("show", port + ":plugins/pstack/.claude-plugin/plugin.json"))["version"],
+    "port_version": json.loads(git("show", port + ":plugins/engineering-toolkit/.claude-plugin/plugin.json"))["version"],
     "upstream_commits": commits,
     "summary": {"changed_files": len(changes),
                 "by_change": dict(sorted(Counter(row["change"] for row in changes).items())),
                 "by_comparison": dict(sorted(Counter(row["comparison"] for row in changes).items()))},
     "skills": {"upstream": skill_names(after, "pstack/skills/"),
-               "port": skill_names(local, "plugins/pstack/skills/")},
+               "port": skill_names(local, "plugins/engineering-toolkit/skills/")},
     "changes": changes, "port_only_files": port_only, "existing_upstream_files_absent_from_port": excluded,
     "interpretation": "Blob equality is evidence, not a semantic approval. Review adaptations and exclusions before applying changes. Unmapped documentation and manifests need distribution-specific review.",
 }

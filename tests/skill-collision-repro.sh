@@ -6,7 +6,7 @@ fail=0
 
 note() { printf '%s\n' "$*"; }
 
-legacy_command_dir="$repo/plugins/pstack/commands"
+legacy_command_dir="$repo/plugins/engineering-toolkit/commands"
 if [ -e "$legacy_command_dir" ]; then
   note "FAIL: legacy command layer still exists: $legacy_command_dir"
   find "$legacy_command_dir" -mindepth 1 -print 2>/dev/null || true
@@ -16,7 +16,7 @@ else
 fi
 
 bad_principle=""
-for skill in "$repo"/plugins/pstack/skills/principle-*/SKILL.md; do
+for skill in "$repo"/plugins/engineering-toolkit/skills/principle-*/SKILL.md; do
   if [ ! -f "$skill" ]; then
     bad_principle="no principle-* leaves found"$'\n'
     break
@@ -34,15 +34,119 @@ else
 fi
 
 verof() { { grep -m1 '"version"' "$1" || true; } | sed -E 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/'; }
-vc="$(verof "$repo/plugins/pstack/.claude-plugin/plugin.json")"
-vx="$(verof "$repo/plugins/pstack/.codex-plugin/plugin.json")"
+vc="$(verof "$repo/plugins/engineering-toolkit/.claude-plugin/plugin.json")"
+vx="$(verof "$repo/plugins/engineering-toolkit/.codex-plugin/plugin.json")"
+vr="$(verof "$repo/plugins/engineering-toolkit/.cursor-plugin/plugin.json")"
 vm="$(verof "$repo/.claude-plugin/marketplace.json")"
-vu="$(sed -n 's/| open-pstack version | `\([^`]*\)` |/\1/p' "$repo/UPSTREAM.md")"
-if [ -n "$vc" ] && [ "$vc" = "$vx" ] && [ "$vc" = "$vm" ] && [ "$vc" = "$vu" ]; then
-  note "ok: open-pstack version matches across UPSTREAM.md and the 3 manifests ($vc)"
+vu="$(sed -n 's/| Open Pstack version at fork | `\([^`]*\)` |/\1/p' "$repo/UPSTREAM.md")"
+if [ -n "$vc" ] && [ "$vc" = "$vx" ] && [ "$vc" = "$vr" ] && [ "$vc" = "$vm" ] && [ "$vc" = "$vu" ]; then
+  note "ok: open-pstack version matches across UPSTREAM.md and the 4 manifests ($vc)"
 else
-  note "FAIL: open-pstack version differs: upstream=$vu claude-plugin=$vc codex-plugin=$vx marketplace=$vm"
+  note "FAIL: open-pstack version differs: upstream=$vu claude-plugin=$vc codex-plugin=$vx cursor-plugin=$vr marketplace=$vm"
   fail=1
+fi
+
+json_field() { { grep -m1 "\"$2\"" "$1" || true; } | sed -E "s/.*\"$2\"[[:space:]]*:[[:space:]]*\"([^\"]+)\".*/\1/"; }
+identity_bad=""
+want_marketplace="engineering-toolkit"
+want_plugin="eng"
+want_display="Engineering Toolkit"
+want_repo="https://github.com/cameronjlarsen/engineering-toolkit"
+for manifest in \
+  "$repo/plugins/engineering-toolkit/.claude-plugin/plugin.json" \
+  "$repo/plugins/engineering-toolkit/.cursor-plugin/plugin.json"
+do
+  [ "$(json_field "$manifest" name)" = "$want_plugin" ] || identity_bad="$identity_bad$manifest name=$(json_field "$manifest" name)"$'\n'
+  [ "$(json_field "$manifest" displayName)" = "$want_display" ] || identity_bad="$identity_bad$manifest displayName=$(json_field "$manifest" displayName)"$'\n'
+  [ "$(json_field "$manifest" homepage)" = "$want_repo" ] || identity_bad="$identity_bad$manifest homepage=$(json_field "$manifest" homepage)"$'\n'
+  [ "$(json_field "$manifest" repository)" = "$want_repo" ] || identity_bad="$identity_bad$manifest repository=$(json_field "$manifest" repository)"$'\n'
+done
+codex_manifest="$repo/plugins/engineering-toolkit/.codex-plugin/plugin.json"
+[ "$(json_field "$codex_manifest" name)" = "$want_plugin" ] || identity_bad="$identity_bad$codex_manifest name=$(json_field "$codex_manifest" name)"$'\n'
+[ "$(json_field "$codex_manifest" displayName)" = "$want_display" ] || identity_bad="$identity_bad$codex_manifest displayName=$(json_field "$codex_manifest" displayName)"$'\n'
+[ "$(json_field "$codex_manifest" homepage)" = "$want_repo" ] || identity_bad="$identity_bad$codex_manifest homepage=$(json_field "$codex_manifest" homepage)"$'\n'
+[ "$(json_field "$codex_manifest" repository)" = "$want_repo" ] || identity_bad="$identity_bad$codex_manifest repository=$(json_field "$codex_manifest" repository)"$'\n'
+[ "$(json_field "$codex_manifest" websiteURL)" = "$want_repo" ] || identity_bad="$identity_bad$codex_manifest websiteURL=$(json_field "$codex_manifest" websiteURL)"$'\n'
+for market in \
+  "$repo/.claude-plugin/marketplace.json" \
+  "$repo/.agents/plugins/marketplace.json"
+do
+  [ "$(json_field "$market" name)" = "$want_marketplace" ] || identity_bad="$identity_bad$market catalog=$(json_field "$market" name)"$'\n'
+  plugin_entry="$(awk '
+    $0 ~ /"plugins"/ { in_plugins = 1 }
+    in_plugins && $0 ~ /"name"/ {
+      if (match($0, /"name"[[:space:]]*:[[:space:]]*"[^"]+"/)) {
+        name = substr($0, RSTART, RLENGTH)
+        sub(/^"name"[[:space:]]*:[[:space:]]*"/, "", name)
+        sub(/"$/, "", name)
+        print name
+        exit
+      }
+    }
+  ' "$market")"
+  [ "$plugin_entry" = "$want_plugin" ] || identity_bad="$identity_bad$market plugin=$plugin_entry"$'\n'
+done
+want_plugin_dir="plugins/engineering-toolkit"
+legacy_plugin_leaf="pstack"
+[ -d "$repo/$want_plugin_dir" ] || identity_bad="$identity_bad missing skill directory $want_plugin_dir"$'\n'
+[ -e "$repo/plugins/$legacy_plugin_leaf" ] && identity_bad="$identity_bad leftover skill directory plugins/$legacy_plugin_leaf"$'\n'
+grep -Fq "./$want_plugin_dir" "$repo/.claude-plugin/marketplace.json" || identity_bad="$identity_bad Claude marketplace source is not ./$want_plugin_dir"$'\n'
+grep -Fq "./$want_plugin_dir" "$repo/.agents/plugins/marketplace.json" || identity_bad="$identity_bad Codex marketplace source is not ./$want_plugin_dir"$'\n'
+if grep -q 'cameronjlarsen/open-pstack' \
+  "$repo/README.md" \
+  "$repo/AGENTS.md" \
+  "$repo/docs/reference.md" \
+  "$repo/plugins/engineering-toolkit/.claude-plugin/plugin.json" \
+  "$repo/plugins/engineering-toolkit/.cursor-plugin/plugin.json" \
+  "$repo/plugins/engineering-toolkit/.codex-plugin/plugin.json" \
+  "$repo/.claude-plugin/marketplace.json" \
+  "$repo/.agents/plugins/marketplace.json"
+then
+  identity_bad="$identity_bad live docs still cite cameronjlarsen/open-pstack"$'\n'
+fi
+readme_h1="$(sed -n '1p' "$repo/README.md")"
+[ "$readme_h1" = "# Engineering Toolkit" ] || identity_bad="$identity_bad README h1=$readme_h1"$'\n'
+grep -q '/eng:engineering-mode' "$repo/README.md" || identity_bad="$identity_bad README missing /eng:engineering-mode"$'\n'
+grep -q '/eng:setup-engineering-toolkit' "$repo/README.md" || identity_bad="$identity_bad README missing /eng:setup-engineering-toolkit"$'\n'
+[ -e "$repo/plugins/engineering-toolkit/skills/setup-pstack" ] && identity_bad="$identity_bad leftover skills/setup-pstack"$'\n'
+grep -Fq '~/.cursor/rules/engineering-toolkit-models.mdc' "$repo/plugins/engineering-toolkit/skills/setup-engineering-toolkit/SKILL.md" || identity_bad="$identity_bad setup skill lost Cursor sheet path"$'\n'
+grep -Fq 'engineering-toolkit-models.mdc' "$repo/plugins/engineering-toolkit/skills/engineering-mode/scripts/routing/parent.ts" || identity_bad="$identity_bad parent.ts lost Cursor sheet path"$'\n'
+hook="$repo/plugins/engineering-toolkit/hooks/session-start-context.md"
+grep -Fq 'You have Engineering Toolkit.' "$hook" || identity_bad="$identity_bad SessionStart hook lost Engineering Toolkit greeting"$'\n'
+grep -Fq '`eng:engineering-mode`' "$hook" || identity_bad="$identity_bad SessionStart hook lost eng:engineering-mode"$'\n'
+grep -Fq '`eng:tdd`' "$hook" || identity_bad="$identity_bad SessionStart hook lost eng:tdd"$'\n'
+if grep -Fq 'You have pstack.' "$hook"; then
+  identity_bad="$identity_bad leftover You have pstack in SessionStart hook"$'\n'
+fi
+if grep -Fq 'pstack:' "$hook"; then
+  identity_bad="$identity_bad leftover pstack: skill namespace in SessionStart hook"$'\n'
+fi
+codex_map="$repo/plugins/engineering-toolkit/skills/engineering-mode/references/codex-tools.md"
+cursor_map="$repo/plugins/engineering-toolkit/skills/engineering-mode/references/cursor-tools.md"
+grep -Fq '# Codex tool mapping for Engineering Toolkit' "$codex_map" || identity_bad="$identity_bad Codex mapping title is not Engineering Toolkit"$'\n'
+grep -Fq 'eng:typescript-best-practices' "$codex_map" || identity_bad="$identity_bad Codex mapping lost eng:typescript-best-practices"$'\n'
+if grep -Fq 'pstack:typescript-best-practices' "$codex_map"; then
+  identity_bad="$identity_bad leftover pstack:typescript-best-practices in Codex mapping"$'\n'
+fi
+grep -Fq '# Cursor tool mapping for Engineering Toolkit' "$cursor_map" || identity_bad="$identity_bad Cursor mapping title is not Engineering Toolkit"$'\n'
+if grep -Fq '# Cursor tool mapping for pstack' "$cursor_map"; then
+  identity_bad="$identity_bad leftover Cursor mapping title for pstack"$'\n'
+fi
+grep -Fq 'Engineering Toolkit helps you write less' "$repo/docs/reference.md" || identity_bad="$identity_bad reference tagline lost Engineering Toolkit"$'\n'
+if grep -Fq 'pstack helps you write less' "$repo/docs/reference.md"; then
+  identity_bad="$identity_bad leftover pstack tagline in docs/reference.md"$'\n'
+fi
+grep -Fq 'assets/engineering-toolkit-workflow.png' "$repo/README.md" || identity_bad="$identity_bad README lost engineering-toolkit-workflow.png"$'\n'
+[ -e "$repo/assets/engineering-toolkit-workflow.png" ] || identity_bad="$identity_bad missing assets/engineering-toolkit-workflow.png"$'\n'
+if [ -e "$repo/assets/pstack-workflow.png" ]; then
+  identity_bad="$identity_bad leftover assets/pstack-workflow.png"$'\n'
+fi
+if [ -n "$identity_bad" ]; then
+  note "FAIL: public identity is not Engineering Toolkit / eng:"
+  note "$identity_bad"
+  fail=1
+else
+  note "ok: public identity is Engineering Toolkit, plugin eng, repo cameronjlarsen/engineering-toolkit"
 fi
 
 # Active configuration must use Claude's rolling family aliases. Concrete
@@ -52,7 +156,7 @@ legacy_model_pins="$(
   grep -REn \
     --include='*.md' --include='*.ts' --include='*.sh' \
     'claude:claude-(fable|opus)-[0-9]|^model: claude-(fable|opus)-[0-9]|--model claude-(fable|opus)-[0-9]' \
-    "$repo/plugins/pstack" "$repo/tests" "$repo/README.md" "$repo/docs/reference.md" \
+    "$repo/plugins/engineering-toolkit" "$repo/tests" "$repo/README.md" "$repo/docs/reference.md" \
     2>/dev/null || true
 )"
 standalone_code_pins="$(
@@ -60,7 +164,7 @@ standalone_code_pins="$(
     --include='*.ts' --include='*.js' \
     --exclude='*.test.ts' --exclude='*.test.js' \
     "['\"]claude-(fable|opus)-[0-9]" \
-    "$repo/plugins/pstack" \
+    "$repo/plugins/engineering-toolkit" \
     2>/dev/null || true
 )"
 if [ -n "$legacy_model_pins" ] || [ -n "$standalone_code_pins" ]; then
@@ -72,11 +176,10 @@ else
   note "ok: active Fable and Opus configuration uses rolling aliases"
 fi
 
-# Static invariant (CHANGES maintenance note): provider-dispatch owns the default
-# provider/model quad and the three panel skills plus setup-pstack copy it verbatim.
-setup="$repo/plugins/pstack/skills/setup-pstack/SKILL.md"
-dispatch="$repo/plugins/pstack/skills/poteto-mode/references/provider-dispatch.md"
-quad_of() { { grep -oE '(claude|codex|grok):[a-z0-9.-]+@(low|medium|high|xhigh|max)' || true; } | tr '\n' ' ' | sed 's/ $//'; }
+setup="$repo/plugins/engineering-toolkit/skills/setup-engineering-toolkit/SKILL.md"
+dispatch="$repo/plugins/engineering-toolkit/skills/engineering-mode/references/provider-dispatch.md"
+quad_of() { { grep -oE '(claude-code|codex|grok)/[a-z0-9.-]+@(low|medium|high|xhigh|max)' || true; } | tr '\n' ' ' | sed 's/ $//'; }
+omit_of() { { grep -oE '((claude-code|codex|grok)/)?[a-z0-9.-]+@(low|medium|high|xhigh|max)' || true; } | tr '\n' ' ' | sed 's/ $//'; }
 canon_quad="$(awk '
   $0 == "## Model matrix" { in_matrix = 1; next }
   in_matrix && /^## / { exit }
@@ -94,20 +197,45 @@ canon_quad="$(awk '
     provider = cells[3]
     model = cells[4]
     effort = cells[5]
+    app = (provider == "claude") ? "claude-code" : provider
     if (out != "") out = out " "
-    out = out provider ":" model "@" effort
+    out = out app "/" model "@" effort
+  }
+  END { print out }
+' "$dispatch")"
+omit_quad="$(awk '
+  $0 == "## Model matrix" { in_matrix = 1; next }
+  in_matrix && /^## / { exit }
+  in_matrix && /^\|/ {
+    line = $0
+    sub(/^\|/, "", line)
+    sub(/\|$/, "", line)
+    n = split(line, cells, "|")
+    for (i = 1; i <= n; i++) {
+      gsub(/^ +| +$/, "", cells[i])
+      gsub(/`/, "", cells[i])
+    }
+    family = cells[1]
+    if (family == "Family" || family ~ /^:?-+:?$/) next
+    provider = cells[3]
+    model = cells[4]
+    effort = cells[5]
+    descriptor = (provider == "claude") ? (model "@" effort) : (provider "/" model "@" effort)
+    if (out != "") out = out " "
+    out = out descriptor
   }
   END { print out }
 ' "$dispatch")"
 quad_bad=""
 [ -n "$canon_quad" ] || quad_bad="could not read the canonical quad from $dispatch"$'\n'
+[ -n "$omit_quad" ] || quad_bad="${quad_bad}could not read the omit-when-served quad from $dispatch"$'\n'
 # Anchor on the quad's last slug rather than a hard-coded one, so a model swap in
-# setup-pstack cannot leave this check hunting for a slug nobody ships any more.
+# setup-engineering-toolkit cannot leave this check hunting for a slug nobody ships any more.
 anchor="${canon_quad##* }"
 # arena and architect each state the quad on one line; interrogate lists it
 # as one slug per row of its Reviewer A/B/C/D table (upstream #167).
 for name in arena architect; do
-  skill="$repo/plugins/pstack/skills/$name/SKILL.md"
+  skill="$repo/plugins/engineering-toolkit/skills/$name/SKILL.md"
   n="$(grep -Fc "$anchor" "$skill" || true)"
   if [ "$n" != "1" ]; then
     quad_bad="$quad_bad$skill: expected exactly 1 default-quad line, found $n"$'\n'
@@ -116,26 +244,26 @@ for name in arena architect; do
   got="$(grep -F "$anchor" "$skill" | quad_of)"
   [ "$got" = "$canon_quad" ] || quad_bad="$quad_bad$skill: [$got] != [$canon_quad]"$'\n'
 done
-interrogate="$repo/plugins/pstack/skills/interrogate/SKILL.md"
+interrogate="$repo/plugins/engineering-toolkit/skills/interrogate/SKILL.md"
 got="$(grep -E '^\| Reviewer [A-Z] \|' "$interrogate" | quad_of)"
 [ "$got" = "$canon_quad" ] || quad_bad="$quad_bad$interrogate reviewer table: [$got] != [$canon_quad]"$'\n'
 while IFS= read -r line; do
-  got="$(printf '%s\n' "$line" | quad_of)"
-  [ "$got" = "$canon_quad" ] || quad_bad="$quad_bad$setup role row: [$got] != [$canon_quad]"$'\n'
+  got="$(printf '%s\n' "$line" | omit_of)"
+  [ "$got" = "$omit_quad" ] || quad_bad="$quad_bad$setup role row: [$got] != [$omit_quad]"$'\n'
 done < <(grep -E '^(arena runners|arena cross-judge pool|architect runners|interrogate reviewers):' "$setup")
 if [ -n "$quad_bad" ]; then
-  note "FAIL: the default model quad is not identical across provider dispatch, the panel skills, and setup-pstack:"
+  note "FAIL: the default model quad is not identical across provider dispatch, the panel skills, and setup-engineering-toolkit:"
   note "$quad_bad"
   fail=1
 else
-  note "ok: default model quad identical across provider dispatch + 3 panel skills + setup-pstack ($canon_quad)"
+  note "ok: named quad in panel skills ($canon_quad); omit-when-served first-run in setup-engineering-toolkit ($omit_quad)"
 fi
 
-plugin="$repo/plugins/pstack"
-canon="$plugin/skills/poteto-mode/references/bugbot-triage.md"
+plugin="$repo/plugins/engineering-toolkit"
+canon="$plugin/skills/engineering-mode/references/bugbot-triage.md"
 skill="$plugin/skills/babysit/SKILL.md"
-playbook="$plugin/skills/poteto-mode/playbooks/babysit.md"
-bugbot_skill_rel="../poteto-mode/references/bugbot-triage.md"
+playbook="$plugin/skills/engineering-mode/playbooks/babysit.md"
+bugbot_skill_rel="../engineering-mode/references/bugbot-triage.md"
 bugbot_playbook_rel="../references/bugbot-triage.md"
 bugbot_bad=""
 if [ ! -f "$canon" ]; then
@@ -160,9 +288,9 @@ fi
 playbook_op="$(grep -E '^8\. \*\*Bugbot is triaged skeptically, always\.\*\*' "$playbook" || true)"
 playbook_n="$(printf '%s\n' "$playbook_op" | awk 'NF { c++ } END { print c+0 }')"
 if [ "$playbook_n" != "1" ]; then
-  bugbot_bad="${bugbot_bad}poteto-mode babysit playbook lost step-8 Bugbot operational line"$'\n'
+  bugbot_bad="${bugbot_bad}engineering-mode babysit playbook lost step-8 Bugbot operational line"$'\n'
 elif ! printf '%s\n' "$playbook_op" | grep -Fq "$bugbot_playbook_rel"; then
-  bugbot_bad="${bugbot_bad}poteto-mode babysit playbook step 8 lost bugbot-triage binding ($bugbot_playbook_rel)"$'\n'
+  bugbot_bad="${bugbot_bad}engineering-mode babysit playbook step 8 lost bugbot-triage binding ($bugbot_playbook_rel)"$'\n'
 fi
 copies="$(find "$plugin" -name 'bugbot-triage.md' ! -path '*/node_modules/*' -print 2>/dev/null || true)"
 n="$(printf '%s\n' "$copies" | awk 'NF { c++ } END { print c+0 }')"
@@ -178,13 +306,13 @@ else
 fi
 
 forge_neutral_files=(
-  "$plugin/skills/poteto-mode/playbooks/shipping.md"
-  "$plugin/skills/poteto-mode/playbooks/babysit.md"
-  "$plugin/skills/poteto-mode/playbooks/autopilot-full.md"
-  "$plugin/skills/poteto-mode/playbooks/autopilot-stack.md"
-  "$plugin/skills/poteto-mode/playbooks/opening-a-pr.md"
-  "$plugin/skills/poteto-mode/playbooks/multi-phase-plan.md"
-  "$plugin/skills/poteto-mode/references/bugbot-triage.md"
+  "$plugin/skills/engineering-mode/playbooks/shipping.md"
+  "$plugin/skills/engineering-mode/playbooks/babysit.md"
+  "$plugin/skills/engineering-mode/playbooks/autopilot-full.md"
+  "$plugin/skills/engineering-mode/playbooks/autopilot-stack.md"
+  "$plugin/skills/engineering-mode/playbooks/opening-a-pr.md"
+  "$plugin/skills/engineering-mode/playbooks/multi-phase-plan.md"
+  "$plugin/skills/engineering-mode/references/bugbot-triage.md"
 )
 graphite_commands="$(grep -En 'gt (submit|track|restack|sync|merge|ls)' "${forge_neutral_files[@]}" || true)"
 if [ -n "$graphite_commands" ]; then
@@ -195,7 +323,7 @@ else
   note "ok: forge-neutral stack playbooks name no Graphite command"
 fi
 
-unsafe_shell_templates="$(perl -ne 'while (/`((?:git|gh|origin|skills\/poteto-mode\/scripts\/watch-pr\/watch-pr)[^`]*)`/g) { my $command = $1; print "$command\n" if $command =~ /<[^>]+>/ }' "${forge_neutral_files[@]}" | sort -u)"
+unsafe_shell_templates="$(perl -ne 'while (/`((?:git|gh|origin|skills\/engineering-mode\/scripts\/watch-pr\/watch-pr)[^`]*)`/g) { my $command = $1; print "$command\n" if $command =~ /<[^>]+>/ }' "${forge_neutral_files[@]}" | sort -u)"
 if [ -n "$unsafe_shell_templates" ]; then
   note "FAIL: executable shell templates paste placeholder text into commands:"
   note "$unsafe_shell_templates"
@@ -204,11 +332,11 @@ else
   note "ok: forge-derived values stay quoted shell data"
 fi
 
-shipping="$plugin/skills/poteto-mode/playbooks/shipping.md"
-autopilot_full="$plugin/skills/poteto-mode/playbooks/autopilot-full.md"
-autopilot_stack="$plugin/skills/poteto-mode/playbooks/autopilot-stack.md"
-opening_a_pr="$plugin/skills/poteto-mode/playbooks/opening-a-pr.md"
-multi_phase_plan="$plugin/skills/poteto-mode/playbooks/multi-phase-plan.md"
+shipping="$plugin/skills/engineering-mode/playbooks/shipping.md"
+autopilot_full="$plugin/skills/engineering-mode/playbooks/autopilot-full.md"
+autopilot_stack="$plugin/skills/engineering-mode/playbooks/autopilot-stack.md"
+opening_a_pr="$plugin/skills/engineering-mode/playbooks/opening-a-pr.md"
+multi_phase_plan="$plugin/skills/engineering-mode/playbooks/multi-phase-plan.md"
 shipping_safety_bad=""
 grep -Fq 'watch-pr --owner "$base_owner" --repo "$base_name" --pr "$pr"' "$playbook" || shipping_safety_bad="${shipping_safety_bad}Babysit watcher does not pin the base repository and PR number"$'\n'
 grep -Fq -- '--disable-auto' "$shipping" || shipping_safety_bad="${shipping_safety_bad}Shipping does not disarm pre-existing auto-merge"$'\n'
@@ -219,7 +347,7 @@ if [ -n "$shipping_disarm_order" ]; then
 fi
 grep -Fq 'current bottom and every descendant' "$shipping" || shipping_safety_bad="${shipping_safety_bad}Shipping does not disarm the frontier and descendants before mutation"$'\n'
 grep -Fq 'Stop before any rebase, force-push, retarget, arm, or merge' "$shipping" || shipping_safety_bad="${shipping_safety_bad}Shipping can mutate the frontier before every merge request is confirmed off"$'\n'
-grep -Fq 'skills/poteto-mode/scripts/watch-pr/watch-pr' "$shipping" || shipping_safety_bad="${shipping_safety_bad}Shipping does not use the installed-plugin watcher path"$'\n'
+grep -Fq 'skills/engineering-mode/scripts/watch-pr/watch-pr' "$shipping" || shipping_safety_bad="${shipping_safety_bad}Shipping does not use the installed-plugin watcher path"$'\n'
 grep -Fq -- '--owner "$base_owner" --repo "$base_name"' "$shipping" || shipping_safety_bad="${shipping_safety_bad}Shipping does not pin the GitHub watcher to the base repository"$'\n'
 grep -Fq -- '--force-with-lease="refs/heads/$branch:$captured_sha"' "$shipping" || shipping_safety_bad="${shipping_safety_bad}Shipping does not bind rewritten branch pushes to the captured SHA"$'\n'
 grep -Fq 'git merge-base --is-ancestor "$landing_base_sha" "refs/heads/$branch"' "$shipping" || shipping_safety_bad="${shipping_safety_bad}Shipping does not prove its recorded patch base is an ancestor before rebasing"$'\n'
@@ -352,7 +480,8 @@ fi
 sol_descriptor="$(awk -F '|' '
   $2 ~ /^[[:space:]]*sol[[:space:]]*$/ {
     for (i = 4; i <= 6; i++) gsub(/^[[:space:]]+|[[:space:]]+$/, "", $i)
-    print $4 ":" $5 "@" $6
+    app = ($4 == "claude") ? "claude-code" : $4
+    print app "/" $5 "@" $6
   }
 ' "$dispatch")"
 solo_code_bad=""
@@ -364,7 +493,7 @@ for role in bug-fix perf-issue hillclimb; do
   if [ "$setup_descriptor" != "$sol_descriptor" ]; then
     solo_code_bad="${solo_code_bad}${setup} ${role}: [${setup_descriptor}] != [${sol_descriptor}]"$'\n'
   fi
-  role_playbook="$plugin/skills/poteto-mode/playbooks/$role.md"
+  role_playbook="$plugin/skills/engineering-mode/playbooks/$role.md"
   playbook_descriptor="$(sed -n 's/.*default `\([^`]*\)`.*/\1/p' "$role_playbook")"
   if [ "$playbook_descriptor" != "$sol_descriptor" ]; then
     solo_code_bad="${solo_code_bad}${role_playbook}: [${playbook_descriptor}] != [${sol_descriptor}]"$'\n'

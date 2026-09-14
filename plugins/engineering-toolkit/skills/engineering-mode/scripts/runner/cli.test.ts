@@ -1,0 +1,90 @@
+import { describe, expect, it } from "bun:test";
+import { join } from "node:path";
+import { parseArgs } from "./cli.ts";
+
+function argv(extra: readonly string[] = []): string[] {
+  return [
+    "--parent",
+    "codex",
+    "--app",
+    "claude-code",
+    "--model",
+    "gpt-5.6-sol",
+    "--effort",
+    "max",
+    "--mode",
+    "read-only",
+    "--prompt",
+    join(process.cwd(), "prompt.md"),
+    "--cwd",
+    process.cwd(),
+    "--output",
+    join(process.cwd(), "output.md"),
+    "--receipt",
+    join(process.cwd(), "receipt.json"),
+    ...extra,
+  ];
+}
+
+describe("runner CLI parsing", () => {
+  it("does not invent a timeout", () => {
+    expect(parseArgs(argv())?.timeoutMs).toBeNull();
+  });
+
+  it("honors an explicit positive timeout", () => {
+    expect(parseArgs(argv(["--timeout", "5400"]))?.timeoutMs).toBe(5_400_000);
+  });
+
+  it("rejects a non-positive timeout", () => {
+    expect(() => parseArgs(argv(["--timeout", "0"]))).toThrow(
+      "greater than zero"
+    );
+  });
+
+  it("accepts cursor as a parent and rejects it as an app", () => {
+    const parsed = parseArgs([
+      "--parent",
+      "cursor",
+      "--app",
+      "grok",
+      "--model",
+      "grok-4.6",
+      "--effort",
+      "xhigh",
+      "--mode",
+      "read-only",
+      "--prompt",
+      join(process.cwd(), "prompt.md"),
+      "--cwd",
+      process.cwd(),
+      "--output",
+      join(process.cwd(), "output.md"),
+      "--receipt",
+      join(process.cwd(), "receipt.json"),
+    ]);
+    expect(parsed?.parent).toBe("cursor");
+    expect(parsed?.app).toBe("grok");
+    expect(() =>
+      parseArgs([
+        "--parent",
+        "claude-code",
+        "--app",
+        "cursor",
+        "--model",
+        "fable",
+        "--effort",
+        "max",
+        "--mode",
+        "read-only",
+        "--prompt",
+        join(process.cwd(), "prompt.md"),
+        "--cwd",
+        process.cwd(),
+        "--output",
+        join(process.cwd(), "output.md"),
+        "--receipt",
+        join(process.cwd(), "receipt.json"),
+      ])
+    ).toThrow("app must be one of");
+  });
+});

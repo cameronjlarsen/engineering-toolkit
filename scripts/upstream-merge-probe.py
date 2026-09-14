@@ -79,10 +79,10 @@ def main(audit_path):
         variant = copy.deepcopy(audit)
         row = copy.deepcopy(next(c for c in variant["changes"] if c["change"] == "modify" and c["port_path"]))
         row["comparison"] = "absent-from-port-review-exclusion"
-        row["port_path"] = "plugins/pstack/skills/make-bot-ui/SKILL.md"
+        row["port_path"] = "plugins/engineering-toolkit/skills/make-bot-ui/SKILL.md"
         variant["changes"] = [row]
         code, out = run(variant, tree)
-        results.append(check("excluded path reported without crash or directory", code == 1 and "excluded path" in out and not os.path.exists(os.path.join(tree, "plugins/pstack/skills/make-bot-ui")), out))
+        results.append(check("excluded path reported without crash or directory", code == 1 and "excluded path" in out and not os.path.exists(os.path.join(tree, "plugins/engineering-toolkit/skills/make-bot-ui")), out))
 
         tree = worktree(port); trees.append(tree)
         variant = copy.deepcopy(audit)

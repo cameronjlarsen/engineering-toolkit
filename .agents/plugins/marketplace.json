@@ -1,14 +1,14 @@
 {
-  "name": "open-pstack",
+  "name": "engineering-toolkit",
   "interface": {
-    "displayName": "pstack"
+    "displayName": "Engineering Toolkit"
   },
   "plugins": [
     {
-      "name": "pstack",
+      "name": "eng",
       "source": {
         "source": "local",
-        "path": "./plugins/pstack"
+        "path": "./plugins/engineering-toolkit"
       },
       "policy": {
         "installation": "AVAILABLE",
