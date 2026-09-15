@@ -40,11 +40,11 @@ Install `plugins/engineering-toolkit` from this checkout (the `.cursor-plugin` m
 
 ### Claude Code
 
-From this checkout, add the repo as a local marketplace, then install `eng@engineering-toolkit` and reload plugins.
+From this checkout, add the repo as a local marketplace, then install `et@engineering-toolkit` and reload plugins.
 
 ### Codex
 
-From this checkout, add the repo as a local Codex marketplace, then add `eng`.
+From this checkout, add the repo as a local Codex marketplace, then add `et`.
 
 Turn on Codex subagents in `~/.codex/config.toml` so Engineering Toolkit can compare work in parallel:
 
@@ -64,13 +64,13 @@ Lauren's original setup has two steps. This fork keeps the same flow.
 In Claude Code, run:
 
 ```text
-/eng:setup-engineering-toolkit
+/et:setup-engineering-toolkit
 ```
 
 In Codex, ask:
 
 ```text
-Use eng:setup-engineering-toolkit to configure Engineering Toolkit.
+Use et:setup-engineering-toolkit to configure Engineering Toolkit.
 ```
 
 In Cursor, run:
@@ -90,13 +90,13 @@ Start any task that needs careful engineering with `engineering-mode`.
 In Claude Code:
 
 ```text
-/eng:engineering-mode Add saved filters to search. Keep the design simple, verify it in the real app, and open a pull request.
+/et:engineering-mode Add saved filters to search. Keep the design simple, verify it in the real app, and open a pull request.
 ```
 
 In Codex:
 
 ```text
-Use eng:engineering-mode. Add saved filters to search. Keep the design simple, verify it in the real app, and open a pull request.
+Use et:engineering-mode. Add saved filters to search. Keep the design simple, verify it in the real app, and open a pull request.
 ```
 
 In Cursor:
@@ -123,7 +123,7 @@ That is the main workflow. The other skills are there when engineering-mode need
 | `babysit` | A pull request needs CI failures and review comments handled until it is ready. |
 | `reflect` | A hard task is finished and its lessons should improve the next run. |
 
-Claude Code prefixes plugin skills with `/eng:`. In Claude Code, invoke a native skill such as `/eng:architect`. In Codex, ask for the skill, such as `Use eng:architect for this design.` In Cursor, user-facing skills stay unprefixed. Run `/architect`. See the [technical reference](docs/reference.md) for the full list.
+Claude Code prefixes plugin skills with `/et:`. In Claude Code, invoke a native skill such as `/et:architect`. In Codex, ask for the skill, such as `Use et:architect for this design.` In Cursor, user-facing skills stay unprefixed. Run `/architect`. See the [technical reference](docs/reference.md) for the full list.
 
 ## Models and token use
 
@@ -137,7 +137,7 @@ All three apps read the same skills from `plugins/engineering-toolkit`. Only the
 
 | | Claude Code | Codex | Cursor |
 | --- | --- | --- | --- |
-| Start engineering-mode | Claude loads a small startup instruction that can route non-trivial work into it. You can also run `/eng:engineering-mode` yourself. | Ask for `eng:engineering-mode` by name. Codex does not load the Claude startup instruction. | Run `/engineering-mode`. |
+| Start engineering-mode | Claude loads a small startup instruction that can route non-trivial work into it. You can also run `/et:engineering-mode` yourself. | Ask for `et:engineering-mode` by name. Codex does not load the Claude startup instruction. | Run `/engineering-mode`. |
 | Runs inside the app | Claude models stay inside Claude Code. | The Sol model stays inside Codex. | Plugin-agent Fable and Opus stay inside Cursor. |
 | Other models | Codex and Grok run through their signed-in command-line tools. | Claude and Grok run through their signed-in command-line tools. | Claude, Codex, and Grok run through their signed-in command-line tools. |
 | Skills and workflows | Shared. | Shared. | Shared. |

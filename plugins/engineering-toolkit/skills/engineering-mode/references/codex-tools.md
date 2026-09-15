@@ -13,7 +13,7 @@ Shared skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuesti
 | Fetch a URL | `shell` with `curl` / `wget` |
 | Search the web | `web_search` |
 | Invoke a skill (the `Skill` tool, `/command`) | Skills load natively. Follow the instructions presented. |
-| `paths` frontmatter scopes automatic loading | Claude Code only. On Codex, invoke `eng:typescript-best-practices` by name. |
+| `paths` frontmatter scopes automatic loading | Claude Code only. On Codex, invoke `et:typescript-best-practices` by name. |
 | Dispatch a subagent (the `Agent`/`Task` tool) | `spawn_agent` |
 | Dispatch N parallel subagents in one turn | N `spawn_agent` calls in one response |
 | Wait for a subagent result | `wait_agent` |

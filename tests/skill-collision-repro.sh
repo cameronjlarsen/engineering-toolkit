@@ -49,7 +49,7 @@ fi
 json_field() { { grep -m1 "\"$2\"" "$1" || true; } | sed -E "s/.*\"$2\"[[:space:]]*:[[:space:]]*\"([^\"]+)\".*/\1/"; }
 identity_bad=""
 want_marketplace="engineering-toolkit"
-want_plugin="eng"
+want_plugin="et"
 want_display="Engineering Toolkit"
 want_repo="https://github.com/cameronjlarsen/engineering-toolkit"
 for manifest in \
@@ -106,27 +106,33 @@ then
 fi
 readme_h1="$(sed -n '1p' "$repo/README.md")"
 [ "$readme_h1" = "# Engineering Toolkit" ] || identity_bad="$identity_bad README h1=$readme_h1"$'\n'
-grep -q '/eng:engineering-mode' "$repo/README.md" || identity_bad="$identity_bad README missing /eng:engineering-mode"$'\n'
-grep -q '/eng:setup-engineering-toolkit' "$repo/README.md" || identity_bad="$identity_bad README missing /eng:setup-engineering-toolkit"$'\n'
+grep -q '/et:engineering-mode' "$repo/README.md" || identity_bad="$identity_bad README missing /et:engineering-mode"$'\n'
+grep -q '/et:setup-engineering-toolkit' "$repo/README.md" || identity_bad="$identity_bad README missing /et:setup-engineering-toolkit"$'\n'
 [ -e "$repo/plugins/engineering-toolkit/skills/setup-pstack" ] && identity_bad="$identity_bad leftover skills/setup-pstack"$'\n'
 grep -Fq '~/.cursor/rules/engineering-toolkit-models.mdc' "$repo/plugins/engineering-toolkit/skills/setup-engineering-toolkit/SKILL.md" || identity_bad="$identity_bad setup skill lost Cursor sheet path"$'\n'
 grep -Fq 'engineering-toolkit-models.mdc' "$repo/plugins/engineering-toolkit/skills/engineering-mode/scripts/routing/parent.ts" || identity_bad="$identity_bad parent.ts lost Cursor sheet path"$'\n'
 hook="$repo/plugins/engineering-toolkit/hooks/session-start-context.md"
 grep -Fq 'You have Engineering Toolkit.' "$hook" || identity_bad="$identity_bad SessionStart hook lost Engineering Toolkit greeting"$'\n'
-grep -Fq '`eng:engineering-mode`' "$hook" || identity_bad="$identity_bad SessionStart hook lost eng:engineering-mode"$'\n'
-grep -Fq '`eng:tdd`' "$hook" || identity_bad="$identity_bad SessionStart hook lost eng:tdd"$'\n'
+grep -Fq '`et:engineering-mode`' "$hook" || identity_bad="$identity_bad SessionStart hook lost et:engineering-mode"$'\n'
+grep -Fq '`et:tdd`' "$hook" || identity_bad="$identity_bad SessionStart hook lost et:tdd"$'\n'
 if grep -Fq 'You have pstack.' "$hook"; then
   identity_bad="$identity_bad leftover You have pstack in SessionStart hook"$'\n'
 fi
 if grep -Fq 'pstack:' "$hook"; then
   identity_bad="$identity_bad leftover pstack: skill namespace in SessionStart hook"$'\n'
 fi
+if grep -Fq 'eng:' "$hook"; then
+  identity_bad="$identity_bad leftover eng: skill namespace in SessionStart hook"$'\n'
+fi
 codex_map="$repo/plugins/engineering-toolkit/skills/engineering-mode/references/codex-tools.md"
 cursor_map="$repo/plugins/engineering-toolkit/skills/engineering-mode/references/cursor-tools.md"
 grep -Fq '# Codex tool mapping for Engineering Toolkit' "$codex_map" || identity_bad="$identity_bad Codex mapping title is not Engineering Toolkit"$'\n'
-grep -Fq 'eng:typescript-best-practices' "$codex_map" || identity_bad="$identity_bad Codex mapping lost eng:typescript-best-practices"$'\n'
+grep -Fq 'et:typescript-best-practices' "$codex_map" || identity_bad="$identity_bad Codex mapping lost et:typescript-best-practices"$'\n'
 if grep -Fq 'pstack:typescript-best-practices' "$codex_map"; then
   identity_bad="$identity_bad leftover pstack:typescript-best-practices in Codex mapping"$'\n'
+fi
+if grep -Fq 'eng:' "$codex_map"; then
+  identity_bad="$identity_bad leftover eng: skill namespace in Codex mapping"$'\n'
 fi
 grep -Fq '# Cursor tool mapping for Engineering Toolkit' "$cursor_map" || identity_bad="$identity_bad Cursor mapping title is not Engineering Toolkit"$'\n'
 if grep -Fq '# Cursor tool mapping for pstack' "$cursor_map"; then
@@ -142,11 +148,11 @@ if [ -e "$repo/assets/pstack-workflow.png" ]; then
   identity_bad="$identity_bad leftover assets/pstack-workflow.png"$'\n'
 fi
 if [ -n "$identity_bad" ]; then
-  note "FAIL: public identity is not Engineering Toolkit / eng:"
+  note "FAIL: public identity is not Engineering Toolkit / et:"
   note "$identity_bad"
   fail=1
 else
-  note "ok: public identity is Engineering Toolkit, plugin eng, repo cameronjlarsen/engineering-toolkit"
+  note "ok: public identity is Engineering Toolkit, plugin et, repo cameronjlarsen/engineering-toolkit"
 fi
 
 # Active configuration must use Claude's rolling family aliases. Concrete
