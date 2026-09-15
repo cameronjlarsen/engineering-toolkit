@@ -10,6 +10,10 @@ This fork renames upstream's `poteto-agent` to `engineering-agent` so the live s
 
 Open Pstack imports `work-unit-commits` from [Gentleman-Programming/gentle-ai](https://github.com/Gentleman-Programming/gentle-ai/blob/main/skills/work-unit-commits/SKILL.md) under MIT (c) 2025 Gentleman Programming. This is an attributed Gentle AI import, not a Cursor pstack sync. Adaptations: SDD Relationship section, SDD workload guard, and SDD When-to-Use bullet removed because open-pstack SDD is opt-in; license set to MIT per the repo LICENSE; one sentence links the skill as the commit-shaping complement to `principle-sequence-verifiable-units`. `engineering-mode` loads it before commit splits; Opening a PR and Feature playbooks reference it alongside sequence-verifiable-units.
 
+## Cursor 0.15.2 content sync keeps 1.4.1 manifests
+
+This checkout applies Cursor pstack 0.15.2 content at `5bf2b1544db739998121a306340631963c2ff3de` without bumping this fork's 1.4.1 manifests. Applied #362 pronoun and tick-prompt wording onto the diverged engineering-mode playbooks. Did not apply #365 model defaults. Did not apply #366 to `setup-engineering-toolkit`. `README-UPSTREAM.md` is now the Cursor 0.15.2 README verbatim.
+
 ## 1.4.1 syncs to Cursor pstack 0.15.1
 
 Open Pstack 1.4.1 tracks Cursor pstack 0.15.1 at `f8abeddd1862dc73704e3d719dd73df0d51b8c71`. Poteto-mode now requires each claim to include its evidence or a measured, inferred, or guess label in the same sentence. Agents also run any check they can run themselves instead of handing that check to the user. No playbook, model, runtime, or dependency changed.
