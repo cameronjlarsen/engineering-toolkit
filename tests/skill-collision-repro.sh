@@ -39,11 +39,11 @@ vx="$(verof "$repo/plugins/engineering-toolkit/.codex-plugin/plugin.json")"
 vr="$(verof "$repo/plugins/engineering-toolkit/.cursor-plugin/plugin.json")"
 vm="$(verof "$repo/.claude-plugin/marketplace.json")"
 vcm="$(verof "$repo/.cursor-plugin/marketplace.json")"
-vu="$(sed -n 's/| Open Pstack version at fork | `\([^`]*\)` |/\1/p' "$repo/UPSTREAM.md")"
+vu="$(sed -n 's/| Engineering Toolkit version | `\([^`]*\)` |/\1/p' "$repo/UPSTREAM.md")"
 if [ -n "$vc" ] && [ "$vc" = "$vx" ] && [ "$vc" = "$vr" ] && [ "$vc" = "$vm" ] && [ "$vc" = "$vcm" ] && [ "$vc" = "$vu" ]; then
-  note "ok: open-pstack version matches across UPSTREAM.md and the 6 versioned files ($vc)"
+  note "ok: engineering-toolkit version matches across UPSTREAM.md and the 6 versioned files ($vc)"
 else
-  note "FAIL: open-pstack version differs: upstream=$vu claude-plugin=$vc codex-plugin=$vx cursor-plugin=$vr marketplace=$vm cursor-marketplace=$vcm"
+  note "FAIL: engineering-toolkit version differs: upstream=$vu claude-plugin=$vc codex-plugin=$vx cursor-plugin=$vr marketplace=$vm cursor-marketplace=$vcm"
   fail=1
 fi
 
