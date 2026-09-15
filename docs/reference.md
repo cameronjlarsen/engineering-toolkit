@@ -16,21 +16,21 @@ The skill tree stays at `plugins/engineering-toolkit`. Do not install `ericlitma
 
 ### Cursor
 
-This repository ships as a Cursor marketplace containing one plugin (`eng`). Add it from the GitHub URL:
+This repository ships as a Cursor marketplace containing one plugin (`et`). Add it from the GitHub URL:
 
 ```text
 /add-plugin https://github.com/cameronjlarsen/engineering-toolkit
 ```
 
-Install `eng` from the marketplace panel. Run `/setup-engineering-toolkit`. The root `.cursor-plugin/marketplace.json` lists that plugin at `./plugins/engineering-toolkit`. For local plugin development, clone the repository and point Cursor at `plugins/engineering-toolkit`.
+Install `et` from the marketplace panel. Run `/setup-engineering-toolkit`. The root `.cursor-plugin/marketplace.json` lists that plugin at `./plugins/engineering-toolkit`. For local plugin development, clone the repository and point Cursor at `plugins/engineering-toolkit`.
 
 ### Claude Code
 
-This repository ships as a Claude Code marketplace containing one plugin (`eng`).
+This repository ships as a Claude Code marketplace containing one plugin (`et`).
 
 ```text
 /plugin marketplace add cameronjlarsen/engineering-toolkit
-/plugin install eng@engineering-toolkit
+/plugin install et@engineering-toolkit
 /reload-plugins
 ```
 
@@ -42,10 +42,10 @@ The same plugin carries a `.codex-plugin/plugin.json` manifest and a root `.agen
 
 ```shell
 codex plugin marketplace add cameronjlarsen/engineering-toolkit --ref main
-codex plugin add eng@engineering-toolkit
+codex plugin add et@engineering-toolkit
 ```
 
-Codex discovers the plugin skills under the `eng` namespace, so they list as `eng:engineering-mode`, `eng:tdd`, and so on. The namespace comes from `plugins/engineering-toolkit/.codex-plugin/plugin.json`. To enable the multi-model and parallel-subagent skills (`interrogate`, `arena`, `how`, `why`, `reflect`, `architect`), turn on subagents in `~/.codex/config.toml`:
+Codex discovers the plugin skills under the `et` namespace, so they list as `et:engineering-mode`, `et:tdd`, and so on. The namespace comes from `plugins/engineering-toolkit/.codex-plugin/plugin.json`. To enable the multi-model and parallel-subagent skills (`interrogate`, `arena`, `how`, `why`, `reflect`, `architect`), turn on subagents in `~/.codex/config.toml`:
 
 ```toml
 [features]
@@ -96,14 +96,14 @@ Plugin-internal `skills/<name>/` path references in the docs below are relative 
 
 The Codex build shares one `skills/` tree with the Claude Code build. Nothing is forked or generated. Two narrow references keep runtime translation separate: `codex-tools.md` maps harness primitives and `provider-dispatch.md` maps model providers. Engineering Toolkit otherwise keeps the upstream Claude-native prose and adds a one-line Platform note to each skill that names a Claude primitive, so the port stays in lockstep with upstream sync.
 
-- **Skill invocation.** Codex loads `SKILL.md` natively. There is no `Skill` tool. You invoke a skill by name (ask for it, or pick `eng:engineering-mode` from the list).
+- **Skill invocation.** Codex loads `SKILL.md` natively. There is no `Skill` tool. You invoke a skill by name (ask for it, or pick `et:engineering-mode` from the list).
 - **Package surface.** The native `skills/` tree is the only workflow source. The plugin ships no `commands/` layer and does not link prompts into `~/.codex/prompts/`. Codex would migrate such files into duplicate source-command skills while loading the native skill tree. The 23 `principle-*` leaves declare `user-invocable: false`. Claude keeps them out of its user picker; Codex 0.149.0 currently shows them despite that metadata ([#8](https://github.com/ericlitman/open-pstack/issues/8)).
 - **Tool and built-in mapping.** Claude tool names and built-in skills resolve through [`codex-tools.md`](../plugins/engineering-toolkit/skills/engineering-mode/references/codex-tools.md). Model execution resolves separately through [`provider-dispatch.md`](../plugins/engineering-toolkit/skills/engineering-mode/references/provider-dispatch.md), so Codex can keep Sol native while invoking Claude and Grok externally.
 - **Subagents.** The `Agent` tool maps to Codex `spawn_agent` / `wait_agent`, enabled by `multi_agent = true`. Parallel fan-out is multiple `spawn_agent` calls in one turn. If the native Codex lane is unavailable, record that lane as a dropout; external Claude and Grok lanes still run, and no provider is silently substituted. There is no `engineering-agent` subagent type on Codex; route ad-hoc subagents by dispatching a `spawn_agent` told to read `engineering-mode` first.
-- **Auto-fire.** The `hooks/` SessionStart injection is Claude Code-only; Codex has no plugin hook runtime. Enter `eng:engineering-mode` by name, or add a standing instruction to `~/.codex/AGENTS.md` if you want the same always-on routing.
+- **Auto-fire.** The `hooks/` SessionStart injection is Claude Code-only; Codex has no plugin hook runtime. Enter `et:engineering-mode` by name, or add a standing instruction to `~/.codex/AGENTS.md` if you want the same always-on routing.
 - **Models.** `/setup-engineering-toolkit` writes typed Route values and `app/model@effort` wire values and asks one requested effort per frontier family (`low`, `medium`, `high`, `xhigh`, `max`). The first-run panel is Fable max, GPT-5.6 Sol max, Grok 4.6 xhigh, and Opus xhigh. Fable and Opus use Claude's rolling aliases. Runtime dispatch normalizes older versioned descriptors in memory, so an installed sheet stops pinning immediately. A setup rerun persists that migration while keeping each role's family and effort. In Codex, Sol uses native `spawn_agent`; Claude and Grok use the deterministic external runner. In Claude Code, Fable and Opus use native agents; Sol and Grok use the runner. Children never detect the parent or reroute themselves. The `bug-fix`, `perf-issue`, and `hillclimb` roles stay on GPT-5.6 Sol max instead of upstream's Fable default because Sol costs less for these frequent delegated code roles.
 
-Verified in fresh installed Claude Code and Codex sessions: the user-facing skills are discovered and namespaced under `eng`; both parents fan out the frontier quad through the documented native/external route table, retain long-running handles without a default timeout, and cross-judge only after every candidate is terminal. The `principle-*` leaves remain available for `engineering-mode` to read by path. Claude honors their `user-invocable: false` metadata; Codex 0.149.0 does not ([#8](https://github.com/ericlitman/open-pstack/issues/8)).
+Verified in fresh installed Claude Code and Codex sessions: the user-facing skills are discovered and namespaced under `et`; both parents fan out the frontier quad through the documented native/external route table, retain long-running handles without a default timeout, and cross-judge only after every candidate is terminal. The `principle-*` leaves remain available for `engineering-mode` to read by path. Claude honors their `user-invocable: false` metadata; Codex 0.149.0 does not ([#8](https://github.com/ericlitman/open-pstack/issues/8)).
 
 ## Dependencies
 
@@ -131,7 +131,7 @@ No third-party plugins. The harsher-critique escape hatch lives in the bundled `
 
 ## Skills
 
-The table uses the short upstream names. Claude Code exposes each native skill with a `/eng:` prefix, such as `/eng:engineering-mode`. In Codex, ask for the namespaced skill, such as `eng:engineering-mode`.
+The table uses the short upstream names. Claude Code exposes each native skill with a `/et:` prefix, such as `/et:engineering-mode`. In Codex, ask for the namespaced skill, such as `et:engineering-mode`.
 
 | skill | use it when |
 | --- | --- |

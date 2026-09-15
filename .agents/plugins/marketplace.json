@@ -5,7 +5,7 @@
   },
   "plugins": [
     {
-      "name": "eng",
+      "name": "et",
       "source": {
         "source": "local",
         "path": "./plugins/engineering-toolkit"

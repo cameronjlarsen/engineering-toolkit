@@ -2,6 +2,10 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## Fork-authored: plugin short name et
+
+The plugin short name is now `et` (engineering-toolkit) across Cursor, Claude Code, and Codex. Claude install is `et@engineering-toolkit`. In Codex, add `et`. Claude and Codex skill prefix is `et:`. Cursor slash commands stay unprefixed. Catalog name, displayName, and `plugins/engineering-toolkit` are unchanged. Existing installs keep `eng` until reinstalled.
+
 ## Fork-authored: rename poteto-agent to engineering-agent
 
 This fork renames upstream's `poteto-agent` to `engineering-agent` so the live spawn ID matches `/engineering-mode`. This is a fork delta, not a Cursor pstack sync. The live spawn ID is `engineering-agent`. No alias. README-UPSTREAM.md remains verbatim and still says `poteto-agent`.
