@@ -12,7 +12,7 @@ Open Pstack imports `work-unit-commits` from [Gentleman-Programming/gentle-ai](h
 
 ## Cursor 0.15.2 content sync keeps 1.4.1 manifests
 
-This checkout applies Cursor pstack 0.15.2 content at `5bf2b1544db739998121a306340631963c2ff3de` without bumping this fork's 1.4.1 manifests. Applied #362 pronoun and tick-prompt wording onto the diverged engineering-mode playbooks. Did not apply #365 model defaults. Did not apply #366 to `setup-engineering-toolkit`. `README-UPSTREAM.md` is now the Cursor 0.15.2 README verbatim.
+This checkout applies Cursor pstack 0.15.2 content at `5bf2b1544db739998121a306340631963c2ff3de` without bumping this fork's 1.4.1 manifests. Applied #362 pronoun and tick-prompt wording onto the diverged engineering-mode playbooks. #366 was adapted onto `setup-engineering-toolkit` as the step-4 budget preset, not copied as `setup-pstack`. Still did not apply #365 model defaults. `README-UPSTREAM.md` is now the Cursor 0.15.2 README verbatim.
 
 ## 1.4.1 syncs to Cursor pstack 0.15.1
 

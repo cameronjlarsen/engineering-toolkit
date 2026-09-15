@@ -1,6 +1,6 @@
 ---
 name: setup-engineering-toolkit
-description: Configure Engineering Toolkit's typed model routes per role. Discovers apps, probes selected routes, and writes the parent sheet. Use for /setup-engineering-toolkit, "configure Engineering Toolkit models", or changing model choices.
+description: Configure Engineering Toolkit's typed model routes per role and a reasoning budget. Discovers apps, probes selected routes, and writes the parent sheet. Use for /setup-engineering-toolkit, "configure Engineering Toolkit models", "engineering toolkit budget", "pstack budget", or changing model choices.
 ---
 
 # Setup Engineering Toolkit
@@ -38,7 +38,9 @@ Read the current parent-specific sheet when it exists. It is grammar 2. The
 old `claude:fable@max` form is accepted as inbound migration to named
 `claude-code`; new writes never emit it. Normalize rolling aliases
 `claude-fable-*` and `claude-opus-*` in memory, preserving app, effort, role,
-and lane order. Record migrations for confirmation. If the current sheet is
+and lane order. Record migrations for confirmation. Also read a `# budget:`
+line when the sheet has one, and name that current budget later when asking.
+A missing line means no recorded budget yet. If the current sheet is
 missing, read the previous `pstack-models` path for that parent as inbound
 migration. If that is also missing, use the complete first-run role map below.
 
@@ -56,16 +58,22 @@ An unmatched app/model, out-of-domain effort, duplicate role, or unknown role
 is inconsistent state. Stop and show the conflicting rows. Do not probe or
 write while any inconsistency is unresolved.
 
-### 4. Collect requested efforts
+### 4. Ask for a budget, then apply it
 
-Ask for efforts only for selected routes. If first-run still proposes the four
-matrix families, ask once for those selected rows and use their capability
-metadata. An omitted effort remains destination-default; do not fill it with a
-family default.
+**(a) Ask for a budget.** Prefer AskQuestion. On Claude Code that tool is AskUserQuestion. Offer these four options with these exact labels, and name the current budget when the sheet recorded one.
+
+- `unlimited, keep max`
+- `large, xhigh reasoning`
+- `medium, high reasoning`
+- `small, medium reasoning`
+
+**(b) Apply it.** Every run, build the working table from the skill defaults in step 7 first. On a re-run, keep any role the operator already changed by family, list, or alias (`inherit-parent`, `auto`). Then apply the budget. `unlimited` leaves every effort as in that table. The other three set the `@effort` of every real Route, panel lanes included, to `xhigh`, `high`, or `medium`. `inherit-parent` and `auto` do not change. If the target effort is not selectable for that model family per provider-dispatch.md, use that family's highest selectable effort at or below the target, else mark the role as needing a choice. For example, `small` turns `fable@max` into `fable@medium` and `grok/grok-4.6@xhigh` into `grok/grok-4.6@medium`.
+
+**(c) Confirm stays in steps 6 and 7.** Do not repeat the role-confirm questions here.
 
 ### 5. Probe selected routes
 
-Probe only selected routes used by the sheet. Do not blindly probe four
+Probe only selected routes used by the sheet, after the step 4 budget remap, not the pre-budget efforts. Do not blindly probe four
 families when the sheet does not use them. If first-run still proposes the
 four matrix families, probe those selected rows only. Distinguish installed,
 launch-ready, and unknown. A failed probe writes nothing: report the failing
@@ -104,9 +112,9 @@ documented role key.
 
 ### 7. Confirm and commit
 
-Show app discovery, readiness, rolling-alias migrations, the route table for
-this parent, and every rendered role and Route wire value. Ask for confirmation
-before writing.
+Show app discovery, readiness, rolling-alias migrations, the chosen budget
+label and target effort, the route table for this parent, and every rendered
+role and Route wire value. Ask for confirmation before writing.
 
 Every selected route must have passed step 5. Why and Reflect require the
 parent's live MCP surface. Keep their roles on `inherit-parent` or `auto`;
@@ -114,7 +122,7 @@ external override is a typed reject. `inherit-parent` and `auto` always
 validate, but say when they reduce a panel's provider diversity. For panel
 roles, one lane runs per entry. The list length is the fan-out count.
 
-After the operator confirms, write the in-memory render from step 6. Never paste the example below as the result. It is only the complete first-run role map used to seed step 2; selected efforts and explicit role changes always replace its example values before writing.
+After the operator confirms, write the in-memory render from step 6, including a `# budget:` line with the chosen label and target effort. Never paste the example below as the result. It is only the complete first-run role map used to seed step 2; selected efforts and explicit role changes always replace its example values before writing.
 
 ```markdown
 # Engineering Toolkit model configuration
@@ -129,6 +137,7 @@ for the destination default. Every documented role remains present.
 `inherit-parent` and `auto` use the parent model natively and still count as
 one panel lane.
 
+# budget: unlimited (max)
 feature, refactoring: grok/grok-4.6@xhigh
 bug-fix: codex/gpt-5.6-sol@max
 perf-issue: codex/gpt-5.6-sol@max
