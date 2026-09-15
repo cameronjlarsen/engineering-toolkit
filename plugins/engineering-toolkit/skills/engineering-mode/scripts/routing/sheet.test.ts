@@ -6,8 +6,15 @@ import {
   modelSlug,
   namedApp,
   route,
+  type Effort,
+  type RoleMap,
 } from "./route.ts";
-import { loadRoleMap, printRoleMap } from "./sheet.ts";
+import {
+  applyBudget,
+  loadRoleMap,
+  parseBudgetLine,
+  printRoleMap,
+} from "./sheet.ts";
 
 const roles = [
   "feature, refactoring",
@@ -170,5 +177,100 @@ describe("sheet validation and round trips", () => {
       ok: false,
       error: { tag: "missing-role", role: "bug-fix" },
     });
+  });
+});
+
+const ALL_EFFORTS: readonly Effort[] = ["low", "medium", "high", "xhigh", "max"];
+
+function mustLoad(values: Partial<Record<(typeof roles)[number], string>> = {}): RoleMap {
+  const result = loadRoleMap(sheet(values));
+  if (!result.ok) throw new Error("expected a role map");
+  return result.value;
+}
+
+describe("sheet budget", () => {
+  it("parses unlimited and small budget lines", () => {
+    expect(parseBudgetLine("# budget: unlimited (max)")).toEqual({
+      ok: true,
+      value: { label: "unlimited", target: "max" },
+    });
+    expect(parseBudgetLine("  # budget: small (medium)")).toEqual({
+      ok: true,
+      value: { label: "small", target: "medium" },
+    });
+  });
+
+  it("rejects a budget line whose label and target disagree", () => {
+    expect(parseBudgetLine("# budget: small (max)")).toEqual({
+      ok: false,
+      error: { tag: "invalid-budget", raw: "# budget: small (max)" },
+    });
+  });
+
+  it("applies small to real routes and leaves inherit-parent", () => {
+    const roles = mustLoad({
+      "judgment and prose": "fable@max",
+      "arena runners": "grok/grok-4.6@xhigh, inherit-parent",
+    });
+    const budget = parseBudgetLine("# budget: small (medium)");
+    expect(budget.ok).toBe(true);
+    if (!budget.ok) return;
+    const result = applyBudget(roles, budget.value, () => ALL_EFFORTS);
+    expect(result.needsChoice).toEqual([]);
+    expect(result.roles["judgment and prose"]).toEqual(
+      routeValue("fable", currentHost(), explicitEffort("medium"))
+    );
+    expect(result.roles["arena runners"]).toEqual([
+      routeValue("grok-4.6", namedApp("grok"), explicitEffort("medium")),
+      { kind: "inherit-parent" },
+    ]);
+    expect(result.roles["why investigators, synthesizer"]).toEqual({ kind: "inherit-parent" });
+  });
+
+  it("leaves explicit and destination-default efforts under unlimited", () => {
+    const roles = mustLoad({
+      "judgment and prose": "fable@max",
+      "feature, refactoring": "fable",
+    });
+    const budget = parseBudgetLine("# budget: unlimited (max)");
+    expect(budget.ok).toBe(true);
+    if (!budget.ok) return;
+    const result = applyBudget(roles, budget.value, () => ALL_EFFORTS);
+    expect(result.needsChoice).toEqual([]);
+    expect(result.roles["judgment and prose"]).toEqual(
+      routeValue("fable", currentHost(), explicitEffort("max"))
+    );
+    expect(result.roles["feature, refactoring"]).toEqual(routeValue("fable"));
+  });
+
+  it("marks needsChoice when no selectable effort is at or below the target", () => {
+    const roles = mustLoad({ "judgment and prose": "fable@max" });
+    const budget = parseBudgetLine("# budget: small (medium)");
+    expect(budget.ok).toBe(true);
+    if (!budget.ok) return;
+    const result = applyBudget(roles, budget.value, () => ["high", "xhigh", "max"]);
+    expect(result.needsChoice).toEqual(["judgment and prose"]);
+    expect(result.roles["judgment and prose"]).toEqual(
+      routeValue("fable", currentHost(), explicitEffort("max"))
+    );
+  });
+
+  it("prints an optional budget comment before the role rows", () => {
+    const roles = mustLoad({ "judgment and prose": "fable@max" });
+    const printed = printRoleMap(roles, { label: "large", target: "xhigh" });
+    expect(printed).toContain("# budget: large (xhigh)\n");
+    expect(loadRoleMap(printed).ok).toBe(true);
+  });
+
+  it("still loads a sheet that records a budget among the comments", () => {
+    const result = loadRoleMap(
+      [
+        "# Engineering Toolkit model configuration",
+        "# budget: large (xhigh)",
+        "Descriptor grammar: 2",
+        ...roles.map((role) => `${role}: inherit-parent`),
+      ].join("\n")
+    );
+    expect(result.ok).toBe(true);
   });
 });

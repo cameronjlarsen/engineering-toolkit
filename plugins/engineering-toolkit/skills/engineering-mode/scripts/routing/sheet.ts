@@ -55,7 +55,19 @@ export type SheetError =
   | { readonly tag: "mcp-bound-must-inherit"; readonly role: RoleId }
   | { readonly tag: "invalid-model-slug"; readonly raw: string }
   | { readonly tag: "v1-unknown-provider"; readonly provider: string }
-  | { readonly tag: "v1-missing-effort"; readonly raw: string };
+  | { readonly tag: "v1-missing-effort"; readonly raw: string }
+  | { readonly tag: "invalid-budget"; readonly raw: string };
+
+export const BUDGET_LABELS = ["unlimited", "large", "medium", "small"] as const;
+export type BudgetLabel = (typeof BUDGET_LABELS)[number];
+export type Budget = { readonly label: BudgetLabel; readonly target: Effort };
+
+export const BUDGET_TARGETS: Record<BudgetLabel, Effort> = {
+  unlimited: "max",
+  large: "xhigh",
+  medium: "high",
+  small: "medium",
+};
 
 type ParsedDescriptor = RoleBinding;
 
@@ -247,8 +259,11 @@ function printBinding(binding: RoleBinding): string {
   return `${app}${binding.route.model}${effort}`;
 }
 
-export function printRoleMap(roles: RoleMap): string {
+export function printRoleMap(roles: RoleMap, budget?: Budget): string {
   const lines = ["# Engineering Toolkit model configuration", "", "Descriptor grammar: 2", ""];
+  if (budget !== undefined) {
+    lines.push(`# budget: ${budget.label} (${budget.target})`, "");
+  }
   for (const role of SINGLE_ROLE_IDS) {
     lines.push(`${role}: ${printBinding(roles[role])}`);
   }
@@ -256,4 +271,88 @@ export function printRoleMap(roles: RoleMap): string {
     lines.push(`${role}: ${roles[role].map(printBinding).join(", ")}`);
   }
   return `${lines.join("\n")}\n`;
+}
+
+function isBudgetLabel(value: string): value is BudgetLabel {
+  return (BUDGET_LABELS as readonly string[]).includes(value);
+}
+
+export function parseBudgetLine(line: string): Result<Budget, SheetError> {
+  const parsed = /^\s*#\s*budget:\s*(\S+)\s*\((\S+)\)\s*$/.exec(line);
+  if (parsed === null) {
+    return { ok: false, error: { tag: "invalid-budget", raw: line } };
+  }
+  const label = parsed[1];
+  const target = parsed[2];
+  if (
+    label === undefined ||
+    target === undefined ||
+    !isBudgetLabel(label) ||
+    !isEffort(target) ||
+    BUDGET_TARGETS[label] !== target
+  ) {
+    return { ok: false, error: { tag: "invalid-budget", raw: line } };
+  }
+  return { ok: true, value: { label, target } };
+}
+
+function highestSelectableAtOrBelow(
+  target: Effort,
+  selectable: readonly Effort[]
+): Effort | undefined {
+  const cap = EFFORTS.indexOf(target);
+  let best: Effort | undefined;
+  for (const effort of selectable) {
+    const rank = EFFORTS.indexOf(effort);
+    if (rank === -1 || rank > cap) continue;
+    if (best === undefined || EFFORTS.indexOf(best) < rank) {
+      best = effort;
+    }
+  }
+  return best;
+}
+
+function remapBudgetBinding(
+  binding: RoleBinding,
+  role: RoleId,
+  budget: Budget,
+  selectable: (model: ModelSlug) => readonly Effort[],
+  needsChoice: RoleId[]
+): RoleBinding {
+  if (binding.kind !== "route") return binding;
+  const clamped = highestSelectableAtOrBelow(budget.target, selectable(binding.route.model));
+  if (clamped === undefined) {
+    if (!needsChoice.includes(role)) needsChoice.push(role);
+    return binding;
+  }
+  return {
+    kind: "route",
+    route: route({
+      model: binding.route.model,
+      app: binding.route.app,
+      effort: explicitEffort(clamped),
+    }),
+  };
+}
+
+export function applyBudget(
+  roles: RoleMap,
+  budget: Budget,
+  selectable: (model: ModelSlug) => readonly Effort[]
+): { roles: RoleMap; needsChoice: readonly RoleId[] } {
+  if (budget.label === "unlimited") {
+    return { roles, needsChoice: [] };
+  }
+
+  const needsChoice: RoleId[] = [];
+  const next: Record<string, RoleBinding | readonly RoleBinding[]> = {};
+  for (const role of SINGLE_ROLE_IDS) {
+    next[role] = remapBudgetBinding(roles[role], role, budget, selectable, needsChoice);
+  }
+  for (const role of PANEL_ROLE_IDS) {
+    next[role] = roles[role].map((binding) =>
+      remapBudgetBinding(binding, role, budget, selectable, needsChoice)
+    );
+  }
+  return { roles: next as RoleMap, needsChoice };
 }

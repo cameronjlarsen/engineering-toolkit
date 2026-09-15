@@ -51,7 +51,7 @@ const SHEET_ROLES = [
 const SETUP_SECTION_ORDER = [
   "### 2. Load current state",
   "### 3. Parse selected routes",
-  "### 4. Collect requested efforts",
+  "### 4. Ask for a budget, then apply it",
   "### 5. Probe selected routes",
   "### 6. Render, preserving role families",
   "### 7. Confirm and commit",
