@@ -28,8 +28,9 @@ The port is editorial, not mechanical. See [CHANGES.md](CHANGES.md) for the full
 
 Summary of structural changes:
 
-- Plugin content lives at `plugins/engineering-toolkit/` (with its own `.claude-plugin/plugin.json`). The repo root holds `.claude-plugin/marketplace.json` and the LICENSE / NOTICE / README / CHANGES docs.
+- Plugin content lives at `plugins/engineering-toolkit/` (with its own `.claude-plugin/plugin.json`). The repo root holds `.claude-plugin/marketplace.json`, `.agents/plugins/marketplace.json`, `.cursor-plugin/marketplace.json`, and the LICENSE / NOTICE / README / CHANGES docs.
 - `.claude-plugin/marketplace.json` added at repo root so the repo is installable via `/plugin marketplace add`. The marketplace's single plugin entry sources from `./plugins/engineering-toolkit`.
+- `.cursor-plugin/marketplace.json` added at repo root so Cursor can import the same GitHub URL with `/add-plugin`. Its plugin entry sources from `./plugins/engineering-toolkit`.
 - The native `plugins/engineering-toolkit/skills/` tree is the only user-facing workflow surface. Cursor, Claude Code, and Codex invoke those skills directly.
 - Seven skills imported from `cursor-team-kit`: `deslop`, `thermo-nuclear-code-quality-review`, `make-pr-easy-to-review`, `fix-ci`, `fix-merge-conflicts`, `get-pr-comments`, `what-did-i-get-done`. All copied verbatim — no rewiring needed.
 - One skill imported from Gentle AI: `work-unit-commits`. SDD sections removed because open-pstack SDD is opt-in; this skill is everyday commit shaping and the commit-split complement to `principle-sequence-verifiable-units`.
@@ -52,6 +53,7 @@ Files authored for this port (not derived from upstream):
 - `.claude-plugin/marketplace.json` (repo root)
 - `plugins/engineering-toolkit/.codex-plugin/plugin.json`
 - `.agents/plugins/marketplace.json` (repo root)
+- `.cursor-plugin/marketplace.json` (repo root)
 - `plugins/engineering-toolkit/skills/engineering-mode/references/codex-tools.md`
 - `plugins/engineering-toolkit/skills/engineering-mode/scripts/bootstrap.test.ts`
 - `plugins/engineering-toolkit/skills/engineering-mode/scripts/check-plan.test.ts`

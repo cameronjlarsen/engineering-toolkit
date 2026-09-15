@@ -4,7 +4,7 @@ This repository is a fork of [Open Pstack](https://github.com/ericlitman/open-ps
 
 This fork uses that work as a base. One skill tree should parent on Cursor, Claude Code, Codex, and later other coding agents. Today it ships those three parents. It tracks both Open Pstack and Cursor's pstack and pulls in changes as needed.
 
-The intended GitHub remote is [cameronjlarsen/engineering-toolkit](https://github.com/cameronjlarsen/engineering-toolkit). That copy is not published yet. Install from this checkout until it is. Do not install Lauren's original pstack or `ericlitman/open-pstack` as a stand-in for this fork.
+The GitHub repository is [cameronjlarsen/engineering-toolkit](https://github.com/cameronjlarsen/engineering-toolkit). Do not install Lauren's original pstack or `ericlitman/open-pstack` as a stand-in for this fork.
 
 Lauren built pstack from the skills she uses to ship code at Cursor. In a [55-minute interview with Denis Labelle](https://x.com/DenisLabelle/status/2091337807939706928), she says that she shipped 1,000 pull requests in one month after steadily improving how her agents work and verify their results.
 
@@ -32,19 +32,36 @@ Engineering Toolkit does not ask you to trust an agent on day one. It helps the 
 
 You need a current Cursor, Claude Code, or Codex installation. For the full four-model review, install and sign in to the Claude Code, Codex, and Grok command-line tools. [Bun](https://bun.sh) runs the small local tool that starts models outside the app you are using. You can still use the core workflows with fewer models.
 
-Until [cameronjlarsen/engineering-toolkit](https://github.com/cameronjlarsen/engineering-toolkit) is published, install from this checkout. The skill tree stays at `plugins/engineering-toolkit`. That directory holds the Cursor, Claude Code, and Codex manifests.
+The skill tree stays at `plugins/engineering-toolkit`. That directory holds the Cursor, Claude Code, and Codex manifests.
 
 ### Cursor
 
-Install `plugins/engineering-toolkit` from this checkout (the `.cursor-plugin` manifest). Do not install Lauren's original pstack alongside it. Then run `/setup-engineering-toolkit`. Setup writes grammar 2 into `~/.cursor/rules/engineering-toolkit-models.mdc`. It does not write upstream Task slugs.
+Run this command in Agent chat:
+
+```text
+/add-plugin https://github.com/cameronjlarsen/engineering-toolkit
+```
+
+Do not install Lauren's original pstack alongside it. Install `et` from the marketplace panel. Run `/setup-engineering-toolkit`. Setup writes grammar 2 into `~/.cursor/rules/engineering-toolkit-models.mdc`. It does not write upstream Task slugs.
 
 ### Claude Code
 
-From this checkout, add the repo as a local marketplace, then install `et@engineering-toolkit` and reload plugins.
+Run these commands inside Claude Code:
+
+```text
+/plugin marketplace add cameronjlarsen/engineering-toolkit
+/plugin install et@engineering-toolkit
+/reload-plugins
+```
 
 ### Codex
 
-From this checkout, add the repo as a local Codex marketplace, then add `et`.
+Run these commands in your shell:
+
+```shell
+codex plugin marketplace add cameronjlarsen/engineering-toolkit --ref main
+codex plugin add et@engineering-toolkit
+```
 
 Turn on Codex subagents in `~/.codex/config.toml` so Engineering Toolkit can compare work in parallel:
 
@@ -166,7 +183,7 @@ Read [UPSTREAM.md](UPSTREAM.md) before changing content that came from either tr
 
 ## Contributing
 
-This fork is not yet published. Do not open issues on [ericlitman/open-pstack](https://github.com/ericlitman/open-pstack) for work that belongs here. After [cameronjlarsen/engineering-toolkit](https://github.com/cameronjlarsen/engineering-toolkit) is published, track durable work in that repository's GitHub Issues.
+Search [GitHub Issues](https://github.com/cameronjlarsen/engineering-toolkit/issues) before opening a new issue. Do not open issues on [ericlitman/open-pstack](https://github.com/ericlitman/open-pstack) for work that belongs here.
 
 Pull requests must keep one shared skill tree for Cursor, Claude Code, and Codex. They must pass the repository's tests, type checks, plugin validation, and static checks.
 
