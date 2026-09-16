@@ -7,7 +7,7 @@ description: "Spawn N parallel candidates at the same task, pick a base, graft t
 
 Fan out N parallel attempts at the same task. Read every candidate end to end. Pick the strongest as the base. Graft the best ideas from the others into it. Verify the synthesized result.
 
-**Dispatch contract.** Read [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md) before fan-out. Configured values are typed Routes written as `app/model@effort`, not host-native model slugs. The parent starts native and external lanes directly; children never route themselves. On Codex, resolve the remaining Claude tool names via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
+**Dispatch contract.** Read [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md) before fan-out. Configured values are typed Routes written as `app/model@effort`, not host-native model slugs. Open each comma lane with `beginSoloRole`. After a `capacity-exhausted` observation, `observeSoloRole` may return the next hop for that lane only. Other lanes keep running. Children never route themselves. On Codex, resolve the remaining Claude tool names via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
 
 ## Start
 
@@ -35,7 +35,7 @@ Start all N lanes in one fan-out phase through the provider-dispatch contract. N
 
 Each rationale names the alternatives the candidate considered and what it rejected.
 
-An external lane counts only when its receipt says `complete` and carries either a matching `provider-report` or Codex's exact `pinned-argv` evidence; a native lane counts when its tool transcript returns the assigned model's result. If a candidate fails, proceed with N-1 and note the exact dropout in the synthesis record. Never replace it with another provider silently.
+An external lane counts only when its receipt says `complete` and carries either a matching `provider-report` or Codex's exact `pinned-argv` evidence; a native lane counts when its tool transcript returns the assigned model's result. If a candidate hits `capacity-exhausted` and the lane has a `then` hop, plan that hop with new paths and keep N. If a candidate fails for any other reason, or the chain is exhausted, proceed with N-1 and note the exact dropout in the synthesis record. Never replace it with another provider silently.
 
 ## Phase C: Cross-judge
 

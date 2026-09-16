@@ -37,6 +37,7 @@ export type ReceiptStatus =
   | "unavailable-cli"
   | "unauthenticated"
   | "unavailable-model"
+  | "capacity-exhausted"
   | "timed-out"
   | "child-failed"
   | "malformed-output";

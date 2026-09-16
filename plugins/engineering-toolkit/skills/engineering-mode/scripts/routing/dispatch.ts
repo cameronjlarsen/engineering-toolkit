@@ -15,6 +15,7 @@ import {
   type RoleId,
   type Route,
   type RoutePatch,
+  type SoloAssignment,
   type WorkerPolicy,
   isCliChildApp,
   route,
@@ -217,4 +218,21 @@ export function planLane(input: {
       return _exhaustive;
     }
   }
+}
+
+export function applySoloOverride(
+  assignment: SoloAssignment,
+  patch: RoutePatch | undefined,
+  role: Exclude<RoleId, McpBoundRoleId>
+): Result<SoloAssignment, ResolveError | { readonly tag: "unsupported-failover-override" }> {
+  if (assignment.kind === "failover") {
+    if (
+      patch !== undefined &&
+      (patch.model !== undefined || patch.app !== undefined || patch.effort !== undefined)
+    ) {
+      return { ok: false, error: { tag: "unsupported-failover-override" } };
+    }
+    return { ok: true, value: assignment };
+  }
+  return applyOverride(assignment, patch, role);
 }

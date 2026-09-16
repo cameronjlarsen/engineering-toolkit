@@ -7,7 +7,7 @@ description: "Use for \"how does X work\", code walkthroughs before changing som
 
 Explore the codebase to answer "how does X work?" questions. Produce architectural explanations at the level of a senior engineer onboarding onto a subsystem, enough to build a working mental model, not so much that it reads like annotated source code.
 
-**Dispatch contract.** Resolve every configured role through [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md). Values are typed Routes written as `app/model@effort`, or omit the app for the current host. The parent chooses native versus external execution. On Codex, resolve remaining Claude tool names via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
+**Dispatch contract.** Resolve every configured role through [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md). Values are typed Routes written as `app/model@effort`, or omit the app for the current host. `how explorer` and `how explainer` are solo roles. Open each with `beginSoloRole`. After the lane finishes, report the receipt or native tool error through `observeSoloRole`. Only `capacity-exhausted` yields another plan. Auth, missing CLI, malformed output, and unknown readiness stop that role. The parent chooses native versus external execution from the returned `LanePlan`. On Codex, resolve remaining Claude tool names via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
 
 ## Step 1. Assess Complexity
 
