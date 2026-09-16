@@ -1,19 +1,24 @@
+import { failoverBinding } from "./failover.ts";
 import {
   APP_IDS,
   EFFORTS,
   type AppId,
   type Effort,
   type EffortRef,
+  type FailoverAuthoringError,
   type ModelSlug,
   type RoleBinding,
   type RoleId,
   type RoleMap,
   type Result,
+  type Route,
+  type SoloAssignment,
   currentHost,
   destinationDefault,
   explicitEffort,
   modelSlug,
   namedApp,
+  printRouteWire,
   route,
 } from "./route.ts";
 
@@ -45,6 +50,8 @@ const PANEL_ROLE_IDS = [
 
 const ROLE_IDS = [...SINGLE_ROLE_IDS, ...PANEL_ROLE_IDS] as readonly RoleId[];
 
+export type GrammarVersion = 1 | 2 | 3;
+
 export type SheetError =
   | { readonly tag: "invalid-grammar-version"; readonly raw: string }
   | { readonly tag: "invalid-lane"; readonly role: RoleId; readonly raw: string }
@@ -56,7 +63,8 @@ export type SheetError =
   | { readonly tag: "invalid-model-slug"; readonly raw: string }
   | { readonly tag: "v1-unknown-provider"; readonly provider: string }
   | { readonly tag: "v1-missing-effort"; readonly raw: string }
-  | { readonly tag: "invalid-budget"; readonly raw: string };
+  | { readonly tag: "invalid-budget"; readonly raw: string }
+  | FailoverAuthoringError;
 
 export const BUDGET_LABELS = ["unlimited", "large", "medium", "small"] as const;
 export type BudgetLabel = (typeof BUDGET_LABELS)[number];
@@ -70,6 +78,8 @@ export const BUDGET_TARGETS: Record<BudgetLabel, Effort> = {
 };
 
 type ParsedDescriptor = RoleBinding;
+
+const THEN = " then ";
 
 const V1_APPS: Record<string, AppId> = {
   claude: "claude-code",
@@ -174,7 +184,11 @@ function parseV1Descriptor(raw: string, role: RoleId): Result<ParsedDescriptor, 
   };
 }
 
-function parseDescriptor(raw: string, role: RoleId, grammar: 1 | 2): Result<ParsedDescriptor, SheetError> {
+function parseDescriptor(
+  raw: string,
+  role: RoleId,
+  grammar: GrammarVersion
+): Result<ParsedDescriptor, SheetError> {
   if (raw === "inherit-parent" || raw === "auto") {
     return { ok: true, value: { kind: raw } };
   }
@@ -186,30 +200,64 @@ function parseDescriptor(raw: string, role: RoleId, grammar: 1 | 2): Result<Pars
   return parsed;
 }
 
+function parseSoloValue(
+  role: RoleId,
+  rawValue: string,
+  grammar: GrammarVersion
+): Result<SoloAssignment, SheetError> {
+  const raw = rawValue.trim();
+  if (raw.includes(THEN)) {
+    if (grammar < 3) {
+      return { ok: false, error: { tag: "invalid-descriptor", role, raw } };
+    }
+    if (MCP_BOUND_ROLE_IDS.has(role)) {
+      return { ok: false, error: { tag: "mcp-bound-must-inherit", role } };
+    }
+    const tokens = raw.split(THEN).map((token) => token.trim());
+    if (tokens.some((token) => token === "")) {
+      return { ok: false, error: { tag: "invalid-descriptor", role, raw } };
+    }
+    const hops: Route[] = [];
+    for (const token of tokens) {
+      if (token === "inherit-parent" || token === "auto") {
+        return { ok: false, error: { tag: "failover-inherit-forbidden" } };
+      }
+      const parsed = parseDescriptor(token, role, grammar);
+      if (!parsed.ok) return parsed;
+      if (parsed.value.kind !== "route") {
+        return { ok: false, error: { tag: "failover-inherit-forbidden" } };
+      }
+      hops.push(parsed.value.route);
+    }
+    return failoverBinding(hops);
+  }
+  return parseDescriptor(raw, role, grammar);
+}
+
 function parseRoleLine(
   role: RoleId,
   rawValue: string,
-  grammar: 1 | 2
-): Result<RoleBinding | readonly RoleBinding[], SheetError> {
+  grammar: GrammarVersion
+): Result<SoloAssignment | readonly SoloAssignment[], SheetError> {
   if (PANEL_ROLE_IDS.includes(role as (typeof PANEL_ROLE_IDS)[number])) {
     const lanes = rawValue.split(",").map((lane) => lane.trim());
     if (lanes.some((lane) => lane === "")) {
       return { ok: false, error: { tag: "invalid-lane", role, raw: rawValue } };
     }
-    const parsed: RoleBinding[] = [];
+    const parsed: SoloAssignment[] = [];
     for (const lane of lanes) {
-      const value = parseDescriptor(lane, role, grammar);
+      const value = parseSoloValue(role, lane, grammar);
       if (!value.ok) return value;
       parsed.push(value.value);
     }
     return { ok: true, value: parsed };
   }
-  return parseDescriptor(rawValue.trim(), role, grammar);
+  return parseSoloValue(role, rawValue, grammar);
 }
 
 export function loadRoleMap(sheetText: string): Result<RoleMap, SheetError> {
   const lines = sheetText.split(/\r?\n/);
-  let grammar: 1 | 2 = 1;
+  let grammar: GrammarVersion = 1;
   let sawHeader = false;
   const entries = new Map<string, string>();
   for (const line of lines) {
@@ -217,11 +265,11 @@ export function loadRoleMap(sheetText: string): Result<RoleMap, SheetError> {
     if (trimmed === "") continue;
     const header = /^Descriptor grammar:\s*(\S+)$/.exec(trimmed);
     if (header !== null) {
-      if (sawHeader || (header[1] !== "2" && header[1] !== "1")) {
+      if (sawHeader || (header[1] !== "3" && header[1] !== "2" && header[1] !== "1")) {
         return { ok: false, error: { tag: "invalid-grammar-version", raw: header[1] } };
       }
       sawHeader = true;
-      grammar = header[1] === "2" ? 2 : 1;
+      grammar = Number(header[1]) as GrammarVersion;
       continue;
     }
     if (trimmed.startsWith("#")) continue;
@@ -243,7 +291,7 @@ export function loadRoleMap(sheetText: string): Result<RoleMap, SheetError> {
     if (!entries.has(role)) return { ok: false, error: { tag: "missing-role", role } };
   }
 
-  const result: Record<string, RoleBinding | readonly RoleBinding[]> = {};
+  const result: Record<string, SoloAssignment | readonly SoloAssignment[]> = {};
   for (const role of ROLE_IDS) {
     const parsed = parseRoleLine(role, entries.get(role) as string, grammar);
     if (!parsed.ok) return parsed;
@@ -254,21 +302,26 @@ export function loadRoleMap(sheetText: string): Result<RoleMap, SheetError> {
 
 function printBinding(binding: RoleBinding): string {
   if (binding.kind !== "route") return binding.kind;
-  const app = binding.route.app.kind === "named" ? `${binding.route.app.app}/` : "";
-  const effort = binding.route.effort.kind === "explicit" ? `@${binding.route.effort.effort}` : "";
-  return `${app}${binding.route.model}${effort}`;
+  return printRouteWire(binding.route);
+}
+
+function printAssignment(assignment: SoloAssignment): string {
+  if (assignment.kind === "failover") {
+    return assignment.routes.map(printRouteWire).join(" then ");
+  }
+  return printBinding(assignment);
 }
 
 export function printRoleMap(roles: RoleMap, budget?: Budget): string {
-  const lines = ["# Engineering Toolkit model configuration", "", "Descriptor grammar: 2", ""];
+  const lines = ["# Engineering Toolkit model configuration", "", "Descriptor grammar: 3", ""];
   if (budget !== undefined) {
     lines.push(`# budget: ${budget.label} (${budget.target})`, "");
   }
   for (const role of SINGLE_ROLE_IDS) {
-    lines.push(`${role}: ${printBinding(roles[role])}`);
+    lines.push(`${role}: ${printAssignment(roles[role])}`);
   }
   for (const role of PANEL_ROLE_IDS) {
-    lines.push(`${role}: ${roles[role].map(printBinding).join(", ")}`);
+    lines.push(`${role}: ${roles[role].map(printAssignment).join(", ")}`);
   }
   return `${lines.join("\n")}\n`;
 }
@@ -312,6 +365,29 @@ function highestSelectableAtOrBelow(
   return best;
 }
 
+function remapBudgetAssignment(
+  assignment: SoloAssignment,
+  role: RoleId,
+  budget: Budget,
+  selectable: (model: ModelSlug) => readonly Effort[],
+  needsChoice: RoleId[]
+): SoloAssignment {
+  if (assignment.kind === "failover") {
+    const hops = assignment.routes.map((hop) =>
+      remapBudgetBinding({ kind: "route", route: hop }, role, budget, selectable, needsChoice)
+    );
+    const rebuilt = failoverBinding(
+      hops.flatMap((hop) => (hop.kind === "route" ? [hop.route] : []))
+    );
+    if (!rebuilt.ok) {
+      if (!needsChoice.includes(role)) needsChoice.push(role);
+      return assignment;
+    }
+    return rebuilt.value;
+  }
+  return remapBudgetBinding(assignment, role, budget, selectable, needsChoice);
+}
+
 function remapBudgetBinding(
   binding: RoleBinding,
   role: RoleId,
@@ -345,13 +421,13 @@ export function applyBudget(
   }
 
   const needsChoice: RoleId[] = [];
-  const next: Record<string, RoleBinding | readonly RoleBinding[]> = {};
+  const next: Record<string, SoloAssignment | readonly SoloAssignment[]> = {};
   for (const role of SINGLE_ROLE_IDS) {
-    next[role] = remapBudgetBinding(roles[role], role, budget, selectable, needsChoice);
+    next[role] = remapBudgetAssignment(roles[role], role, budget, selectable, needsChoice);
   }
   for (const role of PANEL_ROLE_IDS) {
-    next[role] = roles[role].map((binding) =>
-      remapBudgetBinding(binding, role, budget, selectable, needsChoice)
+    next[role] = roles[role].map((assignment) =>
+      remapBudgetAssignment(assignment, role, budget, selectable, needsChoice)
     );
   }
   return { roles: next as RoleMap, needsChoice };

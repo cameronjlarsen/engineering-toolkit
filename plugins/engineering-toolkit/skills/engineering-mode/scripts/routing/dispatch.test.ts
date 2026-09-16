@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { shippedCatalog } from "./catalog.ts";
-import { applyOverride, planLane } from "./dispatch.ts";
+import { applyOverride, applySoloOverride, planLane } from "./dispatch.ts";
+import { failoverBinding } from "./failover.ts";
 import {
   currentHost,
   explicitEffort,
@@ -227,5 +228,17 @@ describe("dispatch", () => {
     if (!result.ok) return;
     expect(result.value.kind).toBe("external");
     if (result.value.kind === "external") expect(result.value.launch.app).toBe("claude-code");
+  });
+
+  it("rejects an override on a failover assignment", () => {
+    const assignment = failoverBinding([
+      route({ model: model("grok-4.6"), app: namedApp("grok"), effort: explicitEffort("xhigh") }),
+      route({ model: model("opus"), effort: explicitEffort("xhigh") }),
+    ]);
+    expect(assignment.ok).toBe(true);
+    if (!assignment.ok) return;
+    expect(
+      applySoloOverride(assignment.value, { model: model("fable") }, "how explorer")
+    ).toEqual({ ok: false, error: { tag: "unsupported-failover-override" } });
   });
 });

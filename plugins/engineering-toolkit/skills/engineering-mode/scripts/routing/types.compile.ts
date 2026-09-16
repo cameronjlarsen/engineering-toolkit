@@ -1,6 +1,9 @@
+import type { AppCatalog } from "./catalog.ts";
+import { planLane } from "./dispatch.ts";
 import type {
   Access,
   CliLaunchSpec,
+  FailoverBinding,
   IsolatedWorktree,
   ParentHost,
   RoleMap,
@@ -62,6 +65,47 @@ const cursorChildLaunch: CliLaunchSpec = {
 };
 
 const worktree: IsolatedWorktree = { path: "worktree" };
+const readAccess: Access = { mode: "read-only", worktree: null };
+declare const catalog: AppCatalog;
+
+const failover: FailoverBinding = {
+  kind: "failover",
+  routes: [route, route],
+};
+
+const whyFailover: RoleMap["why investigators, synthesizer"] = {
+  // @ts-expect-error Why is bound to inherit-parent or auto.
+  kind: "failover",
+  routes: [route, route],
+};
+
+const reflectFailover: RoleMap["reflect tooling, judgment, divergent, synthesizer"] = {
+  // @ts-expect-error Reflect is bound to inherit-parent or auto.
+  kind: "failover",
+  routes: [route, route],
+};
+
+const panelFailover: RoleMap["arena runners"] = [failover];
+
+const shortFailover: FailoverBinding = {
+  kind: "failover",
+  // @ts-expect-error A failover chain needs at least two routes.
+  routes: [route],
+};
+
+const featureFailover: RoleMap["feature, refactoring"] = failover;
+
+planLane({
+  parent: "cursor",
+  // @ts-expect-error planLane takes one RoleBinding, not a failover chain.
+  binding: failover,
+  override: undefined,
+  catalog,
+  inventory: [],
+  access: readAccess,
+  role: "how explorer",
+});
+
 void [
   whyRoute,
   reflectRoute,
@@ -73,4 +117,9 @@ void [
   grokParent,
   cursorChildLaunch,
   worktree,
+  whyFailover,
+  reflectFailover,
+  panelFailover,
+  shortFailover,
+  featureFailover,
 ];

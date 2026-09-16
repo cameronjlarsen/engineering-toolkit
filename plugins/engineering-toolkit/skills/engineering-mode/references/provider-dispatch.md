@@ -3,11 +3,15 @@
 Engineering Toolkit model choices are typed `Route` values. The sheet is only their wire
 format; the domain does not contain a provider field.
 
-A role is `inherit-parent`, `auto`, or a `Route`. A `Route` contains a model,
+A role is `inherit-parent`, `auto`, a single `Route`, or a failover chain of
+at least two `Route`s joined by ` then `. A panel role is a comma list of those
+assignments. Each comma entry is one concurrent lane; a lane may itself be a
+` then ` chain. Commas are never ordered backups. A `Route` contains a model,
 an optional app, and an optional effort. An omitted app means the current
 host. The model vendor never selects the app. An omitted effort means the
-destination's default; family defaults are not filled in. If the
-destination does not publish a default, dispatch rejects the route.
+destination's default; family defaults are not filled in. Failover hops must
+name `@effort` explicitly. If the destination does not publish a default,
+dispatch rejects a single Route. Why and Reflect remain inherit-only.
 
 ## Model matrix
 
@@ -46,10 +50,15 @@ instead of silently executing it.
 
 ## The parent owns the route
 
-`planLane` is the parent-owned entry point. The top-level harness resolves a
-binding once and derives native versus external from
-`parent === resolved app`. Children receive an assigned plan. They never
-choose a route, detect or reroute the harness, or spawn another model.
+`planLane` is the parent-owned entry point for one already-pinned Route. Solo
+skills open `beginSoloRole` and report classified observations through
+`observeSoloRole`. Only `capacity-exhausted` yields another `LanePlan`. Auth,
+missing CLI, malformed output, unknown readiness, and resolve errors stop the
+role. The parent never picks `--app` or `--model` ad hoc, never treats
+`child-failed` as quota, and never rewrites named `grok/...` to Cursor-native
+Grok. Children receive an assigned plan. They never choose a route, detect or
+reroute the harness, or spawn another model. The launcher never falls back and
+never substitutes a weaker model.
 
 | Parent | `claude-code` | `codex` | `grok` | `cursor` |
 |---|---|---|---|---|
@@ -109,7 +118,9 @@ Pass arguments as an argv array or quote every path. Never interpolate prompt
 text into a shell command. The launcher preflights the selected app and
 authentication, invokes the model exactly once, and records app/model/effort.
 External lanes do not receive the parent's MCP surface. Cursor cannot be
-launched as a child. The launcher never falls back.
+launched as a child. The launcher never falls back. It classifies
+`capacity-exhausted` (exit 75) from quota text. It does not launch a second
+model.
 
 Grok authentication preflight has one bounded retry. If the first `grok models` result would be classified as unauthenticated, the runner waits five seconds and tries the same preflight once more. A second failure is terminal. The delay and second attempt share the runner's absolute deadline and cancellation latch, and the receipt keeps evidence from both attempts. Model execution is never retried.
 
@@ -125,7 +136,8 @@ Start the background process, continue launching the other lanes, then drain the
 
 The runner and its preflight have no implicit timeout. Pass `--timeout` only
 when a real user, service, or task deadline supplies one. No weaker-model
-fallback is allowed.
+fallback is allowed. Capacity failover is a parent-owned next plan, not a
+launcher retry.
 
 Read-only mode maps to Claude plan mode with project-only settings and an explicit tool list, Codex's read-only sandbox, and Grok plan mode plus its `read-only` sandbox and read-oriented tool list. Grok's built-in read-only profile deliberately keeps its own state and system temporary directories writable, so point a read-only Grok lane at the actual checkout rather than a worktree under `/tmp`, `/var/tmp`, or the host's temporary directory. `isolated-write` maps to Claude `acceptEdits` with project-only settings, Codex `workspace-write`, and Grok `acceptEdits` plus its `workspace` sandbox and write-capable tool list. Give every writer only a dedicated worktree or output directory. Never route a writer into the primary checkout.
 
@@ -144,21 +156,26 @@ The receipt also carries elapsed time, token usage when the CLI exposes it, and 
 
 Any missing CLI, failed login, unavailable model, explicit timeout,
 cancellation, non-zero child exit, malformed result, or model mismatch is a
-receipt-bearing dropout. Unknown readiness remains unknown and rejects the
-selected route; it is not unavailable or verified. Never substitute the parent
-model, retry another app, or reinterpret an external route as native.
+receipt-bearing dropout. `capacity-exhausted` is a distinct receipt status.
+Unknown readiness remains unknown and rejects the
+selected route; it is not unavailable, verified, or a reason to try the next
+hop. Never substitute the parent
+model, retry another app inside the launcher, or reinterpret an external route as native.
 
 Start native and external lanes in the same fan-out phase, then wait for all of them before judging. A judge must not read candidate paths while their owners are still writing.
 
 ## Wire examples
 
-The sheet header is `Descriptor grammar: 2`. These are wire values:
+The sheet header is `Descriptor grammar: 3`. Inbound grammar 2 without ` then `
+still loads. Print always emits grammar 3. These are wire values:
 
 ```text
 fable
 fable@max
 grok/grok-4.6
 claude-code/fable@high
+grok/grok-4.6@xhigh then opus@xhigh
+grok/grok-4.6@xhigh then opus@xhigh, fable@max
 inherit-parent
 auto
 ```

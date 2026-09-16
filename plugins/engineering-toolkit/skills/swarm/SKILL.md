@@ -7,7 +7,7 @@ description: "Fan out N parallel workers, drain them, and return one report. Use
 
 Fan out N parallel workers. They may cover separate slices, race the same brief, or mix both. The parent waits, aggregates, and returns one report.
 
-**Dispatch contract.** Resolve each worker Route through [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md). The parent starts native and external lanes; workers never route themselves. On Codex, resolve remaining Claude tool names via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
+**Dispatch contract.** Resolve each worker Route through [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md). The parent starts native and external lanes through `beginSoloRole`; workers never route themselves. A usage-limit dropout may advance that worker's `then` hop. On Codex, resolve remaining Claude tool names via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
 
 ## Start
 

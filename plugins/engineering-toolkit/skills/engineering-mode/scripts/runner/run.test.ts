@@ -10,7 +10,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, delimiter, join } from "node:path";
 import { tmpdir } from "node:os";
 import { childEnvironment, runLane } from "./run.ts";
 import { main } from "./cli.ts";
@@ -23,7 +23,7 @@ let previousPath: string | undefined;
 const fake = `#!/usr/bin/env bun
 import { appendFileSync, existsSync, unlinkSync, writeFileSync } from "node:fs";
 const args = process.argv.slice(2);
-const name = process.argv[1].split("/").at(-1);
+const name = process.argv[1].replaceAll("\\\\", "/").split("/").at(-1);
 const isPreflight =
   (name === "claude" && args[0] === "auth") ||
   (name === "codex" && args[0] === "login") ||
@@ -98,6 +98,25 @@ if (process.env.FAKE_INVALID_MODEL === "1") {
   console.error("The requested model is not supported with this account.");
   process.exit(1);
 }
+if (process.env.FAKE_CAPACITY === "1") {
+  console.error("You have exceeded your usage limit.");
+  process.exit(1);
+}
+if (process.env.FAKE_QUOTA_BEFORE_AUTH === "1") {
+  console.error("usage limit exceeded; not logged in");
+  process.exit(1);
+}
+if (process.env.FAKE_CAPACITY_ENVELOPE === "1") {
+  if (name === "grok") {
+    console.log(JSON.stringify({type:"result",subtype:"success",is_error:true,result:"resource exhausted billing limit",session_id:"g1",usage:{input_tokens:1,output_tokens:1,total_tokens:2},total_cost_usd:0,modelUsage:{[model + "-build"]:{}}}));
+  } else if (name === "claude") {
+    console.log(JSON.stringify({result:"resource exhausted",is_error:true,session_id:"c1",usage:{input_tokens:1,output_tokens:1},total_cost_usd:0,modelUsage:{[reportedModel]:{}}}));
+  } else {
+    console.error("resource exhausted");
+    process.exit(1);
+  }
+  process.exit(0);
+}
 if (stage === "model" && process.env.FAKE_DESCENDANT_HOLDS_PIPES_MS) {
   const seconds = Number(process.env.FAKE_DESCENDANT_HOLDS_PIPES_MS) / 1000;
   const descendant = Bun.spawn(["/bin/sh", "-c", "sleep " + seconds], {
@@ -133,6 +152,12 @@ function makeExecutable(name: string): void {
   const path = join(bin, name);
   writeFileSync(path, fake);
   chmodSync(path, 0o755);
+  if (process.platform === "win32") {
+    writeFileSync(
+      join(bin, `${name}.cmd`),
+      `@echo off\r\nbun "${path}" %*\r\n`
+    );
+  }
 }
 
 function options(app: App, suffix: string = app): RunnerOptions {
@@ -238,9 +263,12 @@ beforeEach(() => {
   writeFileSync(join(scratch, "prompt.md"), "Return the marker.");
   for (const name of ["claude", "codex", "grok"]) makeExecutable(name);
   previousPath = process.env.PATH;
-  process.env.PATH = `${bin}:${dirname(process.execPath)}:${previousPath ?? ""}`;
+  process.env.PATH = `${bin}${delimiter}${dirname(process.execPath)}${delimiter}${previousPath ?? ""}`;
   delete process.env.FAKE_TIMEOUT;
   delete process.env.FAKE_INVALID_MODEL;
+  delete process.env.FAKE_CAPACITY;
+  delete process.env.FAKE_QUOTA_BEFORE_AUTH;
+  delete process.env.FAKE_CAPACITY_ENVELOPE;
   delete process.env.FAKE_CANCEL;
   delete process.env.FAKE_CANCEL_STAGE;
   delete process.env.FAKE_IGNORE_SIGNAL;
@@ -265,6 +293,9 @@ afterEach(() => {
   process.env.PATH = previousPath;
   delete process.env.FAKE_TIMEOUT;
   delete process.env.FAKE_INVALID_MODEL;
+  delete process.env.FAKE_CAPACITY;
+  delete process.env.FAKE_QUOTA_BEFORE_AUTH;
+  delete process.env.FAKE_CAPACITY_ENVELOPE;
   delete process.env.FAKE_CANCEL;
   delete process.env.FAKE_CANCEL_STAGE;
   delete process.env.FAKE_IGNORE_SIGNAL;
@@ -335,6 +366,38 @@ describe("runLane", () => {
       modelVerified: false,
       modelEvidence: null,
     });
+  });
+
+  it("classifies quota text as capacity-exhausted with exit 75 and one invocation", async () => {
+    process.env.FAKE_CAPACITY = "1";
+    const modelStarted = join(scratch, "quota-model.started");
+    process.env.FAKE_MODEL_STARTED_PATH = modelStarted;
+    const input = options("grok", "quota");
+    const result = await runLane(input);
+    expect(result.exitCode).toBe(75);
+    expect(existsSync(modelStarted)).toBe(true);
+    expect(existsSync(input.outputPath)).toBe(false);
+    expect(receipt(input.receiptPath)).toMatchObject({
+      status: "capacity-exhausted",
+      model: "grok-4.6",
+    });
+  });
+
+  it("classifies quota before auth when both appear", async () => {
+    process.env.FAKE_QUOTA_BEFORE_AUTH = "1";
+    const input = options("grok", "quota-before-auth");
+    const result = await runLane(input);
+    expect(result.exitCode).toBe(75);
+    expect(receipt(input.receiptPath).status).toBe("capacity-exhausted");
+  });
+
+  it("classifies a zero-exit is_error envelope with quota text as capacity-exhausted", async () => {
+    process.env.FAKE_CAPACITY_ENVELOPE = "1";
+    const input = options("grok", "quota-envelope");
+    const result = await runLane(input);
+    expect(result.exitCode).toBe(75);
+    expect(existsSync(input.outputPath)).toBe(false);
+    expect(receipt(input.receiptPath).status).toBe("capacity-exhausted");
   });
 
   it("retries a contradictory Grok authentication preflight before running the model", async () => {
