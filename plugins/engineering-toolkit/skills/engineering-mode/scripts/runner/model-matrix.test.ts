@@ -8,6 +8,10 @@ const DISPATCH_PATH = join(
   PLUGIN_ROOT,
   "skills/engineering-mode/references/provider-dispatch.md"
 );
+const CURSOR_TOOLS_PATH = join(
+  PLUGIN_ROOT,
+  "skills/engineering-mode/references/cursor-tools.md"
+);
 const SETUP_PATH = join(PLUGIN_ROOT, "skills/setup-engineering-toolkit/SKILL.md");
 const AGENTS_DIR = join(PLUGIN_ROOT, "agents");
 
@@ -353,6 +357,44 @@ describe("model matrix", () => {
     );
     expect(nativeLanes).toContain("`pstack-<stem>-<effort>`");
     expect(nativeLanes).toContain("host-spawn");
+    expect(nativeLanes).toContain(
+      "Set `Task` `model` to a live Cursor selector"
+    );
+    expect(nativeLanes).toContain("Do not pass `opus` or `fable`");
+    expect(nativeLanes).not.toContain(
+      "Do not pass a Cursor host model slug onto a plugin-agent Task"
+    );
+  });
+
+  it("requires Cursor plugin-agent Tasks to pass a live family selector", () => {
+    const cursorTools = readFileSync(CURSOR_TOOLS_PATH, "utf8");
+    const nativeStart = cursorTools.indexOf("## Native lanes");
+    const externalStart = cursorTools.indexOf("## External lanes");
+    expect(nativeStart).toBeGreaterThan(-1);
+    expect(externalStart).toBeGreaterThan(nativeStart);
+    const nativeLanes = cursorTools.slice(nativeStart, externalStart);
+    const pluginAgent = nativeLanes
+      .split(/\r?\n/)
+      .find((line) => line.includes("plugin-agent:"));
+    expect(pluginAgent).toBeDefined();
+    expect(pluginAgent).toContain("live Cursor selector");
+    expect(pluginAgent).toContain("this session's Task model list");
+    expect(pluginAgent).toContain("Do not pass `opus` or `fable`");
+    expect(pluginAgent).toContain("Do not omit `model`");
+    expect(pluginAgent).toContain("inherits the parent");
+    expect(pluginAgent).not.toContain(
+      "Do not set `Task` `model` to a Cursor host slug"
+    );
+    const cursorNative = readFileSync(DISPATCH_PATH, "utf8");
+    const cursorBullet = cursorNative
+      .split(/\r?\n/)
+      .filter((line) => line.includes("plugin-agent") || line.includes("`opus`"))
+      .join("\n");
+    expect(cursorBullet).toContain("live Cursor selector");
+    expect(setup).toContain(
+      "A Cursor plugin-agent probe must also prove the child is the requested family"
+    );
+    expect(setup).toContain("A reply that names the parent model");
   });
 
   it("normalizes old rolling-family pins before any runtime route", () => {
