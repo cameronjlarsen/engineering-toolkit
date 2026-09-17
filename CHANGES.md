@@ -2,6 +2,10 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## Fork-authored: catalog version 1.4.3
+
+The live Cursor selector mapping for native Claude plugin-agents landed on plugin version 1.4.2, so Cursor, Claude Code, and Codex marketplaces had no new version to pick up. This checkout now publishes Engineering Toolkit 1.4.3. The Open Pstack fork-point row in `UPSTREAM.md` stays 1.4.1. The static identity check compares the Engineering Toolkit version row with the five versioned JSON manifests.
+
 ## Fork-authored: catalog version 1.4.2
 
 The merged catalog logo stayed on plugin version 1.4.1, so Cursor, Claude Code, and Codex marketplaces had no new version to pick up. This checkout now publishes Engineering Toolkit 1.4.2. The Open Pstack fork-point row in `UPSTREAM.md` stays 1.4.1. The static identity check compares the Engineering Toolkit version row with the five versioned JSON manifests.
