@@ -9,7 +9,7 @@
       "name": "et",
       "source": "./plugins/engineering-toolkit",
       "description": "if you want to go fast, go deep first. Engineering Toolkit helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence.",
-      "version": "1.4.2",
+      "version": "1.4.3",
       "author": {
         "name": "Lauren Tan (original)"
       },

@@ -1,7 +1,7 @@
 {
   "name": "et",
   "displayName": "Engineering Toolkit",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "if you want to go fast, go deep first. Engineering Toolkit is a fork of Open Pstack. It helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence. One shared skill tree and grammar 2 model sheets.",
   "author": {
     "name": "Lauren Tan"

@@ -16,7 +16,7 @@ Do not open issues on Open Pstack for work that belongs in this fork. Keep one s
 | Commit | `5bf2b1544db739998121a306340631963c2ff3de` |
 | Cursor pstack version | `0.15.2` |
 | Open Pstack version at fork | `1.4.1` |
-| Engineering Toolkit version | `1.4.2` |
+| Engineering Toolkit version | `1.4.3` |
 
 The table above is the current Cursor sync point. This checkout started from Open Pstack 1.4.1, which imported that 0.15.1 sync. `README-UPSTREAM.md` preserves the Cursor pstack README verbatim. `CHANGES.md` and `NOTICE.md` describe the Open Pstack adaptations and provenance.
 
