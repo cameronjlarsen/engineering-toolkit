@@ -214,7 +214,7 @@ The port is editorial, not mechanical. Anywhere upstream pstack assumed Cursor-s
 
 ### Cross-vendor dispatch
 
-The earlier Open Pstack port collapsed panels to Claude-only models. The bundled runner restores cross-provider judgment without adding a daemon or model-router service. A Cursor parent runs Fable and Opus as native plugin-agent Tasks, Grok as native host-spawn, and shells out to Claude and Codex. Named `grok/...` still uses Grok CLI. Claude Code shells out to Codex and Grok. Codex shells out to Claude and Grok. The top-level parent chooses every route and each external process receives a complete task directly, so there is no supervising model invocation and no child-side harness detection.
+The earlier Open Pstack port collapsed panels to Claude-only models. The bundled runner restores cross-provider judgment without adding a daemon or model-router service. A Cursor parent runs Fable and Opus as native plugin-agent Tasks with a live family selector on `Task.model`, Grok as native host-spawn, and shells out to Claude and Codex. Named `grok/...` still uses Grok CLI. Claude Code shells out to Codex and Grok. Codex shells out to Claude and Grok. The top-level parent chooses every route and each external process receives a complete task directly, so there is no supervising model invocation and no child-side harness detection.
 
 ### What's deliberately kept
 

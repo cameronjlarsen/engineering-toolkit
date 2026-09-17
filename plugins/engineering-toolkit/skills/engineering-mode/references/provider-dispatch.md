@@ -77,8 +77,7 @@ Native dispatch avoids a second CLI startup and its base context.
   the complete task, grounding paths, access mode, and unique output location.
   Use an isolated worktree for a writer.
 - Cursor: match the route's `(app, model)` to one model-matrix row. A row with
-  a plugin-agent stem dispatches through `pstack-<stem>-<effort>`. Do not pass
-  a Cursor host model slug onto a plugin-agent Task. A row with stem `-`
+  a plugin-agent stem dispatches through `pstack-<stem>-<effort>`. Set `Task` `model` to a live Cursor selector from this session's Task model list that matches that row's family and effort. Do not pass `opus` or `fable`. Do not omit `model`. An omitted selector inherits the parent. A row with stem `-`
   dispatches through host-spawn: `Task` with `model` set to a live Cursor
   selector for that model and effort. Pass the complete task, grounding paths,
   access mode, and unique output location in the `Task` prompt.
