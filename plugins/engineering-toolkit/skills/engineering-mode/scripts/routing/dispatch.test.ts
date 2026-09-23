@@ -1,8 +1,9 @@
 import { describe, expect, it } from "bun:test";
 import { shippedCatalog } from "./catalog.ts";
-import { applyOverride, planLane } from "./dispatch.ts";
+import { applyOverride, planLane, resolveRoute } from "./dispatch.ts";
 import {
   currentHost,
+  EFFORTS,
   explicitEffort,
   modelSlug,
   namedApp,
@@ -227,5 +228,96 @@ describe("dispatch", () => {
     if (!result.ok) return;
     expect(result.value.kind).toBe("external");
     if (result.value.kind === "external") expect(result.value.launch.app).toBe("claude-code");
+  });
+
+  it("resolves a probed-only Codex slug that the shipped catalog lacks", () => {
+    const probedSlug = model("gpt-6.1-sol");
+    expect(shippedCatalog().get("codex")?.models.has(probedSlug)).toBe(false);
+    const result = resolveRoute(
+      "claude-code",
+      route({
+        model: probedSlug,
+        app: namedApp("codex"),
+        effort: explicitEffort("high"),
+      }),
+      shippedCatalog(),
+      [
+        {
+          app: "codex",
+          readiness: { kind: "launch-ready" },
+          probedModels: [
+            {
+              slug: probedSlug,
+              selectableEfforts: [...EFFORTS],
+              destinationDefaultEffort: "medium",
+            },
+          ],
+        },
+      ]
+    );
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        model: probedSlug,
+        app: "codex",
+        effort: "high",
+        lane: "external",
+      },
+    });
+  });
+
+  it("rejects a probed-only slug when inventory omitted probedModels", () => {
+    const probedSlug = model("gpt-6.1-sol");
+    expect(
+      resolveRoute(
+        "claude-code",
+        route({
+          model: probedSlug,
+          app: namedApp("codex"),
+          effort: explicitEffort("high"),
+        }),
+        shippedCatalog(),
+        [{ app: "codex", readiness: { kind: "launch-ready" } }]
+      )
+    ).toEqual({
+      ok: false,
+      error: { tag: "app-does-not-serve-model", app: "codex", model: probedSlug },
+    });
+  });
+
+  it("rejects an explicit effort when the probed model kept no selectable efforts", () => {
+    const probedSlug = model("gpt-6.1-sol");
+    expect(
+      resolveRoute(
+        "claude-code",
+        route({
+          model: probedSlug,
+          app: namedApp("codex"),
+          effort: explicitEffort("high"),
+        }),
+        shippedCatalog(),
+        [
+          {
+            app: "codex",
+            readiness: { kind: "launch-ready" },
+            probedModels: [
+              {
+                slug: probedSlug,
+                selectableEfforts: [],
+                destinationDefaultEffort: { kind: "unknown" },
+              },
+            ],
+          },
+        ]
+      )
+    ).toEqual({
+      ok: false,
+      error: {
+        tag: "effort-not-selectable",
+        app: "codex",
+        model: probedSlug,
+        effort: "high",
+      },
+    });
   });
 });

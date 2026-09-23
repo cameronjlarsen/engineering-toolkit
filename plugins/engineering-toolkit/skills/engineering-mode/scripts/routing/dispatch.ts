@@ -6,6 +6,7 @@ import {
   type Effort,
   type LanePlan,
   type McpBoundRoleId,
+  type ModelOnApp,
   type ParentHost,
   type Readiness,
   type ResolvedRoute,
@@ -15,6 +16,7 @@ import {
   type RoleId,
   type Route,
   type RoutePatch,
+  type VendorId,
   type WorkerPolicy,
   isCliChildApp,
   route,
@@ -93,6 +95,41 @@ function readinessFor(
   return inventory.find((entry) => entry.app === app)?.readiness ?? { kind: "unknown" };
 }
 
+function inventoryEntry(
+  app: AppId,
+  inventory: readonly AppInventoryEntry[]
+): AppInventoryEntry | undefined {
+  return inventory.find((entry) => entry.app === app);
+}
+
+function vendorOnApp(appRecord: { readonly models: ReadonlyMap<unknown, ModelOnApp> } | undefined): VendorId {
+  if (appRecord === undefined) return "unknown";
+  for (const model of appRecord.models.values()) return model.vendor;
+  return "unknown";
+}
+
+function modelOnApp(
+  app: AppId,
+  configured: Route,
+  catalog: AppCatalog,
+  inventory: readonly AppInventoryEntry[]
+): ModelOnApp | undefined {
+  const appRecord = catalog.get(app);
+  const shipped = appRecord?.models.get(configured.model);
+  if (shipped !== undefined) return shipped;
+  const probed = inventoryEntry(app, inventory)?.probedModels?.find(
+    (model) => model.slug === configured.model
+  );
+  if (probed === undefined) return undefined;
+  return {
+    slug: probed.slug,
+    vendor: vendorOnApp(appRecord),
+    destinationDefaultEffort: probed.destinationDefaultEffort,
+    selectableEfforts: probed.selectableEfforts,
+    nativeStem: null,
+  };
+}
+
 export function resolveRoute(
   parent: ParentHost,
   configured: Route,
@@ -101,7 +138,7 @@ export function resolveRoute(
 ): Result<ResolvedRoute, ResolveError> {
   const app = configured.app.kind === "current-host" ? parent : configured.app.app;
   const appRecord = catalog.get(app);
-  const modelRecord = appRecord?.models.get(configured.model);
+  const modelRecord = modelOnApp(app, configured, catalog, inventory);
   if (modelRecord === undefined) {
     return {
       ok: false,

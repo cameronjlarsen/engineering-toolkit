@@ -9,6 +9,8 @@ import {
 
 export type AppCatalog = ReadonlyMap<AppId, AppRecord>;
 
+export const SOL_CLI_MODEL = "gpt-6-sol" as ModelSlug;
+
 const SELECTABLE_EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
 
 function model(
@@ -37,10 +39,11 @@ export function shippedCatalog(): AppCatalog {
     launch: "cli-auth",
     models: pluginAgents,
   };
+  const sol = model(SOL_CLI_MODEL, "openai", null);
   const codex: AppRecord = {
     id: "codex",
     launch: "cli-auth",
-    models: new Map([["gpt-5.6-sol" as ModelSlug, model("gpt-5.6-sol", "openai", null)]]),
+    models: new Map([[SOL_CLI_MODEL, sol]]),
   };
   const grokModel = model("grok-4.6", "xai", null);
   const grok: AppRecord = {
@@ -59,6 +62,13 @@ export function shippedCatalog(): AppCatalog {
     ["grok", grok],
     ["cursor", cursor],
   ]);
+}
+
+export function soleModel(app: AppId, catalog: AppCatalog): ModelSlug | null {
+  const models = catalog.get(app)?.models;
+  if (models === undefined || models.size !== 1) return null;
+  for (const slug of models.keys()) return slug;
+  return null;
 }
 
 export function launchableApps(): readonly CliChildApp[] {

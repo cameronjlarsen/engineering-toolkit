@@ -16,7 +16,7 @@ Do not open issues on Open Pstack for work that belongs in this fork. Keep one s
 | Commit | `5bf2b1544db739998121a306340631963c2ff3de` |
 | Cursor pstack version | `0.15.2` |
 | Open Pstack version at fork | `1.4.1` |
-| Engineering Toolkit version | `1.4.3` |
+| Engineering Toolkit version | `1.4.4` |
 
 The table above is the current Cursor sync point. This checkout started from Open Pstack 1.4.1, which imported that 0.15.1 sync. `README-UPSTREAM.md` preserves the Cursor pstack README verbatim. `CHANGES.md` and `NOTICE.md` describe the Open Pstack adaptations and provenance.
 
@@ -34,8 +34,8 @@ Fetch Open Pstack `main` and inspect commits after the recorded Open Pstack vers
 
 - Commits `799151d` and `6fecddb` add and relocate `make-bot-ui`. It depends on Cursor routines, webhook events, and UI primitives that are not part of the shared skill tree.
 - Four `disable-model-invocation: true` lines from `73f8be4` are not applied to `how`, `why`, `unslop`, or `typescript-best-practices`. engineering-mode invokes those skills by name, and the flag blocks that route on Claude Code.
-- The `23a56e2` default-model hunks for `bug-fix`, `perf-issue`, and `hillclimb` are not applied. Those frequent code-writing roles stay on `codex:gpt-5.6-sol@max` for cost.
-- The `889ec4b` default-model hunks for `bug-fix`, `perf-issue`, and `hillclimb` are not applied. Those roles stay on `codex:gpt-5.6-sol@max` for cost, same reason as `23a56e2`.
+- The `23a56e2` default-model hunks for `bug-fix`, `perf-issue`, and `hillclimb` are not applied. Those frequent code-writing roles stay on the Sol matrix row for cost.
+- The `889ec4b` default-model hunks for `bug-fix`, `perf-issue`, and `hillclimb` are not applied. Those roles stay on the Sol matrix row for cost, same reason as `23a56e2`.
 - The Claude manifest does not take the logo field from `efa2a53` because Claude Code has no schema for it. The shared asset is exposed through the Codex manifest instead.
 - Do not replace `plugins/engineering-toolkit/assets/logo.png` with Cursor pstack or Open Pstack bytes. This fork owns that catalog mark. Keep the file under 512 KiB.
 

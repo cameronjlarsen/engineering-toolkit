@@ -2,6 +2,10 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## Fork-authored: catalog version 1.4.4
+
+Codex Sol is now `gpt-6-sol`. The catalog no longer serves `gpt-5.6-sol`. Setup proposes a stale pin for sheets that still name the retired slug and rewrites the route only after the operator accepts that proposal. Dispatch keeps failing closed with `app-does-not-serve-model` until acceptance. A refreshed Codex model list admits slugs the matrix does not name, and dispatch still fails closed for a slug in neither the catalog nor that list. The Open Pstack fork-point row in `UPSTREAM.md` stays 1.4.1.
+
 ## Fork-authored: catalog version 1.4.3
 
 The live Cursor selector mapping for native Claude plugin-agents landed on plugin version 1.4.2, so Cursor, Claude Code, and Codex marketplaces had no new version to pick up. This checkout now publishes Engineering Toolkit 1.4.3. The Open Pstack fork-point row in `UPSTREAM.md` stays 1.4.1. The static identity check compares the Engineering Toolkit version row with the five versioned JSON manifests.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { launchableApps, launchHome, shippedCatalog } from "./catalog.ts";
+import { launchableApps, launchHome, shippedCatalog, soleModel, SOL_CLI_MODEL } from "./catalog.ts";
 
 describe("shipped catalog", () => {
   it("contains the four shipped apps", () => {
@@ -29,7 +29,7 @@ describe("shipped catalog", () => {
   it("names one CLI home per shipped model slug", () => {
     const catalog = shippedCatalog();
     const fable = catalog.get("claude-code")?.models.get("fable" as never);
-    const sol = catalog.get("codex")?.models.get("gpt-5.6-sol" as never);
+    const sol = catalog.get("codex")?.models.get(SOL_CLI_MODEL);
     const grok = catalog.get("grok")?.models.get("grok-4.6" as never);
     if (!fable || !sol || !grok) throw new Error("missing shipped models");
     expect(launchHome(fable.slug, catalog)).toBe("claude-code");
@@ -40,5 +40,14 @@ describe("shipped catalog", () => {
   it("keeps fable destination default unknown", () => {
     const fable = shippedCatalog().get("claude-code")?.models.get("fable" as never);
     expect(fable?.destinationDefaultEffort).toEqual({ kind: "unknown" });
+  });
+
+  it("reports the sole model only when an app serves exactly one", () => {
+    const catalog = shippedCatalog();
+    expect(catalog.get("codex")?.models.get(SOL_CLI_MODEL)?.slug).toBe(SOL_CLI_MODEL);
+    expect(soleModel("codex", catalog)).toBe(SOL_CLI_MODEL);
+    expect(String(soleModel("grok", catalog))).toBe("grok-4.6");
+    expect(soleModel("claude-code", catalog)).toBeNull();
+    expect(soleModel("cursor", catalog)).toBeNull();
   });
 });
