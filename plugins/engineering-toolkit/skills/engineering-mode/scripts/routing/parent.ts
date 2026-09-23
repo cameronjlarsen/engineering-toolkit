@@ -7,6 +7,7 @@ import {
   type ModelSlug,
   type ParentHost,
   type Result,
+  type RoleBinding,
   type RoleMap,
   currentHost,
   explicitEffort,
@@ -144,7 +145,7 @@ function familyBinding(
   parent: ParentHost,
   catalog: AppCatalog,
   family: FamilyId
-): RoleMap["feature, refactoring"] {
+): RoleBinding {
   const row = familyOf(family);
   const model = requiredSlug(row.model);
   const home = launchHome(model, catalog);
@@ -290,7 +291,7 @@ export function unwrapStoredSheet(
   stored: string
 ): Result<string, { readonly tag: "inconsistent-integration" }> {
   if (!stored.startsWith("---")) {
-    if (!stored.includes("Descriptor grammar: 2")) {
+    if (!stored.includes("Descriptor grammar: 2") && !stored.includes("Descriptor grammar: 3")) {
       return { ok: false, error: { tag: "inconsistent-integration" } };
     }
     return { ok: true, value: stored };
@@ -300,7 +301,7 @@ export function unwrapStoredSheet(
   const frontmatter = stored.slice(4, close);
   let body = stored.slice(close + 5);
   if (body.startsWith("\n")) body = body.slice(1);
-  if (/alwaysApply:\s*true/.test(frontmatter) && !body.includes("Descriptor grammar: 2")) {
+  if (/alwaysApply:\s*true/.test(frontmatter) && !/Descriptor grammar:\s*[123]\b/.test(body)) {
     return { ok: false, error: { tag: "inconsistent-integration" } };
   }
   return { ok: true, value: body };

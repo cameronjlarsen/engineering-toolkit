@@ -5,7 +5,7 @@ description: Configure Engineering Toolkit's typed model routes per role and a r
 
 # Setup Engineering Toolkit
 
-Configure one model sheet for the current parent harness. Read [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md) before probing or writing anything. Its model matrix, grammar 2 wire format, and Route contract are authoritative. Discover apps, but discovery does not enable them. Do not add a second configuration file, a setup binary, or a weaker-model fallback.
+Configure one model sheet for the current parent harness. Read [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md) before probing or writing anything. Its model matrix, grammar 3 wire format, and Route contract are authoritative. Discover apps, but discovery does not enable them. Do not add a second configuration file, a setup binary, or a weaker-model fallback.
 
 There is no setup binary. This agent procedure discovers, probes, and writes
 the parent sheet after confirmation.
@@ -24,7 +24,7 @@ Codex writes `~/.codex/engineering-toolkit-models.md`. Codex has no `@` include,
 <!-- engineering-toolkit:models:end -->
 ```
 
-Cursor writes `~/.cursor/rules/engineering-toolkit-models.mdc`. YAML frontmatter is harness wiring (`alwaysApply: true`). The body after the closing `---` is the same grammar 2 sheet. There is no companion `.md` file and no Task-slug grammar. If that path already holds an upstream Task-slug rule, stop as inconsistent state instead of rewriting it silently.
+Cursor writes `~/.cursor/rules/engineering-toolkit-models.mdc`. YAML frontmatter is harness wiring (`alwaysApply: true`). The body after the closing `---` is the same grammar 3 sheet. There is no companion `.md` file and no Task-slug grammar. If that path already holds an upstream Task-slug rule, stop as inconsistent state instead of rewriting it silently.
 
 ## Steps
 
@@ -34,7 +34,7 @@ Use the harness and tool surface running this skill: Claude Code, Codex, or Curs
 
 ### 2. Load current state
 
-Read the current parent-specific sheet when it exists. It is grammar 2. The
+Read the current parent-specific sheet when it exists. Grammar 3 is the write format. Inbound grammar 1 or 2 without ` then ` still loads. The
 old `claude:fable@max` form is accepted as inbound migration to named
 `claude-code`; new writes never emit it. Normalize rolling aliases
 `claude-fable-*` and `claude-opus-*` in memory, preserving app, effort, role,
@@ -52,11 +52,19 @@ inconsistent state; report it before probing.
 
 Read the model matrix as capability metadata: which app serves each model,
 selectable efforts, native stems, and the displayed family defaults. Parse
-Route wire values as `model`, `app/model`, or either with `@effort`.
-`inherit-parent` and `auto` carry no Route. Do not infer an app from a vendor.
-An unmatched app/model, out-of-domain effort, duplicate role, or unknown role
-is inconsistent state. Stop and show the conflicting rows. Do not probe or
-write while any inconsistency is unresolved.
+Route wire values as `model`, `app/model`, or either with `@effort`. Grammar 3
+rows may join two or more full Routes with ` then `. That is ordered failover
+for that assignment. Panel rows still split on commas first: each comma entry
+is one concurrent lane, and a lane may itself be a ` then ` chain. Do not treat
+the comma list as an ordered backup. `inherit-parent` and `auto` carry no
+Route. Do not infer an app from a vendor. An unmatched app/model, out-of-domain
+effort, omitted `@effort` on a failover hop, duplicate role, or unknown role is
+inconsistent state. Stop and show the conflicting rows. Do not probe or write
+while any inconsistency is unresolved.
+
+Probe the flattened `selectedRoutes` set. Every hop in a ` then ` chain is a
+selected Route. Do not probe only the first hop. First-run still seeds
+single-Route family rows. Setup never invents a backup chain.
 
 ### 4. Ask for a budget, then apply it
 
@@ -73,12 +81,14 @@ write while any inconsistency is unresolved.
 
 ### 5. Probe selected routes
 
-Probe only selected routes used by the sheet, after the step 4 budget remap, not the pre-budget efforts. Do not blindly probe four
-families when the sheet does not use them. If first-run still proposes the
-four matrix families, probe those selected rows only. Distinguish installed,
-launch-ready, and unknown. A failed probe writes nothing: report the failing
-route and keep the active sheet plus parent integration bytes unchanged. A
-failed first run creates neither artifact.
+Probe only selected routes used by the sheet, after the step 4 budget remap,
+not the pre-budget efforts. Include every hop of a failover chain. Do not
+blindly probe four families when the sheet does not use them. If first-run
+still proposes the four matrix families, probe those selected rows only.
+First-run does not seed failover chains. Distinguish installed, launch-ready,
+and unknown. A failed probe writes nothing: report the failing route and keep
+the active sheet plus parent integration bytes unchanged. A failed first run
+creates neither artifact.
 
 | Family | Pair source | Claude parent | Codex parent | Cursor parent | Availability proof |
 |---|---|---|---|---|---|
@@ -112,7 +122,10 @@ Build the new sheet in memory. Do not write it yet.
 
 After route selection, ask whether to keep those role assignments or change
 named roles. Keeping them is the default. Apply only named changes. A changed
-role may use a selected Route, `inherit-parent`, or `auto`. Keep every
+role may use a selected Route, an ordered ` then ` failover chain on a
+non-MCP solo role or on one panel lane, `inherit-parent`, or `auto`. Failover
+is not allowed on Why or Reflect. Confirm the ordered list and that later
+hops are equal-or-stronger alternates, not cheaper substitutes. Keep every
 documented role key.
 
 ### 7. Confirm and commit
@@ -125,14 +138,16 @@ Every selected route must have passed step 5. Why and Reflect require the
 parent's live MCP surface. Keep their roles on `inherit-parent` or `auto`;
 external override is a typed reject. `inherit-parent` and `auto` always
 validate, but say when they reduce a panel's provider diversity. For panel
-roles, one lane runs per entry. The list length is the fan-out count.
+roles, one session runs per comma entry. The list length is the fan-out count.
+A ` then ` chain on a lane is sequential and parent-owned for that lane only.
+Sibling lanes keep running. The launcher still runs one already-pinned Route.
 
 After the operator confirms, write the in-memory render from step 6, including a `# budget:` line with the chosen label and target effort. Never paste the example below as the result. It is only the complete first-run role map used to seed step 2; selected efforts and explicit role changes always replace its example values before writing.
 
 ```markdown
 # Engineering Toolkit model configuration
 
-Descriptor grammar: 2
+Descriptor grammar: 3
 
 Route choices. First-run omits the app when the live parent already serves
 that model, and names the unique CLI home otherwise. The example below is
@@ -162,7 +177,7 @@ interrogate reviewers: fable@max, codex/gpt-5.6-sol@max, grok/grok-4.6@xhigh, op
 
 ### 8. Wire it in
 
-Render the parent integration in memory before either write. On Claude, the integration is the single `@~/.claude/engineering-toolkit-models.md` include in `~/.claude/CLAUDE.md`. On Codex, it is the exact sheet bytes between one `<!-- engineering-toolkit:models:begin -->` and `<!-- engineering-toolkit:models:end -->` pair in `~/.codex/AGENTS.md`. Replace that whole bounded block on a rerun. Insert one block at the end on first run. If either marker is missing, duplicated, or reversed, stop and report inconsistent state instead of guessing a boundary. On Cursor, the `.mdc` is both the sheet and the load hook. Wrap `printRoleMap` in the canonical always-apply frontmatter. Read back the grammar 2 body, not the YAML wrapper.
+Render the parent integration in memory before either write. On Claude, the integration is the single `@~/.claude/engineering-toolkit-models.md` include in `~/.claude/CLAUDE.md`. On Codex, it is the exact sheet bytes between one `<!-- engineering-toolkit:models:begin -->` and `<!-- engineering-toolkit:models:end -->` pair in `~/.codex/AGENTS.md`. Replace that whole bounded block on a rerun. Insert one block at the end on first run. If either marker is missing, duplicated, or reversed, stop and report inconsistent state instead of guessing a boundary. On Cursor, the `.mdc` is both the sheet and the load hook. Wrap `printRoleMap` in the canonical always-apply frontmatter. Read back the grammar 3 body, not the YAML wrapper.
 
 After a confirmed write and readback, delete the previous `pstack-models` sheet for this parent. On Claude, replace `@~/.claude/pstack-models.md` with the new include. On Codex, replace a `pstack:models` marker pair with the new markers in the same write. Do not leave both sheets.
 

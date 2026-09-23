@@ -35,4 +35,4 @@ Writers get a worktree or a unique output directory. Plugin-agent definitions al
 
 ## Instructions file
 
-Where a skill says "your instructions file", on Cursor that is `AGENTS.md` plus the always-apply grammar 2 body in `~/.cursor/rules/engineering-toolkit-models.mdc`.
+Where a skill says "your instructions file", on Cursor that is `AGENTS.md` plus the always-apply grammar 3 body in `~/.cursor/rules/engineering-toolkit-models.mdc`. Grammar 2 sheets still load.

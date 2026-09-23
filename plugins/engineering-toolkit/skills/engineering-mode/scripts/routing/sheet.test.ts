@@ -35,11 +35,24 @@ const roles = [
 ] as const;
 
 function sheet(values: Partial<Record<(typeof roles)[number], string>> = {}): string {
+  return sheetAt(2, values);
+}
+
+function sheetAt(
+  grammar: 2 | 3,
+  values: Partial<Record<(typeof roles)[number], string>> = {}
+): string {
   return [
     "# Engineering Toolkit model configuration",
-    "Descriptor grammar: 2",
+    `Descriptor grammar: ${grammar}`,
     ...roles.map((role) => `${role}: ${values[role] ?? "inherit-parent"}`),
   ].join("\n");
+}
+
+function slug(raw: string) {
+  const parsed = modelSlug(raw);
+  if (!parsed.ok) throw new Error("invalid test model");
+  return parsed.value;
 }
 
 function routeValue(model: string, app = currentHost(), effort = destinationDefault()) {
@@ -136,14 +149,14 @@ describe("sheet grammar 1 migration", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const printed = printRoleMap(result.value);
-    expect(printed).toContain("Descriptor grammar: 2");
+    expect(printed).toContain("Descriptor grammar: 3");
     expect(printed).toContain("feature, refactoring: grok/grok-4.6@xhigh");
     expect(printed).not.toContain("grok:grok-4.6@xhigh");
   });
 });
 
 describe("sheet validation and round trips", () => {
-  it("round-trips a grammar 2 map", () => {
+  it("round-trips a grammar 2 map and prints grammar 3", () => {
     const initial = loadRoleMap(
       sheet({
         "feature, refactoring": "fable",
@@ -154,6 +167,134 @@ describe("sheet validation and round trips", () => {
     expect(initial.ok).toBe(true);
     if (!initial.ok) return;
     expect(loadRoleMap(printRoleMap(initial.value))).toEqual(initial);
+  });
+
+  it("round-trips a grammar 3 solo then-chain without splitting panel commas", () => {
+    const initial = loadRoleMap(
+      sheetAt(3, {
+        "how explorer": "grok/grok-4.6@xhigh then opus@xhigh",
+        "arena runners": "fable@max, grok/grok-4.6@xhigh",
+      })
+    );
+    expect(initial.ok).toBe(true);
+    if (!initial.ok) return;
+    expect(initial.value["how explorer"]).toEqual({
+      kind: "failover",
+      routes: [
+        route({
+          model: slug("grok-4.6"),
+          app: namedApp("grok"),
+          effort: explicitEffort("xhigh"),
+        }),
+        route({
+          model: slug("opus"),
+          app: currentHost(),
+          effort: explicitEffort("xhigh"),
+        }),
+      ],
+    });
+    expect(printRoleMap(initial.value)).toContain(
+      "how explorer: grok/grok-4.6@xhigh then opus@xhigh"
+    );
+    expect(printRoleMap(initial.value)).toContain(
+      "arena runners: fable@max, grok/grok-4.6@xhigh"
+    );
+    expect(loadRoleMap(printRoleMap(initial.value))).toEqual(initial);
+  });
+
+  it("round-trips a grammar 3 then-chain on a panel lane without collapsing commas", () => {
+    const initial = loadRoleMap(
+      sheetAt(3, {
+        "arena runners": "grok/grok-4.6@xhigh then opus@xhigh, fable@max",
+      })
+    );
+    expect(initial.ok).toBe(true);
+    if (!initial.ok) return;
+    expect(initial.value["arena runners"]).toEqual([
+      {
+        kind: "failover",
+        routes: [
+          route({
+            model: slug("grok-4.6"),
+            app: namedApp("grok"),
+            effort: explicitEffort("xhigh"),
+          }),
+          route({
+            model: slug("opus"),
+            app: currentHost(),
+            effort: explicitEffort("xhigh"),
+          }),
+        ],
+      },
+      routeValue("fable", currentHost(), explicitEffort("max")),
+    ]);
+    expect(printRoleMap(initial.value)).toContain(
+      "arena runners: grok/grok-4.6@xhigh then opus@xhigh, fable@max"
+    );
+    expect(loadRoleMap(printRoleMap(initial.value))).toEqual(initial);
+  });
+
+  it("rejects a then-chain on an MCP-bound role", () => {
+    expect(
+      loadRoleMap(
+        sheetAt(3, {
+          "why investigators, synthesizer": "opus@xhigh then fable@max",
+        })
+      )
+    ).toEqual({
+      ok: false,
+      error: {
+        tag: "mcp-bound-must-inherit",
+        role: "why investigators, synthesizer",
+      },
+    });
+  });
+
+  it("rejects omitted effort on a failover hop", () => {
+    expect(
+      loadRoleMap(
+        sheetAt(3, {
+          "how explorer": "grok/grok-4.6 then opus@xhigh",
+        })
+      )
+    ).toEqual({
+      ok: false,
+      error: { tag: "failover-requires-explicit-effort" },
+    });
+  });
+
+  it("rejects a weaker later hop on the same app and model", () => {
+    expect(
+      loadRoleMap(
+        sheetAt(3, {
+          "how explorer": "grok/grok-4.6@xhigh then grok/grok-4.6@high",
+        })
+      )
+    ).toEqual({
+      ok: false,
+      error: {
+        tag: "failover-weaker-effort",
+        model: slug("grok-4.6"),
+        app: namedApp("grok"),
+      },
+    });
+  });
+
+  it("rejects then inside grammar 2", () => {
+    expect(
+      loadRoleMap(
+        sheet({
+          "how explorer": "grok/grok-4.6@xhigh then opus@xhigh",
+        })
+      )
+    ).toEqual({
+      ok: false,
+      error: {
+        tag: "invalid-descriptor",
+        role: "how explorer",
+        raw: "grok/grok-4.6@xhigh then opus@xhigh",
+      },
+    });
   });
 
   it("rejects a route saved for an MCP-bound role", () => {
@@ -258,8 +399,71 @@ describe("sheet budget", () => {
   it("prints an optional budget comment before the role rows", () => {
     const roles = mustLoad({ "judgment and prose": "fable@max" });
     const printed = printRoleMap(roles, { label: "large", target: "xhigh" });
+    expect(printed).toContain("Descriptor grammar: 3\n");
     expect(printed).toContain("# budget: large (xhigh)\n");
     expect(loadRoleMap(printed).ok).toBe(true);
+  });
+
+  it("applies small to every hop of a failover chain", () => {
+    const loaded = loadRoleMap(
+      sheetAt(3, {
+        "how explorer": "grok/grok-4.6@xhigh then opus@xhigh",
+      })
+    );
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok) return;
+    const budget = parseBudgetLine("# budget: small (medium)");
+    expect(budget.ok).toBe(true);
+    if (!budget.ok) return;
+    const result = applyBudget(loaded.value, budget.value, () => ALL_EFFORTS);
+    expect(result.needsChoice).toEqual([]);
+    expect(result.roles["how explorer"]).toEqual({
+      kind: "failover",
+      routes: [
+        route({
+          model: slug("grok-4.6"),
+          app: namedApp("grok"),
+          effort: explicitEffort("medium"),
+        }),
+        route({
+          model: slug("opus"),
+          app: currentHost(),
+          effort: explicitEffort("medium"),
+        }),
+      ],
+    });
+  });
+
+  it("applies small to a then-chain inside a panel lane", () => {
+    const loaded = loadRoleMap(
+      sheetAt(3, {
+        "arena runners": "grok/grok-4.6@xhigh then opus@xhigh, fable@max",
+      })
+    );
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok) return;
+    const budget = parseBudgetLine("# budget: small (medium)");
+    expect(budget.ok).toBe(true);
+    if (!budget.ok) return;
+    const result = applyBudget(loaded.value, budget.value, () => ALL_EFFORTS);
+    expect(result.roles["arena runners"][0]).toEqual({
+      kind: "failover",
+      routes: [
+        route({
+          model: slug("grok-4.6"),
+          app: namedApp("grok"),
+          effort: explicitEffort("medium"),
+        }),
+        route({
+          model: slug("opus"),
+          app: currentHost(),
+          effort: explicitEffort("medium"),
+        }),
+      ],
+    });
+    expect(result.roles["arena runners"][1]).toEqual(
+      routeValue("fable", currentHost(), explicitEffort("medium"))
+    );
   });
 
   it("still loads a sheet that records a budget among the comments", () => {

@@ -8,7 +8,7 @@ Original by Lauren Tan. This distribution builds on Michael Denyer's [pstack-cla
 
 > if you want to go fast, go deep first. Engineering Toolkit helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence.
 
-This is not a verbatim copy of Cursor pstack. Open Pstack edited skill bodies so Cursor-specific primitives resolve in Claude Code and Codex. See [Differences from upstream](#differences-from-upstream). This fork keeps that shared tree and adds Cursor as a parent with grammar 2 model sheets. The exhaustive per-skill audit lives in [CHANGES.md](../CHANGES.md). License attribution lives in [NOTICE.md](../NOTICE.md). The Cursor pstack README is preserved verbatim at [README-UPSTREAM.md](../README-UPSTREAM.md).
+This is not a verbatim copy of Cursor pstack. Open Pstack edited skill bodies so Cursor-specific primitives resolve in Claude Code and Codex. See [Differences from upstream](#differences-from-upstream). This fork keeps that shared tree and adds Cursor as a parent with grammar 3 model sheets (grammar 2 still loads). The exhaustive per-skill audit lives in [CHANGES.md](../CHANGES.md). License attribution lives in [NOTICE.md](../NOTICE.md). The Cursor pstack README is preserved verbatim at [README-UPSTREAM.md](../README-UPSTREAM.md).
 
 ## Install
 
@@ -209,7 +209,7 @@ The port is editorial, not mechanical. Anywhere upstream pstack assumed Cursor-s
 | Cursor cloud agents (`environment: "cloud"`, `cloud_base_branch`) | Local background subagents (`run_in_background: true`), isolated by git worktree |
 | Cursor's `/goal` (standing objective across turns) | The program objective written into the run's standing orders and restated in the todolist |
 | The Cursor agent store (path in the system prompt) | `~/.claude/orchestrate/<project-slug>/`, which survives the session restarts a multi-day program expects |
-| Model rule `~/.cursor/rules/engineering-toolkit-models.mdc` | This fork keeps grammar 2 in that `.mdc` (always-apply wrapper). Claude Code writes `~/.claude/engineering-toolkit-models.md`, included from `CLAUDE.md`. Upstream Task slugs are not a second grammar. |
+| Model rule `~/.cursor/rules/engineering-toolkit-models.mdc` | This fork prints grammar 3 into that `.mdc` (always-apply wrapper). Grammar 2 sheets still load. Claude Code writes `~/.claude/engineering-toolkit-models.md`, included from `CLAUDE.md`. Upstream Task slugs are not a second grammar. |
 | Multi-model panels (arena, architect, interrogate) | Provider dispatch restores the upstream frontier quad: `claude-code/fable@max`, `codex/gpt-5.6-sol@max`, `grok/grok-4.6@xhigh`, `claude-code/opus@xhigh`. Same-provider lanes stay native; external lanes use the bundled runner. |
 
 ### Cross-vendor dispatch

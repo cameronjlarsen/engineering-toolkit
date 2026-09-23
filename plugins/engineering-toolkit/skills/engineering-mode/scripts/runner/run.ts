@@ -11,6 +11,7 @@ import {
 import { dirname, resolve } from "node:path";
 import { parentIdentityKeys } from "../routing/parent.ts";
 import { PARENT_HOSTS } from "../routing/route.ts";
+import { classifyProcessFailure } from "../routing/capacity.ts";
 import { invocationCommand, preflightCommand, type CommandSpec } from "./commands.ts";
 import { versionedClaudeAlias } from "./model-aliases.ts";
 import { parseAppOutput, reportedModelMatches } from "./parse-output.ts";
@@ -368,13 +369,7 @@ function successfulPreflightEvidence(app: App, model: string): string {
 }
 
 function unavailableStatus(value: string): ReceiptStatus {
-  if (/not logged in|unauthenticated|authentication|sign in|login required/i.test(value)) {
-    return "unauthenticated";
-  }
-  if (/model.{0,40}(not found|unknown|unavailable|unsupported|not supported|invalid)|invalid.{0,20}model/i.test(value)) {
-    return "unavailable-model";
-  }
-  return "child-failed";
+  return classifyProcessFailure({ exitCode: 1, combinedText: value });
 }
 
 function preflightFailureStatus(
@@ -417,6 +412,8 @@ function statusExitCode(status: ReceiptStatus): number {
       return 70;
     case "unauthenticated":
       return 77;
+    case "capacity-exhausted":
+      return 75;
     case "timed-out":
       return 124;
   }
@@ -524,7 +521,7 @@ async function executeLane(
   const prompt = readFileSync(options.promptPath, "utf8");
   const env = childEnvironment(options.app);
   const executable = Bun.which(invocation.command, {
-    PATH: env.PATH,
+    PATH: env.PATH ?? env.Path,
     cwd: options.cwd,
   });
   progress.executable = executable;
@@ -815,10 +812,15 @@ async function executeLane(
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    const combined = `${message}\n${result.stderr}\n${result.stdout}`;
+    const classified = classifyProcessFailure({
+      exitCode: result.exitCode,
+      combinedText: combined,
+    });
     removeIfExists(options.outputPath);
     receipt = completeReceipt(options, {
       ...base,
-      status: "malformed-output",
+      status: classified === "capacity-exhausted" ? "capacity-exhausted" : "malformed-output",
       reportedModel: null,
       modelVerified: false,
       modelEvidence: null,

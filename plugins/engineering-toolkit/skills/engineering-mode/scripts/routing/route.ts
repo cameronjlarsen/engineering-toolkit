@@ -31,6 +31,24 @@ export type InheritBinding =
 
 export type RoleBinding = InheritBinding | { readonly kind: "route"; readonly route: Route };
 
+export type FailoverRoutes = readonly [Route, Route, ...Route[]];
+
+export type FailoverBinding = {
+  readonly kind: "failover";
+  readonly routes: FailoverRoutes;
+};
+
+export type LaneAssignment = RoleBinding | FailoverBinding;
+export type SoloAssignment = LaneAssignment;
+
+export const EFFORT_RANK: Record<Effort, 0 | 1 | 2 | 3 | 4> = {
+  low: 0,
+  medium: 1,
+  high: 2,
+  xhigh: 3,
+  max: 4,
+};
+
 export type McpBoundRoleId =
   | "why investigators, synthesizer"
   | "reflect tooling, judgment, divergent, synthesizer";
@@ -55,10 +73,12 @@ export type SingleRoleId =
 
 export type RoleId = SingleRoleId | PanelRoleId;
 
+export type FailoverRoleId = Exclude<SingleRoleId, McpBoundRoleId> | PanelRoleId;
+
 export type RoleMap = {
-  readonly [K in SingleRoleId]: K extends McpBoundRoleId ? InheritBinding : RoleBinding;
+  readonly [K in SingleRoleId]: K extends McpBoundRoleId ? InheritBinding : SoloAssignment;
 } & {
-  readonly [K in PanelRoleId]: readonly RoleBinding[];
+  readonly [K in PanelRoleId]: readonly LaneAssignment[];
 };
 
 export interface RoutePatch {
@@ -146,6 +166,24 @@ export interface AppRecord {
   readonly models: ReadonlyMap<ModelSlug, ModelOnApp>;
 }
 
+export type DropoutClass =
+  | "capacity"
+  | "unauthenticated"
+  | "unavailable-cli"
+  | "unavailable-model"
+  | "timed-out"
+  | "cancelled"
+  | "malformed-output"
+  | "child-failed"
+  | "resolve-reject";
+
+export type FailoverAuthoringError =
+  | { readonly tag: "failover-too-short" }
+  | { readonly tag: "failover-duplicate-route" }
+  | { readonly tag: "failover-weaker-effort"; readonly model: ModelSlug; readonly app: AppRef }
+  | { readonly tag: "failover-requires-explicit-effort" }
+  | { readonly tag: "failover-inherit-forbidden" };
+
 export type ResolveError =
   | { readonly tag: "unsupported-external-override"; readonly role: McpBoundRoleId }
   | { readonly tag: "inherit-does-not-accept-partial-effort" }
@@ -156,6 +194,14 @@ export type ResolveError =
   | { readonly tag: "not-launch-ready"; readonly app: AppId; readonly readiness: Readiness }
   | { readonly tag: "no-launch-interface"; readonly app: AppId }
   | { readonly tag: "invalid-model-slug"; readonly raw: string };
+
+export type SoloRoleStop =
+  | { readonly tag: "complete"; readonly attemptIndex: number }
+  | { readonly tag: "chain-exhausted"; readonly last: DropoutClass }
+  | { readonly tag: "non-capacity-dropout"; readonly class: Exclude<DropoutClass, "capacity"> }
+  | ResolveError
+  | { readonly tag: "attempt-already-observed" }
+  | { readonly tag: "unknown-readiness-is-not-failover"; readonly app: AppId };
 
 export type Result<T, E> =
   | { readonly ok: true; readonly value: T }
@@ -216,4 +262,10 @@ export function route(input: {
     app: input.app ?? currentHost(),
     effort: input.effort ?? destinationDefault(),
   };
+}
+
+export function printRouteWire(configured: Route): string {
+  const app = configured.app.kind === "named" ? `${configured.app.app}/` : "";
+  const effort = configured.effort.kind === "explicit" ? `@${configured.effort.effort}` : "";
+  return `${app}${configured.model}${effort}`;
 }

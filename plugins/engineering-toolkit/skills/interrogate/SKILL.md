@@ -9,7 +9,7 @@ Spawn one reviewer per configured model to adversarially review code changes. Ea
 
 The deliverable is a synthesized verdict. Do NOT auto-apply changes.
 
-**Dispatch contract.** Read [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md) before launching reviewers. Configured entries are typed Routes written as `app/model@effort`; the parent starts native and external read-only lanes directly. On Codex, resolve remaining Claude tool names via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
+**Dispatch contract.** Read [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md) before launching reviewers. Configured entries are typed Routes written as `app/model@effort`; the parent starts native and external read-only lanes directly through `beginSoloRole`. A usage-limit dropout on one reviewer may advance that reviewer's `then` hop. On Codex, resolve remaining Claude tool names via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
 
 ## Step 1, Determine Scope
 
