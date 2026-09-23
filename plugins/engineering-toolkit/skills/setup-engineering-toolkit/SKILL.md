@@ -38,7 +38,15 @@ Read the current parent-specific sheet when it exists. It is grammar 2. The
 old `claude:fable@max` form is accepted as inbound migration to named
 `claude-code`; new writes never emit it. Normalize rolling aliases
 `claude-fable-*` and `claude-opus-*` in memory, preserving app, effort, role,
-and lane order. Record migrations for confirmation. Also read a `# budget:`
+and lane order. Record migrations for confirmation. After the sheet is loaded,
+refresh the Codex model list with `codex debug models`. Never pass `--bundled`.
+Parse that stdout with `parseCodexDebugModels`. A failed refresh is an unknown
+list (`probedModels` omitted), not an empty list: report it. Do not sole-map
+slugs while the list is unknown. When the refresh succeeds, pass that list to
+`proposeStalePinMigrations`. A slug on the list is not a proposal. A slug on
+neither the shipped catalog nor the list stays unmatched for step 3. Do not
+rewrite a route until the operator accepts a proposal. Unaccepted rows stay
+inconsistent at step 3. Also read a `# budget:`
 line when the sheet has one, and name that current budget later when asking.
 A missing line means no recorded budget yet. If the current sheet is
 missing, read the previous `pstack-models` path for that parent as inbound
@@ -50,12 +58,15 @@ inconsistent state; report it before probing.
 
 ### 3. Parse selected routes
 
-Read the model matrix as capability metadata: which app serves each model,
-selectable efforts, native stems, and the displayed family defaults. Parse
-Route wire values as `model`, `app/model`, or either with `@effort`.
-`inherit-parent` and `auto` carry no Route. Do not infer an app from a vendor.
-An unmatched app/model, out-of-domain effort, duplicate role, or unknown role
-is inconsistent state. Stop and show the conflicting rows. Do not probe or
+The four-row model matrix names each family's blank-sheet default. It is not
+the allowlist. A slug is consistent when the shipped catalog or this session's
+refreshed Codex model list contains it. Parse Route wire values as `model`,
+`app/model`, or either with `@effort`. `inherit-parent` and `auto` carry no
+Route. Do not infer an app from a vendor. An effort is inconsistent when it is
+outside that model's selectable efforts. An unmatched app/model means the slug
+is absent from both the shipped catalog and the refreshed list. An unmatched
+app/model, out-of-domain effort, duplicate role, or unknown role is
+inconsistent state. Stop and show the conflicting rows. Do not probe or
 write while any inconsistency is unresolved.
 
 ### 4. Ask for a budget, then apply it
@@ -83,7 +94,7 @@ failed first run creates neither artifact.
 | Family | Pair source | Claude parent | Codex parent | Cursor parent | Availability proof |
 |---|---|---|---|---|---|
 | Fable | Fable matrix row + selected effort | native Agent `pstack-fable-<effort>` | Claude CLI | native Task `pstack-fable-<effort>` plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
-| Sol | Sol matrix row + selected effort | `codex exec` | native `spawn_agent` | Codex CLI | `codex login status` plus one-turn probe or native one-turn probe |
+| Sol | Sol matrix row + selected effort | `codex exec` | native `spawn_agent` | Codex CLI | `codex debug models` without `--bundled` as the model list, plus `codex login status` plus one-turn probe or native one-turn probe |
 | Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | native Task host-spawn | native one-turn probe or `grok models` plus one-turn probe |
 | Opus | Opus matrix row + selected effort | native Agent `pstack-opus-<effort>` | Claude CLI | native Task `pstack-opus-<effort>` plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
 
@@ -144,20 +155,20 @@ one panel lane.
 
 # budget: unlimited (max)
 feature, refactoring: grok/grok-4.6@xhigh
-bug-fix: codex/gpt-5.6-sol@max
-perf-issue: codex/gpt-5.6-sol@max
-hillclimb: codex/gpt-5.6-sol@max
+bug-fix: codex/gpt-6-sol@max
+perf-issue: codex/gpt-6-sol@max
+hillclimb: codex/gpt-6-sol@max
 judgment and prose: fable@max
 hardest tasks: fable@max
 how explorer: grok/grok-4.6@xhigh
 how explainer: fable@max
 why investigators, synthesizer: inherit-parent
 reflect tooling, judgment, divergent, synthesizer: inherit-parent
-arena runners: fable@max, codex/gpt-5.6-sol@max, grok/grok-4.6@xhigh, opus@xhigh
-arena cross-judge pool: fable@max, codex/gpt-5.6-sol@max, grok/grok-4.6@xhigh, opus@xhigh
+arena runners: fable@max, codex/gpt-6-sol@max, grok/grok-4.6@xhigh, opus@xhigh
+arena cross-judge pool: fable@max, codex/gpt-6-sol@max, grok/grok-4.6@xhigh, opus@xhigh
 swarm workers: grok/grok-4.6@xhigh
-architect runners: fable@max, codex/gpt-5.6-sol@max, grok/grok-4.6@xhigh, opus@xhigh
-interrogate reviewers: fable@max, codex/gpt-5.6-sol@max, grok/grok-4.6@xhigh, opus@xhigh
+architect runners: fable@max, codex/gpt-6-sol@max, grok/grok-4.6@xhigh, opus@xhigh
+interrogate reviewers: fable@max, codex/gpt-6-sol@max, grok/grok-4.6@xhigh, opus@xhigh
 ```
 
 ### 8. Wire it in

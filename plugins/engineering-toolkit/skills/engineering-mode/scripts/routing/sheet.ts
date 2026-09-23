@@ -17,7 +17,7 @@ import {
   route,
 } from "./route.ts";
 
-const SINGLE_ROLE_IDS = [
+export const SINGLE_ROLE_IDS = [
   "feature, refactoring",
   "bug-fix",
   "perf-issue",
@@ -35,7 +35,7 @@ const MCP_BOUND_ROLE_IDS = new Set<RoleId>([
   "reflect tooling, judgment, divergent, synthesizer",
 ]);
 
-const PANEL_ROLE_IDS = [
+export const PANEL_ROLE_IDS = [
   "arena runners",
   "arena cross-judge pool",
   "architect runners",

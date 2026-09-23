@@ -127,9 +127,17 @@ export type Readiness =
   | { readonly kind: "launch-ready" }
   | { readonly kind: "unavailable"; readonly reason: string };
 
+export interface ProbedModel {
+  readonly slug: ModelSlug;
+  readonly selectableEfforts: readonly Effort[];
+  readonly destinationDefaultEffort: Effort | { readonly kind: "unknown" };
+}
+
 export interface AppInventoryEntry {
   readonly app: AppId;
   readonly readiness: Readiness;
+  /** Undefined means this session did not refresh the CLI list. An empty array means the refresh succeeded and listed nothing. */
+  readonly probedModels?: readonly ProbedModel[];
 }
 
 export interface ModelOnApp {

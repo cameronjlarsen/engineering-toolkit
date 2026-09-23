@@ -14,7 +14,7 @@ destination does not publish a default, dispatch rejects the route.
 | Family | Upstream pstack choice | Provider | Model | Default effort | Selectable efforts | Plugin-agent stem |
 |---|---|---|---|---|---|---|
 | fable | fable | claude | fable | max | low medium high xhigh max | fable |
-| sol | gpt-5.6-sol-max | codex | gpt-5.6-sol | max | low medium high xhigh max | - |
+| sol | gpt-5.6-sol-max | codex | gpt-6-sol | max | low medium high xhigh max | - |
 | grok | grok-4.6-fast-xhigh | grok | grok-4.6 | xhigh | low medium high xhigh max | - |
 | opus | opus | claude | opus | xhigh | low medium high xhigh max | opus |
 
@@ -25,6 +25,11 @@ alias to the latest available family revision. A runner receipt keeps the
 requested alias in `model` and the concrete provider-reported revision in
 `reportedModel`; verification accepts only a numeric `claude-fable-*` or
 `claude-opus-*` revision from the matching family.
+
+The matrix names each family's blank-sheet default. A cli-auth app also accepts
+any slug in the refreshed CLI model list for that session. `codex debug models`
+is that list for Codex. `--bundled` is not. Dispatch does not rewrite a sheet
+slug onto the matrix default.
 
 ## Read-time normalization
 
@@ -40,7 +45,9 @@ revision immediately without writing user files. Once per parent run, report
 that the persisted sheet is stale and that `/setup-engineering-toolkit` will rewrite it
 after its normal probes and confirmation. Unknown versioned Claude models
 remain invalid. The external runner rejects a missed Fable or Opus version pin
-instead of silently executing it.
+instead of silently executing it. Sol and Grok pins have no read-time alias. A
+model the catalog does not serve fails dispatch as `app-does-not-serve-model`
+until setup accepts a stale-pin proposal.
 
 `fast` is part of Cursor's Grok selector, not a Grok Build CLI model or effort flag. The portable Grok route pins the current CLI model `grok-4.6`. The first-run Grok effort is `xhigh`. Cursor also serves `grok-4.6` natively. An omitted-app Grok route is parent-native host-spawn. Named `grok/...` remains the Grok CLI and stays external.
 

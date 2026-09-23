@@ -1,9 +1,10 @@
 import { describe, expect, it } from "bun:test";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { shippedCatalog } from "./catalog.ts";
-import { planLane } from "./dispatch.ts";
+import { shippedCatalog, SOL_CLI_MODEL } from "./catalog.ts";
+import { planLane, resolveRoute } from "./dispatch.ts";
 import {
+  applyAcceptedMigrations,
   applyIntegrationPatch,
   detectParent,
   firstRunRoleMap,
@@ -11,6 +12,7 @@ import {
   parentIdentityKeys,
   parentProfile,
   pluginAgentName,
+  proposeStalePinMigrations,
   renderParentFiles,
   unwrapStoredSheet,
   wrapMdc,
@@ -22,8 +24,9 @@ import {
   namedApp,
   route,
   type Access,
+  type RoleMap,
 } from "./route.ts";
-import { printRoleMap } from "./sheet.ts";
+import { loadRoleMap, printRoleMap } from "./sheet.ts";
 
 const access: Access = { mode: "read-only", worktree: null };
 
@@ -78,19 +81,19 @@ describe("firstRunRoleMap", () => {
     expect(cursor).toContain("judgment and prose: fable@max");
     expect(cursor).toContain("hardest tasks: fable@max");
     expect(cursor).toContain(
-      "arena runners: fable@max, codex/gpt-5.6-sol@max, grok-4.6@xhigh, opus@xhigh"
+      "arena runners: fable@max, codex/gpt-6-sol@max, grok-4.6@xhigh, opus@xhigh"
     );
     expect(cursor).not.toContain("claude-code/fable");
     expect(cursor).not.toContain("grok/grok-4.6");
     expect(claude).toContain(
-      "arena runners: fable@max, codex/gpt-5.6-sol@max, grok/grok-4.6@xhigh, opus@xhigh"
+      "arena runners: fable@max, codex/gpt-6-sol@max, grok/grok-4.6@xhigh, opus@xhigh"
     );
 
     const codex = printRoleMap(firstRunRoleMap("codex", catalog));
-    expect(codex).toContain("bug-fix: gpt-5.6-sol@max");
+    expect(codex).toContain("bug-fix: gpt-6-sol@max");
     expect(codex).toContain("judgment and prose: claude-code/fable@max");
     expect(codex).toContain(
-      "arena runners: claude-code/fable@max, gpt-5.6-sol@max, grok/grok-4.6@xhigh, claude-code/opus@xhigh"
+      "arena runners: claude-code/fable@max, gpt-6-sol@max, grok/grok-4.6@xhigh, claude-code/opus@xhigh"
     );
   });
 });
@@ -260,5 +263,168 @@ describe("named claude-code from cursor stays external", () => {
     expect(planned.ok).toBe(true);
     if (!planned.ok || planned.value.kind !== "external") return;
     expect(planned.value.launch.app).toBe("claude-code");
+  });
+});
+
+describe("stale pin migrations", () => {
+  const catalog = shippedCatalog();
+
+  function mustLoad(text: string): RoleMap {
+    const loaded = loadRoleMap(text);
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok) throw new Error(loaded.error.tag);
+    return loaded.value;
+  }
+
+  function sheetWith(overrides: Record<string, string>): string {
+    const base = firstRunRoleMap("claude-code", catalog);
+    const printed = printRoleMap(base);
+    const lines = printed.split("\n").map((line) => {
+      const colon = line.indexOf(": ");
+      if (colon < 0) return line;
+      const role = line.slice(0, colon);
+      return role in overrides ? `${role}: ${overrides[role]}` : line;
+    });
+    return `${lines.join("\n")}\n`;
+  }
+
+  it("proposes sole-model cutovers without rewriting until accepted", () => {
+    const roles = mustLoad(
+      sheetWith({ "bug-fix": "codex/gpt-5.6-sol@high" })
+    );
+    expect(printRoleMap(roles)).toContain("bug-fix: codex/gpt-5.6-sol@high");
+
+    const proposals = proposeStalePinMigrations("claude-code", roles, catalog);
+    expect(proposals).toEqual([
+      {
+        site: { role: "bug-fix" },
+        app: "codex",
+        from: slug("gpt-5.6-sol"),
+        to: SOL_CLI_MODEL,
+      },
+    ]);
+
+    const stale = roles["bug-fix"];
+    expect(stale.kind).toBe("route");
+    if (stale.kind !== "route") return;
+    expect(
+      resolveRoute("claude-code", stale.route, catalog, [
+        { app: "codex", readiness: { kind: "launch-ready" } },
+      ])
+    ).toEqual({
+      ok: false,
+      error: {
+        tag: "app-does-not-serve-model",
+        app: "codex",
+        model: slug("gpt-5.6-sol"),
+      },
+    });
+
+    expect(applyAcceptedMigrations(roles, proposals, [])).toEqual(roles);
+    expect(printRoleMap(applyAcceptedMigrations(roles, proposals, []))).toContain(
+      "bug-fix: codex/gpt-5.6-sol@high"
+    );
+
+    const accepted = applyAcceptedMigrations(roles, proposals, [{ role: "bug-fix" }]);
+    const fixed = accepted["bug-fix"];
+    expect(fixed.kind).toBe("route");
+    if (fixed.kind !== "route") return;
+    expect(fixed.route.model).toBe(SOL_CLI_MODEL);
+    expect(fixed.route.effort).toEqual(explicitEffort("high"));
+    expect(fixed.route.app).toEqual(namedApp("codex"));
+    expect(
+      resolveRoute("claude-code", fixed.route, catalog, [
+        { app: "codex", readiness: { kind: "launch-ready" } },
+      ])
+    ).toEqual({
+      ok: true,
+      value: {
+        model: SOL_CLI_MODEL,
+        app: "codex",
+        effort: "high",
+        lane: "external",
+      },
+    });
+    expect(proposeStalePinMigrations("claude-code", accepted, catalog)).toEqual([]);
+    expect(
+      applyAcceptedMigrations(accepted, proposeStalePinMigrations("claude-code", accepted, catalog), [
+        { role: "bug-fix" },
+      ])
+    ).toEqual(accepted);
+
+    expect(
+      proposeStalePinMigrations(
+        "claude-code",
+        mustLoad(sheetWith({ "bug-fix": "claude-code/fable@max" })),
+        catalog
+      )
+    ).toEqual([]);
+
+    const typo = mustLoad(sheetWith({ "bug-fix": "codex/gpt-6-sool@high" }));
+    const typoProposals = proposeStalePinMigrations("claude-code", typo, catalog);
+    expect(typoProposals).toEqual([
+      {
+        site: { role: "bug-fix" },
+        app: "codex",
+        from: slug("gpt-6-sool"),
+        to: SOL_CLI_MODEL,
+      },
+    ]);
+    const typoLeft = applyAcceptedMigrations(typo, typoProposals, []);
+    const typoRoute = typoLeft["bug-fix"];
+    expect(typoRoute.kind).toBe("route");
+    if (typoRoute.kind !== "route") return;
+    expect(
+      resolveRoute("claude-code", typoRoute.route, catalog, [
+        { app: "codex", readiness: { kind: "launch-ready" } },
+      ]).ok
+    ).toBe(false);
+
+    const codexParent = mustLoad(
+      printRoleMap({
+        ...firstRunRoleMap("codex", catalog),
+        "bug-fix": {
+          kind: "route",
+          route: route({
+            model: slug("gpt-5.6-sol"),
+            app: currentHost(),
+            effort: explicitEffort("max"),
+          }),
+        },
+      })
+    );
+    const omitted = proposeStalePinMigrations("codex", codexParent, catalog);
+    expect(omitted).toEqual([
+      {
+        site: { role: "bug-fix" },
+        app: "codex",
+        from: slug("gpt-5.6-sol"),
+        to: SOL_CLI_MODEL,
+      },
+    ]);
+    const omittedAccepted = applyAcceptedMigrations(codexParent, omitted, [
+      { role: "bug-fix" },
+    ]);
+    const omittedRoute = omittedAccepted["bug-fix"];
+    expect(omittedRoute.kind).toBe("route");
+    if (omittedRoute.kind !== "route") return;
+    expect(omittedRoute.route.app).toEqual(currentHost());
+    expect(omittedRoute.route.model).toBe(SOL_CLI_MODEL);
+  });
+
+  it("does not sole-map when a probed list is present", () => {
+    const catalog = shippedCatalog();
+    const probed = [
+      {
+        slug: slug("gpt-6.1-sol"),
+        selectableEfforts: ["low", "medium", "high", "xhigh", "max"] as const,
+        destinationDefaultEffort: "medium" as const,
+      },
+    ];
+    const legal = mustLoad(sheetWith({ "bug-fix": "codex/gpt-6.1-sol@high" }));
+    expect(proposeStalePinMigrations("claude-code", legal, catalog, probed)).toEqual([]);
+
+    const retired = mustLoad(sheetWith({ "bug-fix": "codex/gpt-5.6-sol@high" }));
+    expect(proposeStalePinMigrations("claude-code", retired, catalog, probed)).toEqual([]);
   });
 });

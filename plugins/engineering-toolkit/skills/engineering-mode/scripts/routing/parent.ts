@@ -1,19 +1,25 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { launchHome, type AppCatalog } from "./catalog.ts";
+import { launchHome, SOL_CLI_MODEL, soleModel, type AppCatalog } from "./catalog.ts";
 import {
+  type AppId,
   type Effort,
   type LanePlan,
   type ModelSlug,
+  type PanelRoleId,
   type ParentHost,
+  type ProbedModel,
   type Result,
+  type RoleBinding,
   type RoleMap,
+  type SingleRoleId,
   currentHost,
   explicitEffort,
   modelSlug,
   namedApp,
   route,
 } from "./route.ts";
+import { PANEL_ROLE_IDS, SINGLE_ROLE_IDS } from "./sheet.ts";
 
 export type PluginAgentName = string & { readonly __pluginAgentName: unique symbol };
 
@@ -88,9 +94,20 @@ alwaysApply: true
 ---
 `;
 
+export type RouteSite =
+  | { readonly role: SingleRoleId }
+  | { readonly role: PanelRoleId; readonly lane: number };
+
+export type PinMigration = {
+  readonly site: RouteSite;
+  readonly app: AppId;
+  readonly from: ModelSlug;
+  readonly to: ModelSlug;
+};
+
 const FAMILY_SEED = [
   { family: "fable", model: "fable", effort: "max" },
-  { family: "sol", model: "gpt-5.6-sol", effort: "max" },
+  { family: "sol", model: SOL_CLI_MODEL, effort: "max" },
   { family: "grok", model: "grok-4.6", effort: "xhigh" },
   { family: "opus", model: "opus", effort: "xhigh" },
 ] as const;
@@ -258,6 +275,115 @@ export function firstRunRoleMap(parent: ParentHost, catalog: AppCatalog): RoleMa
     "swarm workers": [familyBinding(parent, catalog, "grok")],
     "architect runners": panel,
     "interrogate reviewers": panel,
+  };
+}
+
+function siteKey(site: RouteSite): string {
+  return "lane" in site ? `${site.role}#${site.lane}` : site.role;
+}
+
+function resolvedApp(parent: ParentHost, binding: RoleBinding): AppId | null {
+  if (binding.kind !== "route") return null;
+  return binding.route.app.kind === "current-host" ? parent : binding.route.app.app;
+}
+
+export function proposeStalePinMigrations(
+  parent: ParentHost,
+  roles: RoleMap,
+  catalog: AppCatalog,
+  probed?: readonly ProbedModel[]
+): readonly PinMigration[] {
+  const migrations: PinMigration[] = [];
+
+  const consider = (site: RouteSite, binding: RoleBinding): void => {
+    if (binding.kind !== "route") return;
+    const app = resolvedApp(parent, binding);
+    if (app === null) return;
+    if (catalog.get(app)?.models.has(binding.route.model) === true) return;
+    if (probed !== undefined) return;
+    const sole = soleModel(app, catalog);
+    if (sole === null) return;
+    migrations.push({
+      site,
+      app,
+      from: binding.route.model,
+      to: sole,
+    });
+  };
+
+  for (const role of SINGLE_ROLE_IDS) {
+    consider({ role }, roles[role]);
+  }
+  for (const role of PANEL_ROLE_IDS) {
+    const lanes = roles[role];
+    for (let lane = 0; lane < lanes.length; lane++) {
+      consider({ role, lane }, lanes[lane]);
+    }
+  }
+  return migrations;
+}
+
+export function applyAcceptedMigrations(
+  roles: RoleMap,
+  migrations: readonly PinMigration[],
+  accepted: readonly RouteSite[]
+): RoleMap {
+  if (accepted.length === 0) return roles;
+  const acceptedKeys = new Set(accepted.map(siteKey));
+  const bySite = new Map<string, PinMigration>();
+  for (const migration of migrations) {
+    if (acceptedKeys.has(siteKey(migration.site))) {
+      bySite.set(siteKey(migration.site), migration);
+    }
+  }
+  if (bySite.size === 0) return roles;
+
+  function rewrite(site: RouteSite, binding: RoleBinding): RoleBinding {
+    const migration = bySite.get(siteKey(site));
+    if (migration === undefined || binding.kind !== "route") return binding;
+    return {
+      kind: "route",
+      route: route({
+        model: migration.to,
+        app: binding.route.app,
+        effort: binding.route.effort,
+      }),
+    };
+  }
+
+  return {
+    "feature, refactoring": rewrite(
+      { role: "feature, refactoring" },
+      roles["feature, refactoring"]
+    ),
+    "bug-fix": rewrite({ role: "bug-fix" }, roles["bug-fix"]),
+    "perf-issue": rewrite({ role: "perf-issue" }, roles["perf-issue"]),
+    hillclimb: rewrite({ role: "hillclimb" }, roles.hillclimb),
+    "judgment and prose": rewrite(
+      { role: "judgment and prose" },
+      roles["judgment and prose"]
+    ),
+    "hardest tasks": rewrite({ role: "hardest tasks" }, roles["hardest tasks"]),
+    "how explorer": rewrite({ role: "how explorer" }, roles["how explorer"]),
+    "how explainer": rewrite({ role: "how explainer" }, roles["how explainer"]),
+    "why investigators, synthesizer": roles["why investigators, synthesizer"],
+    "reflect tooling, judgment, divergent, synthesizer":
+      roles["reflect tooling, judgment, divergent, synthesizer"],
+    "arena runners": roles["arena runners"].map((binding, lane) =>
+      rewrite({ role: "arena runners", lane }, binding)
+    ),
+    "arena cross-judge pool": roles["arena cross-judge pool"].map((binding, lane) =>
+      rewrite({ role: "arena cross-judge pool", lane }, binding)
+    ),
+    "swarm workers": roles["swarm workers"].map((binding, lane) =>
+      rewrite({ role: "swarm workers", lane }, binding)
+    ),
+    "architect runners": roles["architect runners"].map((binding, lane) =>
+      rewrite({ role: "architect runners", lane }, binding)
+    ),
+    "interrogate reviewers": roles["interrogate reviewers"].map((binding, lane) =>
+      rewrite({ role: "interrogate reviewers", lane }, binding)
+    ),
   };
 }
 

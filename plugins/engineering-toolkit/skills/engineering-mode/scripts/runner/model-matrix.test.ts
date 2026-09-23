@@ -1,6 +1,10 @@
 import { describe, expect, it } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { launchableApps, shippedCatalog } from "../routing/catalog.ts";
+import { firstRunRoleMap } from "../routing/parent.ts";
+import type { ModelSlug } from "../routing/route.ts";
+import { printRoleMap } from "../routing/sheet.ts";
 import { EFFORTS, type Effort } from "./types.ts";
 
 const PLUGIN_ROOT = join(import.meta.dir, "../../../..");
@@ -209,8 +213,10 @@ function firstRunSheet(setup: string): string {
 }
 
 describe("model matrix", () => {
-  const rows = parseModelMatrix(readFileSync(DISPATCH_PATH, "utf8"));
-  const setup = readFileSync(SETUP_PATH, "utf8");
+  const rows = parseModelMatrix(
+    readFileSync(DISPATCH_PATH, "utf8").replaceAll("\r\n", "\n")
+  );
+  const setup = readFileSync(SETUP_PATH, "utf8").replaceAll("\r\n", "\n");
   const quad = defaultDescriptors(rows);
 
   it("owns the effort universe and first-run defaults", () => {
@@ -253,7 +259,10 @@ describe("model matrix", () => {
       for (const effort of row.selectableEfforts) {
         const name = `pstack-${stem}-${effort}`;
         expected.add(`${name}.md`);
-        const text = readFileSync(join(AGENTS_DIR, `${name}.md`), "utf8");
+        const text = readFileSync(join(AGENTS_DIR, `${name}.md`), "utf8").replaceAll(
+          "\r\n",
+          "\n"
+        );
         const { fields, body } = parseFrontmatter(text);
         expect(fields).toEqual({
           name,
@@ -322,6 +331,45 @@ describe("model matrix", () => {
     }
   });
 
+  it("binds the shipped catalog and first-run sheet to the matrix", () => {
+    const catalog = shippedCatalog();
+    for (const app of launchableApps()) {
+      const provider = app === "claude-code" ? "claude" : app;
+      const matrixModels = rows
+        .filter((row) => row.provider === provider)
+        .map((row) => row.model)
+        .sort();
+      const catalogModels = [...(catalog.get(app)?.models.keys() ?? [])]
+        .map((slug) => String(slug))
+        .sort();
+      expect(catalogModels).toEqual(matrixModels);
+    }
+    for (const row of rows) {
+      const home = namedApp(row);
+      const onApp = catalog.get(home as "claude-code" | "codex" | "grok")?.models.get(
+        row.model as ModelSlug
+      );
+      expect(onApp?.selectableEfforts).toEqual(row.selectableEfforts);
+      expect(onApp?.nativeStem).toBe(row.pluginAgentStem);
+    }
+    const printed = printRoleMap(firstRunRoleMap("claude-code", catalog));
+    expect(printed).toContain("bug-fix: codex/gpt-6-sol@max");
+    expect(printed).toContain("perf-issue: codex/gpt-6-sol@max");
+    expect(printed).toContain("hillclimb: codex/gpt-6-sol@max");
+    const panel =
+      "arena runners: fable@max, codex/gpt-6-sol@max, grok/grok-4.6@xhigh, opus@xhigh";
+    expect(printed).toContain(panel);
+    expect(printed).toContain(
+      "arena cross-judge pool: fable@max, codex/gpt-6-sol@max, grok/grok-4.6@xhigh, opus@xhigh"
+    );
+    expect(printed).toContain(
+      "architect runners: fable@max, codex/gpt-6-sol@max, grok/grok-4.6@xhigh, opus@xhigh"
+    );
+    expect(printed).toContain(
+      "interrogate reviewers: fable@max, codex/gpt-6-sol@max, grok/grok-4.6@xhigh, opus@xhigh"
+    );
+  });
+
   it("keeps setup's fail-closed reconfiguration order", () => {
     let previous = -1;
     for (const heading of SETUP_SECTION_ORDER) {
@@ -346,7 +394,7 @@ describe("model matrix", () => {
   });
 
   it("binds Claude-native dispatch to the matrix mapping", () => {
-    const dispatch = readFileSync(DISPATCH_PATH, "utf8");
+    const dispatch = readFileSync(DISPATCH_PATH, "utf8").replaceAll("\r\n", "\n");
     const nativeStart = dispatch.indexOf("## Native lanes");
     const externalStart = dispatch.indexOf("## External lanes");
     expect(nativeStart).toBeGreaterThan(-1);
@@ -367,7 +415,7 @@ describe("model matrix", () => {
   });
 
   it("requires Cursor plugin-agent Tasks to pass a live family selector", () => {
-    const cursorTools = readFileSync(CURSOR_TOOLS_PATH, "utf8");
+    const cursorTools = readFileSync(CURSOR_TOOLS_PATH, "utf8").replaceAll("\r\n", "\n");
     const nativeStart = cursorTools.indexOf("## Native lanes");
     const externalStart = cursorTools.indexOf("## External lanes");
     expect(nativeStart).toBeGreaterThan(-1);
@@ -385,7 +433,7 @@ describe("model matrix", () => {
     expect(pluginAgent).not.toContain(
       "Do not set `Task` `model` to a Cursor host slug"
     );
-    const cursorNative = readFileSync(DISPATCH_PATH, "utf8");
+    const cursorNative = readFileSync(DISPATCH_PATH, "utf8").replaceAll("\r\n", "\n");
     const cursorBullet = cursorNative
       .split(/\r?\n/)
       .filter((line) => line.includes("plugin-agent") || line.includes("`opus`"))
@@ -398,7 +446,7 @@ describe("model matrix", () => {
   });
 
   it("normalizes old rolling-family pins before any runtime route", () => {
-    const dispatch = readFileSync(DISPATCH_PATH, "utf8");
+    const dispatch = readFileSync(DISPATCH_PATH, "utf8").replaceAll("\r\n", "\n");
     const normalizationStart = dispatch.indexOf("## Read-time normalization");
     const parentStart = dispatch.indexOf("## The parent owns the route");
     expect(normalizationStart).toBeGreaterThan(-1);
