@@ -15,7 +15,7 @@ const access: Access = { mode: "read-only", worktree: null };
 
 describe("runnerArgv", () => {
   it("builds --parent cursor --app grok without naming cursor as the child", () => {
-    const grok = modelSlug("grok-4.6");
+    const grok = modelSlug("grok-4.7");
     if (!grok.ok) throw new Error("grok");
     const planned = planLane({
       parent: "cursor",
@@ -49,7 +49,7 @@ describe("runnerArgv", () => {
       "--app",
       "grok",
       "--model",
-      "grok-4.6",
+      "grok-4.7",
       "--effort",
       "xhigh",
       "--mode",

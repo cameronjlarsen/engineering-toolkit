@@ -81,19 +81,19 @@ describe("firstRunRoleMap", () => {
     expect(cursor).toContain("judgment and prose: fable@max");
     expect(cursor).toContain("hardest tasks: fable@max");
     expect(cursor).toContain(
-      "arena runners: fable@max, codex/gpt-6-sol@max, grok-4.6@xhigh, opus@xhigh"
+      "arena runners: fable@max, codex/gpt-6-sol@max, grok-4.7@xhigh, opus@xhigh"
     );
     expect(cursor).not.toContain("claude-code/fable");
-    expect(cursor).not.toContain("grok/grok-4.6");
+    expect(cursor).not.toContain("grok/grok-4.7");
     expect(claude).toContain(
-      "arena runners: fable@max, codex/gpt-6-sol@max, grok/grok-4.6@xhigh, opus@xhigh"
+      "arena runners: fable@max, codex/gpt-6-sol@max, grok/grok-4.7@xhigh, opus@xhigh"
     );
 
     const codex = printRoleMap(firstRunRoleMap("codex", catalog));
     expect(codex).toContain("bug-fix: gpt-6-sol@max");
     expect(codex).toContain("judgment and prose: claude-code/fable@max");
     expect(codex).toContain(
-      "arena runners: claude-code/fable@max, gpt-6-sol@max, grok/grok-4.6@xhigh, claude-code/opus@xhigh"
+      "arena runners: claude-code/fable@max, gpt-6-sol@max, grok/grok-4.7@xhigh, claude-code/opus@xhigh"
     );
   });
 });
@@ -130,7 +130,7 @@ describe("nativeHandle", () => {
       binding: {
         kind: "route",
         route: route({
-          model: slug("grok-4.6"),
+          model: slug("grok-4.7"),
           app: currentHost(),
           effort: explicitEffort("xhigh"),
         }),
@@ -145,7 +145,7 @@ describe("nativeHandle", () => {
     if (!planned.ok || planned.value.kind !== "native") return;
     expect(nativeHandle(planned.value, shippedCatalog())).toEqual({
       kind: "host-spawn",
-      model: slug("grok-4.6"),
+      model: slug("grok-4.7"),
       effort: "xhigh",
     });
   });

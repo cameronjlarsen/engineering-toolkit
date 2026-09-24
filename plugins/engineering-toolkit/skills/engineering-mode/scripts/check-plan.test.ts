@@ -15,6 +15,7 @@ const FORBIDDEN_FENCE = [
   "control-cli",
   "git show origin/main:",
   "grok-4.6-fast-xhigh",
+  "grok-4.7-xhigh-fast",
   "~/.claude",
   "../references/",
   "/tmp",

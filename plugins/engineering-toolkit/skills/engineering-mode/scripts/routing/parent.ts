@@ -108,7 +108,7 @@ export type PinMigration = {
 const FAMILY_SEED = [
   { family: "fable", model: "fable", effort: "max" },
   { family: "sol", model: SOL_CLI_MODEL, effort: "max" },
-  { family: "grok", model: "grok-4.6", effort: "xhigh" },
+  { family: "grok", model: "grok-4.7", effort: "xhigh" },
   { family: "opus", model: "opus", effort: "xhigh" },
 ] as const;
 

@@ -51,7 +51,7 @@ describe("dispatch", () => {
   it("plans a named grok route as external", () => {
     const result = planLane({
       parent: "claude-code",
-      binding: routeBinding("grok-4.6", namedApp("grok"), explicitEffort("xhigh")),
+      binding: routeBinding("grok-4.7", namedApp("grok"), explicitEffort("xhigh")),
       override: undefined,
       catalog: shippedCatalog(),
       inventory: [inventory("grok", { kind: "launch-ready" })],
@@ -136,7 +136,7 @@ describe("dispatch", () => {
   it("rejects unknown readiness for a selected external app", () => {
     const result = planLane({
       parent: "claude-code",
-      binding: routeBinding("grok-4.6", namedApp("grok")),
+      binding: routeBinding("grok-4.7", namedApp("grok")),
       override: undefined,
       catalog: shippedCatalog(),
       inventory: [],
@@ -183,7 +183,7 @@ describe("dispatch", () => {
   it("plans omitted-app grok as native on a cursor parent", () => {
     const result = planLane({
       parent: "cursor",
-      binding: routeBinding("grok-4.6", currentHost(), explicitEffort("xhigh")),
+      binding: routeBinding("grok-4.7", currentHost(), explicitEffort("xhigh")),
       override: undefined,
       catalog: shippedCatalog(),
       inventory: [],
@@ -201,7 +201,7 @@ describe("dispatch", () => {
   it("plans named grok as external from a cursor parent", () => {
     const result = planLane({
       parent: "cursor",
-      binding: routeBinding("grok-4.6", namedApp("grok"), explicitEffort("xhigh")),
+      binding: routeBinding("grok-4.7", namedApp("grok"), explicitEffort("xhigh")),
       override: undefined,
       catalog: shippedCatalog(),
       inventory: [inventory("grok", { kind: "launch-ready" })],

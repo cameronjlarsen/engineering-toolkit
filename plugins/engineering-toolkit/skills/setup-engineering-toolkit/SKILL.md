@@ -53,8 +53,9 @@ missing, read the previous `pstack-models` path for that parent as inbound
 migration. If that is also missing, use the complete first-run role map below.
 
 Discover the catalog's apps and classify each as installed, launch-ready, or
-unknown. Discovery does not enable apps. A duplicate or unknown role row is
-inconsistent state; report it before probing.
+unknown. Discovery does not enable apps. A duplicate role row is
+inconsistent state; report it before probing. A line whose role is not in
+the step 7 map, such as `how critics`, is from a retired role. Drop it.
 
 ### 3. Parse selected routes
 
@@ -65,9 +66,12 @@ refreshed Codex model list contains it. Parse Route wire values as `model`,
 Route. Do not infer an app from a vendor. An effort is inconsistent when it is
 outside that model's selectable efforts. An unmatched app/model means the slug
 is absent from both the shipped catalog and the refreshed list. An unmatched
-app/model, out-of-domain effort, duplicate role, or unknown role is
+app/model, out-of-domain effort, or duplicate role is
 inconsistent state. Stop and show the conflicting rows. Do not probe or
-write while any inconsistency is unresolved.
+write while any inconsistency is unresolved. A sheet written before this
+Cursor 0.15.5 Grok default pins the old default models. Delete those role
+lines, or delete the file, then run `/setup-engineering-toolkit` again. A
+rerun keeps any role whose model differs from the default.
 
 ### 4. Ask for a budget, then apply it
 
@@ -78,7 +82,7 @@ write while any inconsistency is unresolved.
 - `medium, high reasoning`
 - `small, medium reasoning`
 
-**(b) Apply it.** Every run, build the working table from the skill defaults in step 7 first. On a re-run, keep any role the operator already changed by family, list, or alias (`inherit-parent`, `auto`). Then apply the budget. `unlimited` leaves every effort as in that table. The other three set the `@effort` of every real Route, panel lanes included, to `xhigh`, `high`, or `medium`. `inherit-parent` and `auto` do not change. If the target effort is not selectable for that model family per provider-dispatch.md, use that family's highest selectable effort at or below the target, else mark the role as needing a choice. For example, `small` turns `fable@max` into `fable@medium` and `grok/grok-4.6@xhigh` into `grok/grok-4.6@medium`.
+**(b) Apply it.** Every run, build the working table from the skill defaults in step 7 first. On a re-run, keep any role the operator already changed by family, list, or alias (`inherit-parent`, `auto`). Then apply the budget. `unlimited` leaves every effort as in that table. The other three set the `@effort` of every real Route, panel lanes included, to `xhigh`, `high`, or `medium`. `inherit-parent` and `auto` do not change. If the target effort is not selectable for that model family per provider-dispatch.md, use that family's highest selectable effort at or below the target, else mark the role as needing a choice. For example, `small` turns `fable@max` into `fable@medium` and `grok/grok-4.7@xhigh` into `grok/grok-4.7@medium`.
 
 **(c) Confirm stays in steps 6 and 7.** Do not repeat the role-confirm questions here.
 
@@ -129,8 +133,8 @@ documented role key.
 ### 7. Confirm and commit
 
 Show app discovery, readiness, rolling-alias migrations, the chosen budget
-label and target effort, the route table for this parent, and every rendered
-role and Route wire value. Ask for confirmation before writing.
+label and target effort, the route table for this parent, every rendered
+role and Route wire value, and each line step 2 dropped. Ask for confirmation before writing.
 
 Every selected route must have passed step 5. Why and Reflect require the
 parent's live MCP surface. Keep their roles on `inherit-parent` or `auto`;
@@ -154,21 +158,21 @@ for the destination default. Every documented role remains present.
 one panel lane.
 
 # budget: unlimited (max)
-feature, refactoring: grok/grok-4.6@xhigh
+feature, refactoring: grok/grok-4.7@xhigh
 bug-fix: codex/gpt-6-sol@max
 perf-issue: codex/gpt-6-sol@max
 hillclimb: codex/gpt-6-sol@max
 judgment and prose: fable@max
 hardest tasks: fable@max
-how explorer: grok/grok-4.6@xhigh
+how explorer: grok/grok-4.7@xhigh
 how explainer: fable@max
 why investigators, synthesizer: inherit-parent
 reflect tooling, judgment, divergent, synthesizer: inherit-parent
-arena runners: fable@max, codex/gpt-6-sol@max, grok/grok-4.6@xhigh, opus@xhigh
-arena cross-judge pool: fable@max, codex/gpt-6-sol@max, grok/grok-4.6@xhigh, opus@xhigh
-swarm workers: grok/grok-4.6@xhigh
-architect runners: fable@max, codex/gpt-6-sol@max, grok/grok-4.6@xhigh, opus@xhigh
-interrogate reviewers: fable@max, codex/gpt-6-sol@max, grok/grok-4.6@xhigh, opus@xhigh
+arena runners: fable@max, codex/gpt-6-sol@max, grok/grok-4.7@xhigh, opus@xhigh
+arena cross-judge pool: fable@max, codex/gpt-6-sol@max, grok/grok-4.7@xhigh, opus@xhigh
+swarm workers: grok/grok-4.7@xhigh
+architect runners: fable@max, codex/gpt-6-sol@max, grok/grok-4.7@xhigh, opus@xhigh
+interrogate reviewers: fable@max, codex/gpt-6-sol@max, grok/grok-4.7@xhigh, opus@xhigh
 ```
 
 ### 8. Wire it in
