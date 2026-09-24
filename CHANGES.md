@@ -2,6 +2,16 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## Cursor 0.15.5 content sync keeps 1.4.4 manifests
+
+This checkout applies Cursor pstack 0.15.5 at `12d587dfb20741cafc376c42c696c5f6e2a64487` without bumping this fork off 1.4.4. The commits are `70b2dc8`, `b42effe`, `b0b9c7a`, and `12d587d`.
+
+Taken. Autopilot verification rounds, upgrade-help wording, merge-prep CI wait, prose cuts, babysit force-with-lease for Autopilot-full self-babysit, an append-only decision log, one shared model-rule read path, and setup dropping retired role lines.
+
+Translated. `poteto-mode` stays `engineering-mode`. `setup-pstack` stays `setup-engineering-toolkit`. `pstack-models.mdc` stays `engineering-toolkit-models.mdc`. Model pins stay grammar 2 descriptors.
+
+Not applied. `bug-fix`, `perf-issue`, and `hillclimb` stay on `codex/gpt-6-sol`. Arena, architect, and interrogate stay four runners. `multi-phase-plan.md` already names `swarm workers` for live lanes, so that hunk was not re-applied. The logo and the older exclusions in `UPSTREAM.md` stay. `README-UPSTREAM.md` is the Cursor 0.15.5 README. Its default-panel sentence names three models. The live panel in this fork stays the four-runner quad.
+
 ## Fork-authored: catalog version 1.4.4
 
 Codex Sol is now `gpt-6-sol`. The catalog no longer serves `gpt-5.6-sol`. Setup proposes a stale pin for sheets that still name the retired slug and rewrites the route only after the operator accepts that proposal. Dispatch keeps failing closed with `app-does-not-serve-model` until acceptance. A refreshed Codex model list admits slugs the matrix does not name, and dispatch still fails closed for a slug in neither the catalog nor that list. The Open Pstack fork-point row in `UPSTREAM.md` stays 1.4.1.

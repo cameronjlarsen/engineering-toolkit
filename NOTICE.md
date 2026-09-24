@@ -23,6 +23,7 @@ This distribution is Engineering Toolkit, a fork of Open Pstack (`ericlitman/ope
 | `plugins/engineering-toolkit/assets/logo.png` | Engineering Toolkit fork catalog mark | (c) 2026 Cameron Larsen | MIT | [LICENSE](LICENSE) |
 | `plugins/engineering-toolkit/skills/engineering-mode/SKILL.md` (0.15.1 reply-writing evidence rule) | [cursor/plugins/pstack @ f8abedd](https://github.com/cursor/plugins/tree/f8abeddd1862dc73704e3d719dd73df0d51b8c71/pstack) | (c) 2026 Lauren Tan | MIT | [LICENSE](LICENSE) |
 | `plugins/engineering-toolkit/skills/engineering-mode/SKILL.md` plus playbooks `autopilot-full`, `autopilot-stack`, `multi-phase-plan` (0.15.2 operator-neutral pronouns and in-chat status tick), and `README-UPSTREAM.md` | [cursor/plugins/pstack @ 5bf2b15](https://github.com/cursor/plugins/tree/5bf2b1544db739998121a306340631963c2ff3de/pstack) | (c) 2026 Lauren Tan | MIT | [LICENSE](LICENSE) |
+| `plugins/engineering-toolkit/skills/` (0.15.3 through 0.15.5 skill text, playbooks, and routing prose) and `README-UPSTREAM.md` | [cursor/plugins/pstack @ 12d587d](https://github.com/cursor/plugins/tree/12d587dfb20741cafc376c42c696c5f6e2a64487/pstack) | (c) 2026 Lauren Tan | MIT | [LICENSE](LICENSE) |
 
 ## What changed in the port
 
