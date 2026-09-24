@@ -45,7 +45,7 @@ export function shippedCatalog(): AppCatalog {
     launch: "cli-auth",
     models: new Map([[SOL_CLI_MODEL, sol]]),
   };
-  const grokModel = model("grok-4.6", "xai", null);
+  const grokModel = model("grok-4.7", "xai", null);
   const grok: AppRecord = {
     id: "grok",
     launch: "cli-auth",

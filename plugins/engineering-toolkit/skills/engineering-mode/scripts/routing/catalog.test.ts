@@ -14,11 +14,11 @@ describe("shipped catalog", () => {
     const catalog = shippedCatalog();
     const cursor = catalog.get("cursor");
     const claude = catalog.get("claude-code");
-    const grok = catalog.get("grok")?.models.get("grok-4.6" as never);
+    const grok = catalog.get("grok")?.models.get("grok-4.7" as never);
     expect(cursor?.launch).toBe("none");
     expect(cursor?.models.get("fable" as never)).toEqual(claude?.models.get("fable" as never));
     expect(cursor?.models.get("opus" as never)).toEqual(claude?.models.get("opus" as never));
-    expect(cursor?.models.get("grok-4.6" as never)).toEqual(grok);
+    expect(cursor?.models.get("grok-4.7" as never)).toEqual(grok);
     expect(grok?.nativeStem).toBeNull();
   });
 
@@ -30,7 +30,7 @@ describe("shipped catalog", () => {
     const catalog = shippedCatalog();
     const fable = catalog.get("claude-code")?.models.get("fable" as never);
     const sol = catalog.get("codex")?.models.get(SOL_CLI_MODEL);
-    const grok = catalog.get("grok")?.models.get("grok-4.6" as never);
+    const grok = catalog.get("grok")?.models.get("grok-4.7" as never);
     if (!fable || !sol || !grok) throw new Error("missing shipped models");
     expect(launchHome(fable.slug, catalog)).toBe("claude-code");
     expect(launchHome(sol.slug, catalog)).toBe("codex");
@@ -46,7 +46,7 @@ describe("shipped catalog", () => {
     const catalog = shippedCatalog();
     expect(catalog.get("codex")?.models.get(SOL_CLI_MODEL)?.slug).toBe(SOL_CLI_MODEL);
     expect(soleModel("codex", catalog)).toBe(SOL_CLI_MODEL);
-    expect(String(soleModel("grok", catalog))).toBe("grok-4.6");
+    expect(String(soleModel("grok", catalog))).toBe("grok-4.7");
     expect(soleModel("claude-code", catalog)).toBeNull();
     expect(soleModel("cursor", catalog)).toBeNull();
   });

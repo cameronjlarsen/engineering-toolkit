@@ -357,16 +357,16 @@ describe("model matrix", () => {
     expect(printed).toContain("perf-issue: codex/gpt-6-sol@max");
     expect(printed).toContain("hillclimb: codex/gpt-6-sol@max");
     const panel =
-      "arena runners: fable@max, codex/gpt-6-sol@max, grok/grok-4.6@xhigh, opus@xhigh";
+      "arena runners: fable@max, codex/gpt-6-sol@max, grok/grok-4.7@xhigh, opus@xhigh";
     expect(printed).toContain(panel);
     expect(printed).toContain(
-      "arena cross-judge pool: fable@max, codex/gpt-6-sol@max, grok/grok-4.6@xhigh, opus@xhigh"
+      "arena cross-judge pool: fable@max, codex/gpt-6-sol@max, grok/grok-4.7@xhigh, opus@xhigh"
     );
     expect(printed).toContain(
-      "architect runners: fable@max, codex/gpt-6-sol@max, grok/grok-4.6@xhigh, opus@xhigh"
+      "architect runners: fable@max, codex/gpt-6-sol@max, grok/grok-4.7@xhigh, opus@xhigh"
     );
     expect(printed).toContain(
-      "interrogate reviewers: fable@max, codex/gpt-6-sol@max, grok/grok-4.6@xhigh, opus@xhigh"
+      "interrogate reviewers: fable@max, codex/gpt-6-sol@max, grok/grok-4.7@xhigh, opus@xhigh"
     );
   });
 

@@ -15,7 +15,7 @@ destination does not publish a default, dispatch rejects the route.
 |---|---|---|---|---|---|---|
 | fable | fable | claude | fable | max | low medium high xhigh max | fable |
 | sol | gpt-5.6-sol-max | codex | gpt-6-sol | max | low medium high xhigh max | - |
-| grok | grok-4.6-fast-xhigh | grok | grok-4.6 | xhigh | low medium high xhigh max | - |
+| grok | grok-4.7-xhigh-fast | grok | grok-4.7 | xhigh | low medium high xhigh max | - |
 | opus | opus | claude | opus | xhigh | low medium high xhigh max | opus |
 
 The allowed effort universe is exactly `low`, `medium`, `high`, `xhigh`, `max`. First-run requested efforts are the Default effort cell of each row. A plugin-agent stem of `-` means the family has no plugin-agent. Otherwise the shipped agent name is `pstack-<stem>-<effort>`.
@@ -49,7 +49,7 @@ instead of silently executing it. Sol and Grok pins have no read-time alias. A
 model the catalog does not serve fails dispatch as `app-does-not-serve-model`
 until setup accepts a stale-pin proposal.
 
-`fast` is part of Cursor's Grok selector, not a Grok Build CLI model or effort flag. The portable Grok route pins the current CLI model `grok-4.6`. The first-run Grok effort is `xhigh`. Cursor also serves `grok-4.6` natively. An omitted-app Grok route is parent-native host-spawn. Named `grok/...` remains the Grok CLI and stays external.
+`fast` is part of Cursor's Grok selector, not a Grok Build CLI model or effort flag. The portable Grok route pins the current CLI model `grok-4.7`. The first-run Grok effort is `xhigh`. Cursor also serves `grok-4.7` natively. An omitted-app Grok route is parent-native host-spawn. Named `grok/...` remains the Grok CLI and stays external.
 
 ## The parent owns the route
 
@@ -65,7 +65,7 @@ choose a route, detect or reroute the harness, or spawn another model.
 | Cursor | external | external | external | native |
 
 The `grok` column is the Grok CLI app. Cursor native Grok is the `cursor` app
-serving `grok-4.6`, not a same-host reinterpretation of named `grok/...`.
+serving `grok-4.7`, not a same-host reinterpretation of named `grok/...`.
 
 `inherit-parent` and `auto` remain parent-native bindings. Why and Reflect
 remain `inherit-parent` or `auto` because they require the parent's MCP
@@ -163,7 +163,7 @@ The sheet header is `Descriptor grammar: 2`. These are wire values:
 ```text
 fable
 fable@max
-grok/grok-4.6
+grok/grok-4.7
 claude-code/fable@high
 inherit-parent
 auto
