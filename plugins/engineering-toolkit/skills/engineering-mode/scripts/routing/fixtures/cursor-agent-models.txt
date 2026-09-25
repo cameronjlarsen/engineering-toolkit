@@ -1,0 +1,55 @@
+Available models
+
+auto - Auto (default)
+gpt-5.3-codex - Codex 5.3
+gpt-5.3-codex-fast - Codex 5.3 Fast
+composer-2.5 - Composer 2.5
+cursor-grok-4.6-high - Grok 4.6
+cursor-grok-4.6-high-fast - Grok 4.6 Fast
+gpt-5.6-sol-none - GPT-5.6 Sol 1M None
+gpt-5.5-low - GPT-5.5 1M Low
+gpt-5.5-extra-high - GPT-5.5 1M Extra High
+muse-spark-1.3-minimal - Muse Spark 1.3 1M Minimal
+claude-sonnet-5-low - Claude Sonnet 5 1M Low
+claude-4.6-opus-high-thinking - Claude Opus 4.6 1M Thinking
+gpt-5.6-luna-high-fast - GPT-5.6 Luna 1M High Fast
+grok-4.7-low - Grok 4.7  Low
+grok-4.7-low-fast - Grok 4.7  Low Fast​​
+grok-4.7-medium - Grok 4.7  Medium
+grok-4.7-medium-fast - Grok 4.7  Medium Fast​​
+grok-4.7-high - Grok 4.7  High
+grok-4.7-high-fast - Grok 4.7  High Fast​​
+grok-4.7-xhigh - Grok 4.7  Extra High
+grok-4.7-xhigh-fast - Grok 4.7  Extra High Fast​​
+claude-opus-5-5-low - Claude Opus 5.5 1M Low
+claude-opus-5-5-low-fast - Claude Opus 5.5 1M Low Fast
+claude-opus-5-5-medium - Claude Opus 5.5 1M
+claude-opus-5-5-medium-fast - Claude Opus 5.5 1M Fast
+claude-opus-5-5-high - Claude Opus 5.5 1M High
+claude-opus-5-5-high-fast - Claude Opus 5.5 1M High Fast
+claude-opus-5-5-xhigh - Claude Opus 5.5 1M Extra High
+claude-opus-5-5-xhigh-fast - Claude Opus 5.5 1M Extra High Fast
+claude-opus-5-5-max - Claude Opus 5.5 1M Max
+claude-opus-5-5-max-fast - Claude Opus 5.5 1M Max Fast
+claude-opus-4-8-low - Claude Opus 4.8 1M Low
+claude-opus-4-8-low-fast - Claude Opus 4.8 1M Low Fast
+claude-opus-4-8-medium - Claude Opus 4.8 1M Medium
+claude-opus-4-8-medium-fast - Claude Opus 4.8 1M Medium Fast
+claude-opus-4-8-high - Claude Opus 4.8 1M
+claude-opus-4-8-high-fast - Claude Opus 4.8 1M Fast
+claude-opus-4-8-xhigh - Claude Opus 4.8 1M Extra High
+claude-opus-4-8-xhigh-fast - Claude Opus 4.8 1M Extra High Fast
+claude-opus-4-8-max - Claude Opus 4.8 1M Max
+claude-opus-4-8-max-fast - Claude Opus 4.8 1M Max Fast
+claude-fable-5-1-low - Claude Fable 5.1 1M Low (NO ZDR)
+claude-fable-5-1-medium - Claude Fable 5.1 1M Medium (NO ZDR)
+claude-fable-5-1-high - Claude Fable 5.1 1M (NO ZDR)
+claude-fable-5-1-xhigh - Claude Fable 5.1 1M Extra High (NO ZDR)
+claude-fable-5-1-max - Claude Fable 5.1 1M Max (NO ZDR)
+claude-fable-5-1-thinking-low - Claude Fable 5.1 1M Low Thinking (NO ZDR)
+claude-fable-5-1-thinking-medium - Claude Fable 5.1 1M Medium Thinking (NO ZDR)
+claude-fable-5-1-thinking-high - Claude Fable 5.1 1M Thinking (NO ZDR)
+claude-fable-5-1-thinking-xhigh - Claude Fable 5.1 1M Extra High Thinking (NO ZDR)
+claude-fable-5-1-thinking-max - Claude Fable 5.1 1M Max Thinking (NO ZDR)
+
+Tip: use --model <id> (or /model <id> in interactive mode) to switch. Parameterized models also accept quoted overrides, e.g. --model 'claude-opus-4-8[context=1m,effort=high,fast=false]'.

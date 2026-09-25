@@ -44,7 +44,11 @@ refresh the Codex model list with `codex debug models`. Never pass `--bundled`.
 Parse that stdout with `parseCodexDebugModels`. A failed refresh is an unknown
 list (`probedModels` omitted), not an empty list: report it. Do not sole-map
 slugs while the list is unknown. When the refresh succeeds, pass that list to
-`proposeStalePinMigrations`. A slug on the list is not a proposal. A slug on
+`proposeStalePinMigrations`. Refresh Cursor's list the same way with
+`cursor-agent models` and parse that stdout with `parseCursorModels`. It
+derives each family's in-slug template and efforts from slugs that end in an
+effort; `-fast` variants add no efforts. Pass each list as that app's
+`probedModels`. A slug on the list is not a proposal. A slug on
 neither the shipped catalog nor the list stays unmatched for step 3. Do not
 rewrite a route until the operator accepts a proposal. Unaccepted rows stay
 inconsistent at step 3. Also read a `# budget:`
@@ -63,7 +67,7 @@ parser ignores every line that is not a role row, so prose stays readable.
 
 The four-row model matrix names each family's blank-sheet default. It is not
 the allowlist. A slug is consistent when the shipped catalog or this session's
-refreshed Codex model list contains it. Parse Route wire values as
+refreshed Codex or Cursor model list for that provider contains it. Parse Route wire values as
 `provider:model@effort`. The effort is required; a migrated grammar 2 route
 without one is inconsistent until the operator names its effort.
 `inherit-parent` and `auto` carry no Route. Do not infer a provider from a

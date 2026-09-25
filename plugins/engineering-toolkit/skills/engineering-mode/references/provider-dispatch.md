@@ -35,7 +35,10 @@ requested alias in `model` and the concrete provider-reported revision in
 
 The matrix names each family's blank-sheet default. A cli-auth app also accepts
 any slug in the refreshed CLI model list for that session. `codex debug models`
-is that list for Codex. `--bundled` is not. Dispatch does not rewrite a sheet
+is that list for Codex. `--bundled` is not. `cursor-agent models` is Cursor's
+list. A Cursor family is a listed slug minus its effort suffix, such as
+`grok-4.7` from `grok-4.7-high`, and its efforts are the suffixes listed for it.
+`-fast` variants add no efforts. Dispatch does not rewrite a sheet
 slug onto the matrix default.
 
 The effort must be one the catalog lists for that model on that provider.
