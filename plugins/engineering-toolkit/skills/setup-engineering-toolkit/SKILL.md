@@ -198,7 +198,15 @@ Do not copy the model sheet between harnesses without rerunning the parent-speci
 
 Before declaring setup complete, parse the written sheet body with
 `loadRoleMap(body, parent)` and compare the result with the in-memory role map.
-A parse error or mismatch fails setup; restore the snapshots. Then run one
+A parse error or mismatch fails setup; restore the snapshots. `<plugin root>`
+is the installed plugin directory and `<parent>` is `claude-code`, `codex`, or
+`cursor`. The command exits non-zero and prints the typed error on failure:
+
+```shell
+PLUGIN_ROOT=<plugin root> bun -e 'const [sheetPath, parent] = process.argv.slice(-2); const root = process.env.PLUGIN_ROOT; const { unwrapStoredSheet } = await import(`${root}/skills/engineering-mode/scripts/routing/parent.ts`); const { loadRoleMap } = await import(`${root}/skills/engineering-mode/scripts/routing/sheet.ts`); const body = unwrapStoredSheet(await Bun.file(sheetPath).text()); const parsed = body.ok ? loadRoleMap(body.value, parent) : body; console.log(JSON.stringify(parsed.ok ? "ok" : parsed.error)); process.exit(parsed.ok ? 0 : 1);' <sheet path> <parent>
+```
+
+Then run one
 small read-only mixed panel from this parent using selected routes, distinct output/receipt paths, and an
 independent cross-judge. Launch native agents and external processes in the
 background with retained handles, then drain them. Verify transcripts and
