@@ -1,13 +1,20 @@
 # Provider dispatch
 
-Engineering Toolkit model choices are typed `Route` values. The sheet is only their wire
-format; the domain does not contain a provider field.
+Engineering Toolkit model choices are typed `Route` values written as
+provider-qualified descriptors:
 
-A role is `inherit-parent`, `auto`, or a `Route`. A `Route` contains a model,
-an optional app, and an optional effort. An omitted app means the current
-host. The model vendor never selects the app. An omitted effort means the
-destination's default; family defaults are not filled in. If the
-destination does not publish a default, dispatch rejects the route.
+```text
+<provider>:<model>@<effort>
+```
+
+A role is `inherit-parent`, `auto`, or a `Route`. A `Route` names a provider,
+a model, and an effort. All three are required. The providers are `claude`,
+`codex`, `cursor`, and `grok`. The model is a family name such as `opus`,
+`fable`, `gpt-6-sol`, or `grok-4.7`, not an app-specific slug. `claude:opus`
+and `cursor:opus` name the same model on two apps. The catalog
+(`scripts/routing/catalog.ts`) turns a family into each app's CLI slug and
+lists the efforts each app accepts for it. The model vendor never selects the
+provider. Every role is written inline; there are no named or shared routes.
 
 ## Model matrix
 
@@ -31,12 +38,18 @@ any slug in the refreshed CLI model list for that session. `codex debug models`
 is that list for Codex. `--bundled` is not. Dispatch does not rewrite a sheet
 slug onto the matrix default.
 
+The effort must be one the catalog lists for that model on that provider.
+Cursor serves `grok-4.7` at `low` through `xhigh` only, so
+`cursor:grok-4.7@max` is rejected before launch. Cursor puts the effort in the
+slug: `cursor:grok-4.7@high` runs `grok-4.7-high`, `cursor:opus@medium` runs
+`claude-opus-5-5-medium`, and `cursor:fable@max` runs `claude-fable-5-1-max`.
+
 ## Read-time normalization
 
 Normalize configured descriptors before choosing a route. If an old
 provider-qualified Claude model starts with `claude-fable-` or
 `claude-opus-` and its remaining revision contains only digits and hyphens,
-replace the model component in memory with `fable` or `opus`. Preserve app,
+replace the model component in memory with `fable` or `opus`. Preserve provider,
 effort, role, and lane order. Use only the normalized value for dispatch or
 runner argv. Never pass the versioned predecessor to Claude.
 
@@ -49,23 +62,24 @@ instead of silently executing it. Sol and Grok pins have no read-time alias. A
 model the catalog does not serve fails dispatch as `app-does-not-serve-model`
 until setup accepts a stale-pin proposal.
 
-`fast` is part of Cursor's Grok selector, not a Grok Build CLI model or effort flag. The portable Grok route pins the current CLI model `grok-4.7`. The first-run Grok effort is `xhigh`. Cursor also serves `grok-4.7` natively. An omitted-app Grok route is parent-native host-spawn. Named `grok/...` remains the Grok CLI and stays external.
+`fast` is part of Cursor's Grok selector, not a Grok Build CLI model or effort flag. The portable Grok route pins the current CLI model `grok-4.7`. The first-run Grok effort is `xhigh`. Cursor also serves `grok-4.7`. `cursor:grok-4.7` is native host-spawn on a Cursor parent and runs through the Cursor CLI from any other parent. `grok:grok-4.7` is always the Grok CLI.
 
 ## The parent owns the route
 
 `planLane` is the parent-owned entry point. The top-level harness resolves a
-binding once and derives native versus external from
-`parent === resolved app`. Children receive an assigned plan. They never
-choose a route, detect or reroute the harness, or spawn another model.
+binding once. A route runs natively only when its provider is the parent. Any
+other route runs through that provider's CLI via `pstack-runner`. Children
+receive an assigned plan. They never choose a route, detect or reroute the
+harness, or spawn another model.
 
-| Parent | `claude-code` | `codex` | `grok` | `cursor` |
+| Parent | `claude:` | `codex:` | `cursor:` | `grok:` |
 |---|---|---|---|---|
-| Claude Code | native | external | external | unlistable |
-| Codex | external | native | external | unlistable |
-| Cursor | external | external | external | native |
+| Claude Code | native | Codex CLI | Cursor CLI | Grok CLI |
+| Codex | Claude Code CLI | native | Cursor CLI | Grok CLI |
+| Cursor | Claude Code CLI | Codex CLI | native | Grok CLI |
 
-The `grok` column is the Grok CLI app. Cursor native Grok is the `cursor` app
-serving `grok-4.7`, not a same-host reinterpretation of named `grok/...`.
+Internally the `claude` provider is the `claude-code` app id, which is also the
+value of `--parent` and `--app` for Claude Code.
 
 `inherit-parent` and `auto` remain parent-native bindings. Why and Reflect
 remain `inherit-parent` or `auto` because they require the parent's MCP
@@ -76,14 +90,14 @@ to `inherit-parent`.
 
 Native dispatch avoids a second CLI startup and its base context.
 
-- Claude Code: match the route's `(app, model)` to one model-matrix row, then
+- Claude Code: match the route's `(provider, model)` to one model-matrix row, then
   dispatch it through `pstack-<stem>-<effort>` using that row's plugin-agent
   stem and resolved effort. Pass the complete task, grounding paths,
   access mode, and unique output location in the `Agent` prompt.
 - Codex: call `spawn_agent` with the route's model and `reasoning_effort`,
   the complete task, grounding paths, access mode, and unique output location.
   Use an isolated worktree for a writer.
-- Cursor: match the route's `(app, model)` to one model-matrix row. A row with
+- Cursor: match the route's `(provider, model)` to one model-matrix row. A row with
   a plugin-agent stem dispatches through `pstack-<stem>-<effort>`. Set `Task` `model` to a live Cursor selector from this session's Task model list that matches that row's family and effort. Do not pass `opus` or `fable`. Do not omit `model`. An omitted selector inherits the parent. A row with stem `-`
   dispatches through host-spawn: `Task` with `model` set to a live Cursor
   selector for that model and effort. Pass the complete task, grounding paths,
@@ -100,8 +114,8 @@ The launcher lives at `skills/engineering-mode/scripts/runner/pstack-runner` und
 ```text
 pstack-runner \
   --parent <claude-code|codex|cursor> \
-  --app <claude-code|codex|grok> \
-  --model <real CLI model> \
+  --app <claude-code|codex|cursor|grok> \
+  --model <family or real CLI model> \
   --effort <low|medium|high|xhigh|max> \
   --mode <read-only|isolated-write> \
   --prompt <unique prompt file> \
@@ -114,8 +128,16 @@ pstack-runner \
 Pass arguments as an argv array or quote every path. Never interpolate prompt
 text into a shell command. The launcher preflights the selected app and
 authentication, invokes the model exactly once, and records app/model/effort.
-External lanes do not receive the parent's MCP surface. Cursor cannot be
-launched as a child. The launcher never falls back.
+External lanes do not receive the parent's MCP surface. The launcher never
+falls back.
+
+For `--app cursor`, pass the family name and effort from the route, for example
+`--app cursor --model grok-4.7 --effort high`. The launcher looks the family up
+in the catalog, rejects an effort the entry does not list with exit 64 and no
+receipt, and runs `cursor-agent -p --output-format json --model <slug>` with
+the prompt on stdin. Its preflight is `cursor-agent status`. On Windows the CLI
+is `%LOCALAPPDATA%\cursor-agent\cursor-agent.cmd`; that directory must be on
+`PATH`.
 
 Grok authentication preflight has one bounded retry. If the first `grok models` result would be classified as unauthenticated, the runner waits five seconds and tries the same preflight once more. A second failure is terminal. The delay and second attempt share the runner's absolute deadline and cancellation latch, and the receipt keeps evidence from both attempts. Model execution is never retried.
 
@@ -133,7 +155,7 @@ The runner and its preflight have no implicit timeout. Pass `--timeout` only
 when a real user, service, or task deadline supplies one. No weaker-model
 fallback is allowed.
 
-Read-only mode maps to Claude plan mode with project-only settings and an explicit tool list, Codex's read-only sandbox, and Grok plan mode plus its `read-only` sandbox and read-oriented tool list. Grok's built-in read-only profile deliberately keeps its own state and system temporary directories writable, so point a read-only Grok lane at the actual checkout rather than a worktree under `/tmp`, `/var/tmp`, or the host's temporary directory. `isolated-write` maps to Claude `acceptEdits` with project-only settings, Codex `workspace-write`, and Grok `acceptEdits` plus its `workspace` sandbox and write-capable tool list. Give every writer only a dedicated worktree or output directory. Never route a writer into the primary checkout.
+Read-only mode maps to Claude plan mode with project-only settings and an explicit tool list, Codex's read-only sandbox, Grok plan mode plus its `read-only` sandbox and read-oriented tool list, and Cursor `--mode plan --trust`. Cursor print mode refuses an untrusted workspace, so a read-only lane trusts its assigned cwd. Grok's built-in read-only profile deliberately keeps its own state and system temporary directories writable, so point a read-only Grok lane at the actual checkout rather than a worktree under `/tmp`, `/var/tmp`, or the host's temporary directory. `isolated-write` maps to Claude `acceptEdits` with project-only settings, Codex `workspace-write`, Grok `acceptEdits` plus its `workspace` sandbox and write-capable tool list, and Cursor `--force`. The Cursor CLI has no flag that disables its subagents or tool families, so its lane relies on the prompt and the assigned cwd. Give every writer only a dedicated worktree or output directory. Never route a writer into the primary checkout.
 
 Every concurrent external lane needs distinct prompt, output, and receipt paths. The launcher reserves output and receipt paths exclusively and refuses to overwrite them.
 
@@ -143,7 +165,7 @@ Success requires all of these:
 
 1. Exit status `0`.
 2. Receipt status `complete`.
-3. Either `modelVerified: true` with `modelEvidence: "provider-report"`, or a Codex receipt with `reportedModel: null`, `modelVerified: false`, and `modelEvidence: "pinned-argv"`. For Claude's `fable` and `opus` aliases, the concrete provider report must belong to the requested family. Codex 0.149.0 accepts the exact `--model` argument but does not report the served model in its JSONL stream.
+3. Either `modelVerified: true` with `modelEvidence: "provider-report"`, or a Codex or Cursor receipt with `reportedModel: null`, `modelVerified: false`, and `modelEvidence: "pinned-argv"`. For Claude's `fable` and `opus` aliases, the concrete provider report must belong to the requested family. Codex 0.149.0 accepts the exact `--model` argument but does not report the served model in its JSONL stream. The `cursor-agent` JSON result has no model field either.
 4. A non-empty output file.
 
 The receipt also carries elapsed time, token usage when the CLI exposes it, and cost when available. Keep it with the arena or review artifacts so parent-harness comparisons are evidence-based.
@@ -158,16 +180,27 @@ Start native and external lanes in the same fan-out phase, then wait for all of 
 
 ## Wire examples
 
-The sheet header is `Descriptor grammar: 2`. These are wire values:
+The sheet header is `Descriptor grammar: 3`. These are wire values:
 
 ```text
-fable
-fable@max
-grok/grok-4.7
-claude-code/fable@high
+claude:fable@max
+codex:gpt-6-sol@high
+cursor:grok-4.7@high
+grok:grok-4.7@xhigh
 inherit-parent
 auto
 ```
 
-The old `claude:fable@max` form is accepted only for inbound migration and
-becomes named app `claude-code`. New writes never emit the old form.
+A sheet line counts only when the text before its first `:` is a documented
+role. Every other line is prose and is ignored.
+
+Older sheets migrate in memory when they are read:
+
+- Grammar 2 (`Descriptor grammar: 2`) wrote `app/model@effort`. The app id
+  `claude-code` becomes the provider `claude`. A route with no app gets the
+  current parent's provider. A route with no effort is an error; setup asks
+  for the effort.
+- Grammar 1 (no header) wrote `provider:model@effort` with providers `claude`,
+  `codex`, and `grok` only.
+
+New writes are always grammar 3.

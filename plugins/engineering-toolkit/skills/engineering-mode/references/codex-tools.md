@@ -1,6 +1,6 @@
 # Codex tool mapping for Engineering Toolkit
 
-Shared skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuestion`) in shared prose. On Codex the files are the same; only those tool names resolve differently. Model execution is not translated here. Read [`provider-dispatch.md`](provider-dispatch.md) for the parent-owned Claude/Codex/Grok route table and typed Route values written as `app/model@effort`.
+Shared skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuestion`) in shared prose. On Codex the files are the same; only those tool names resolve differently. Model execution is not translated here. Read [`provider-dispatch.md`](provider-dispatch.md) for the parent-owned Claude/Codex/Cursor/Grok route table and typed Route values written as `provider:model@effort`.
 
 ## Tool actions
 
@@ -42,7 +42,7 @@ engineering-mode's Subagents section sets Claude-specific defaults (`subagent_ty
 
 ## Models and providers
 
-Do not replace every configured entry with a Codex model. `/setup-engineering-toolkit` writes named-app values such as `claude-code/fable@max`, `codex/gpt-6-sol@max`, and `grok/grok-4.7@xhigh`. In a Codex parent, only `codex/...` is native. Route Claude and Grok values through the external launcher exactly as `provider-dispatch.md` specifies. The current default panel intentionally keeps four-provider frontier diversity and contains no older GPT or Claude substitute.
+Do not replace every configured entry with a Codex model. `/setup-engineering-toolkit` writes provider-qualified values such as `claude:fable@max`, `codex:gpt-6-sol@max`, `grok:grok-4.7@xhigh`, and `cursor:grok-4.7@high`. In a Codex parent, only `codex:...` is native. Route Claude, Cursor, and Grok values through the external launcher exactly as `provider-dispatch.md` specifies. The current default panel intentionally keeps four-provider frontier diversity and contains no older GPT or Claude substitute.
 
 ## Claude built-in skills these skills reference
 
@@ -57,7 +57,7 @@ Some triggers name skills that ship with Claude Code, not this plugin. They do n
 
 ## Vendored scripts
 
-`skills/engineering-mode/scripts/` ships the `watch-pr` PR watcher, the `orch` store CLI, `worktree-audit.sh`, and `runner/pstack-runner`. They are plain bun and bash, so they run the same on Codex; invoke them through `shell`. The external runner additionally needs the assigned `claude`, `codex`, or `grok` executable already authenticated. It rejects a Codex provider when Codex is the parent because that lane belongs on native `spawn_agent`. The other scripts need `bun`, `gh`, (for stack work) `gt`, and (for `worktree-audit.sh`) `jq` and `rg`. `worktree-audit.sh` reads Claude Code transcripts under `~/.claude/projects/`; point it at your runtime's transcript directory instead when you run it elsewhere.
+`skills/engineering-mode/scripts/` ships the `watch-pr` PR watcher, the `orch` store CLI, `worktree-audit.sh`, and `runner/pstack-runner`. They are plain bun and bash, so they run the same on Codex; invoke them through `shell`. The external runner additionally needs the assigned `claude`, `codex`, `cursor-agent`, or `grok` executable already authenticated. It rejects a Codex provider when Codex is the parent because that lane belongs on native `spawn_agent`. The other scripts need `bun`, `gh`, (for stack work) `gt`, and (for `worktree-audit.sh`) `jq` and `rg`. `worktree-audit.sh` reads Claude Code transcripts under `~/.claude/projects/`; point it at your runtime's transcript directory instead when you run it elsewhere.
 
 ## Instructions file
 

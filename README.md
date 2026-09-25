@@ -42,7 +42,7 @@ Run this command in Agent chat:
 /add-plugin https://github.com/cameronjlarsen/engineering-toolkit
 ```
 
-Do not install Lauren's original pstack alongside it. Install `et` from the marketplace panel. Run `/setup-engineering-toolkit`. Setup writes grammar 2 into `~/.cursor/rules/engineering-toolkit-models.mdc`. It does not write upstream Task slugs.
+Do not install Lauren's original pstack alongside it. Install `et` from the marketplace panel. Run `/setup-engineering-toolkit`. Setup writes grammar 3 into `~/.cursor/rules/engineering-toolkit-models.mdc`. It does not write upstream Task slugs.
 
 ### Claude Code
 
