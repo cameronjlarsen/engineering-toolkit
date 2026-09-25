@@ -3,17 +3,14 @@ import {
   EFFORTS,
   type AppId,
   type Effort,
-  type EffortRef,
   type ModelSlug,
+  type ParentHost,
   type RoleBinding,
   type RoleId,
   type RoleMap,
   type Result,
-  currentHost,
-  destinationDefault,
-  explicitEffort,
+  type Route,
   modelSlug,
-  namedApp,
   route,
 } from "./route.ts";
 
@@ -51,11 +48,10 @@ export type SheetError =
   | { readonly tag: "invalid-descriptor"; readonly role: RoleId; readonly raw: string }
   | { readonly tag: "missing-role"; readonly role: RoleId }
   | { readonly tag: "duplicate-role"; readonly role: RoleId }
-  | { readonly tag: "unknown-role"; readonly role: string }
   | { readonly tag: "mcp-bound-must-inherit"; readonly role: RoleId }
   | { readonly tag: "invalid-model-slug"; readonly raw: string }
-  | { readonly tag: "v1-unknown-provider"; readonly provider: string }
-  | { readonly tag: "v1-missing-effort"; readonly raw: string }
+  | { readonly tag: "unknown-provider"; readonly provider: string }
+  | { readonly tag: "missing-effort"; readonly role: RoleId; readonly raw: string }
   | { readonly tag: "invalid-budget"; readonly raw: string };
 
 export const BUDGET_LABELS = ["unlimited", "large", "medium", "small"] as const;
@@ -70,12 +66,21 @@ export const BUDGET_TARGETS: Record<BudgetLabel, Effort> = {
 };
 
 type ParsedDescriptor = RoleBinding;
+type Grammar = 1 | 2 | 3;
 
-const V1_APPS: Record<string, AppId> = {
+const PROVIDER_APPS: Record<string, AppId> = {
   claude: "claude-code",
   codex: "codex",
+  cursor: "cursor",
   grok: "grok",
 };
+
+const GRAMMAR_1_PROVIDERS = ["claude", "codex", "grok"] as const;
+const GRAMMAR_3_PROVIDERS = Object.keys(PROVIDER_APPS);
+
+function providerOf(app: AppId): string {
+  return app === "claude-code" ? "claude" : app;
+}
 
 function isEffort(value: string): value is Effort {
   return (EFFORTS as readonly string[]).includes(value);
@@ -99,19 +104,15 @@ function parseModel(raw: string): Result<ModelSlug, SheetError> {
   return parsed;
 }
 
-function parseEffort(
-  raw: string | undefined,
-  role: RoleId,
-  descriptor: string
-): Result<EffortRef, SheetError> {
-  if (raw === undefined) return { ok: true, value: destinationDefault() };
-  if (!isEffort(raw)) {
-    return { ok: false, error: { tag: "invalid-descriptor", role, raw: descriptor } };
-  }
-  return { ok: true, value: explicitEffort(raw) };
+function routeBinding(model: ModelSlug, app: AppId, effort: Effort): ParsedDescriptor {
+  return { kind: "route", route: route({ model, app, effort }) };
 }
 
-function parseV2Descriptor(raw: string, role: RoleId): Result<ParsedDescriptor, SheetError> {
+function parseV2Descriptor(
+  raw: string,
+  role: RoleId,
+  parent: ParentHost
+): Result<ParsedDescriptor, SheetError> {
   if (raw.includes(":") || (raw.includes("@") && raw.split("@").length > 2)) {
     return { ok: false, error: { tag: "invalid-descriptor", role, raw } };
   }
@@ -132,35 +133,34 @@ function parseV2Descriptor(raw: string, role: RoleId): Result<ParsedDescriptor, 
   }
   const model = parseModel(atParts[0]);
   if (!model.ok) return model;
-  const effort = parseEffort(atParts[1], role, raw);
-  if (!effort.ok) return effort;
-  return {
-    ok: true,
-    value: {
-      kind: "route",
-      route: route({
-        model: model.value,
-        app: appToken === undefined ? currentHost() : namedApp(appToken),
-        effort: effort.value,
-      }),
-    },
-  };
+  const effort = atParts[1];
+  if (effort === undefined) {
+    return { ok: false, error: { tag: "missing-effort", role, raw } };
+  }
+  if (!isEffort(effort)) {
+    return { ok: false, error: { tag: "invalid-descriptor", role, raw } };
+  }
+  return { ok: true, value: routeBinding(model.value, appToken ?? parent, effort) };
 }
 
-function parseV1Descriptor(raw: string, role: RoleId): Result<ParsedDescriptor, SheetError> {
+function parseProviderDescriptor(
+  raw: string,
+  role: RoleId,
+  providers: readonly string[]
+): Result<ParsedDescriptor, SheetError> {
   const colon = raw.indexOf(":");
   if (colon <= 0 || colon !== raw.lastIndexOf(":")) {
     return { ok: false, error: { tag: "invalid-descriptor", role, raw } };
   }
   const provider = raw.slice(0, colon);
-  const app = V1_APPS[provider];
-  if (app === undefined) {
-    return { ok: false, error: { tag: "v1-unknown-provider", provider } };
+  const app = PROVIDER_APPS[provider];
+  if (app === undefined || !providers.includes(provider)) {
+    return { ok: false, error: { tag: "unknown-provider", provider } };
   }
   const body = raw.slice(colon + 1);
   const at = body.lastIndexOf("@");
   if (at <= 0 || at === body.length - 1) {
-    return { ok: false, error: { tag: "v1-missing-effort", raw } };
+    return { ok: false, error: { tag: "missing-effort", role, raw } };
   }
   const model = parseModel(body.slice(0, at));
   if (!model.ok) return model;
@@ -168,17 +168,26 @@ function parseV1Descriptor(raw: string, role: RoleId): Result<ParsedDescriptor, 
   if (!isEffort(effort)) {
     return { ok: false, error: { tag: "invalid-descriptor", role, raw } };
   }
-  return {
-    ok: true,
-    value: { kind: "route", route: route({ model: model.value, app: namedApp(app), effort: explicitEffort(effort) }) },
-  };
+  return { ok: true, value: routeBinding(model.value, app, effort) };
 }
 
-function parseDescriptor(raw: string, role: RoleId, grammar: 1 | 2): Result<ParsedDescriptor, SheetError> {
+function parseDescriptor(
+  raw: string,
+  role: RoleId,
+  grammar: Grammar,
+  parent: ParentHost
+): Result<ParsedDescriptor, SheetError> {
   if (raw === "inherit-parent" || raw === "auto") {
     return { ok: true, value: { kind: raw } };
   }
-  const parsed = grammar === 1 ? parseV1Descriptor(raw, role) : parseV2Descriptor(raw, role);
+  const parsed =
+    grammar === 2
+      ? parseV2Descriptor(raw, role, parent)
+      : parseProviderDescriptor(
+          raw,
+          role,
+          grammar === 1 ? GRAMMAR_1_PROVIDERS : GRAMMAR_3_PROVIDERS
+        );
   if (!parsed.ok) return parsed;
   if (MCP_BOUND_ROLE_IDS.has(role) && parsed.value.kind === "route") {
     return { ok: false, error: { tag: "mcp-bound-must-inherit", role } };
@@ -189,7 +198,8 @@ function parseDescriptor(raw: string, role: RoleId, grammar: 1 | 2): Result<Pars
 function parseRoleLine(
   role: RoleId,
   rawValue: string,
-  grammar: 1 | 2
+  grammar: Grammar,
+  parent: ParentHost
 ): Result<RoleBinding | readonly RoleBinding[], SheetError> {
   if (PANEL_ROLE_IDS.includes(role as (typeof PANEL_ROLE_IDS)[number])) {
     const lanes = rawValue.split(",").map((lane) => lane.trim());
@@ -198,18 +208,21 @@ function parseRoleLine(
     }
     const parsed: RoleBinding[] = [];
     for (const lane of lanes) {
-      const value = parseDescriptor(lane, role, grammar);
+      const value = parseDescriptor(lane, role, grammar, parent);
       if (!value.ok) return value;
       parsed.push(value.value);
     }
     return { ok: true, value: parsed };
   }
-  return parseDescriptor(rawValue.trim(), role, grammar);
+  return parseDescriptor(rawValue.trim(), role, grammar, parent);
 }
 
-export function loadRoleMap(sheetText: string): Result<RoleMap, SheetError> {
+export function loadRoleMap(
+  sheetText: string,
+  parent: ParentHost
+): Result<RoleMap, SheetError> {
   const lines = sheetText.split(/\r?\n/);
-  let grammar: 1 | 2 = 1;
+  let grammar: Grammar = 1;
   let sawHeader = false;
   const entries = new Map<string, string>();
   for (const line of lines) {
@@ -217,22 +230,18 @@ export function loadRoleMap(sheetText: string): Result<RoleMap, SheetError> {
     if (trimmed === "") continue;
     const header = /^Descriptor grammar:\s*(\S+)$/.exec(trimmed);
     if (header !== null) {
-      if (sawHeader || (header[1] !== "2" && header[1] !== "1")) {
+      if (sawHeader || !["1", "2", "3"].includes(header[1])) {
         return { ok: false, error: { tag: "invalid-grammar-version", raw: header[1] } };
       }
       sawHeader = true;
-      grammar = header[1] === "2" ? 2 : 1;
+      grammar = Number(header[1]) as Grammar;
       continue;
     }
     if (trimmed.startsWith("#")) continue;
     const separator = line.indexOf(":");
-    if (separator < 0) {
-      return { ok: false, error: { tag: "unknown-role", role: trimmed } };
-    }
+    if (separator < 0) continue;
     const role = line.slice(0, separator).trim();
-    if (!(ROLE_IDS as readonly string[]).includes(role)) {
-      return { ok: false, error: { tag: "unknown-role", role } };
-    }
+    if (!(ROLE_IDS as readonly string[]).includes(role)) continue;
     if (entries.has(role)) {
       return { ok: false, error: { tag: "duplicate-role", role: role as RoleId } };
     }
@@ -245,7 +254,7 @@ export function loadRoleMap(sheetText: string): Result<RoleMap, SheetError> {
 
   const result: Record<string, RoleBinding | readonly RoleBinding[]> = {};
   for (const role of ROLE_IDS) {
-    const parsed = parseRoleLine(role, entries.get(role) as string, grammar);
+    const parsed = parseRoleLine(role, entries.get(role) as string, grammar, parent);
     if (!parsed.ok) return parsed;
     result[role] = parsed.value;
   }
@@ -254,13 +263,12 @@ export function loadRoleMap(sheetText: string): Result<RoleMap, SheetError> {
 
 function printBinding(binding: RoleBinding): string {
   if (binding.kind !== "route") return binding.kind;
-  const app = binding.route.app.kind === "named" ? `${binding.route.app.app}/` : "";
-  const effort = binding.route.effort.kind === "explicit" ? `@${binding.route.effort.effort}` : "";
-  return `${app}${binding.route.model}${effort}`;
+  const { app, model, effort } = binding.route;
+  return `${providerOf(app)}:${model}@${effort}`;
 }
 
 export function printRoleMap(roles: RoleMap, budget?: Budget): string {
-  const lines = ["# Engineering Toolkit model configuration", "", "Descriptor grammar: 2", ""];
+  const lines = ["# Engineering Toolkit model configuration", "", "Descriptor grammar: 3", ""];
   if (budget !== undefined) {
     lines.push(`# budget: ${budget.label} (${budget.target})`, "");
   }
@@ -316,11 +324,11 @@ function remapBudgetBinding(
   binding: RoleBinding,
   role: RoleId,
   budget: Budget,
-  selectable: (model: ModelSlug) => readonly Effort[],
+  selectable: (route: Route) => readonly Effort[],
   needsChoice: RoleId[]
 ): RoleBinding {
   if (binding.kind !== "route") return binding;
-  const clamped = highestSelectableAtOrBelow(budget.target, selectable(binding.route.model));
+  const clamped = highestSelectableAtOrBelow(budget.target, selectable(binding.route));
   if (clamped === undefined) {
     if (!needsChoice.includes(role)) needsChoice.push(role);
     return binding;
@@ -330,7 +338,7 @@ function remapBudgetBinding(
     route: route({
       model: binding.route.model,
       app: binding.route.app,
-      effort: explicitEffort(clamped),
+      effort: clamped,
     }),
   };
 }
@@ -338,7 +346,7 @@ function remapBudgetBinding(
 export function applyBudget(
   roles: RoleMap,
   budget: Budget,
-  selectable: (model: ModelSlug) => readonly Effort[]
+  selectable: (route: Route) => readonly Effort[]
 ): { roles: RoleMap; needsChoice: readonly RoleId[] } {
   if (budget.label === "unlimited") {
     return { roles, needsChoice: [] };

@@ -2,11 +2,9 @@ import {
   type Access,
   type AppId,
   type AppInventoryEntry,
-  type AppRef,
-  type Effort,
   type LanePlan,
   type McpBoundRoleId,
-  type ModelOnApp,
+  type ModelEntry,
   type ParentHost,
   type Readiness,
   type ResolvedRoute,
@@ -38,28 +36,25 @@ function isMcpBound(role: RoleId): role is McpBoundRoleId {
   return MCP_BOUND_ROLES.has(role as McpBoundRoleId);
 }
 
-function isCurrentHost(app: AppRef | undefined): boolean {
-  return app?.kind === "current-host";
-}
-
 export function applyOverride(
   binding: RoleBinding,
   patch: RoutePatch | undefined,
-  role: RoleId
+  role: RoleId,
+  parent: ParentHost
 ): Result<RoleBinding, ResolveError> {
   if (patch === undefined) return { ok: true, value: binding };
   if (patch.model === undefined && patch.app === undefined && patch.effort === undefined) {
     return { ok: true, value: binding };
   }
-  if (isMcpBound(role) && patch.app?.kind === "named") {
+  if (isMcpBound(role) && patch.app !== undefined && patch.app !== parent) {
     return { ok: false, error: { tag: "unsupported-external-override", role } };
   }
 
   if (binding.kind !== "route") {
-    if (isMcpBound(role) && isCurrentHost(patch.app) && patch.model === undefined && patch.effort === undefined) {
+    if (isMcpBound(role) && patch.model === undefined && patch.effort === undefined) {
       return { ok: true, value: binding };
     }
-    if (patch.model === undefined) {
+    if (patch.model === undefined || patch.effort === undefined) {
       return { ok: false, error: { tag: "inherit-does-not-accept-partial-effort" } };
     }
     return {
@@ -68,7 +63,7 @@ export function applyOverride(
         kind: "route",
         route: route({
           model: patch.model,
-          app: patch.app,
+          app: patch.app ?? parent,
           effort: patch.effort,
         }),
       },
@@ -102,7 +97,7 @@ function inventoryEntry(
   return inventory.find((entry) => entry.app === app);
 }
 
-function vendorOnApp(appRecord: { readonly models: ReadonlyMap<unknown, ModelOnApp> } | undefined): VendorId {
+function vendorOnApp(appRecord: { readonly models: ReadonlyMap<unknown, ModelEntry> } | undefined): VendorId {
   if (appRecord === undefined) return "unknown";
   for (const model of appRecord.models.values()) return model.vendor;
   return "unknown";
@@ -113,7 +108,7 @@ function modelOnApp(
   configured: Route,
   catalog: AppCatalog,
   inventory: readonly AppInventoryEntry[]
-): ModelOnApp | undefined {
+): ModelEntry | undefined {
   const appRecord = catalog.get(app);
   const shipped = appRecord?.models.get(configured.model);
   if (shipped !== undefined) return shipped;
@@ -122,10 +117,10 @@ function modelOnApp(
   );
   if (probed === undefined) return undefined;
   return {
-    slug: probed.slug,
+    family: probed.slug,
     vendor: vendorOnApp(appRecord),
-    destinationDefaultEffort: probed.destinationDefaultEffort,
-    selectableEfforts: probed.selectableEfforts,
+    efforts: probed.selectableEfforts,
+    cli: { effort: "flag", model: probed.slug },
     nativeStem: null,
   };
 }
@@ -136,7 +131,7 @@ export function resolveRoute(
   catalog: AppCatalog,
   inventory: readonly AppInventoryEntry[]
 ): Result<ResolvedRoute, ResolveError> {
-  const app = configured.app.kind === "current-host" ? parent : configured.app.app;
+  const app = configured.app;
   const appRecord = catalog.get(app);
   const modelRecord = modelOnApp(app, configured, catalog, inventory);
   if (modelRecord === undefined) {
@@ -146,24 +141,12 @@ export function resolveRoute(
     };
   }
 
-  let effort: Effort;
-  if (configured.effort.kind === "explicit") {
-    effort = configured.effort.effort;
-    if (!modelRecord.selectableEfforts.includes(effort)) {
-      return {
-        ok: false,
-        error: { tag: "effort-not-selectable", app, model: configured.model, effort },
-      };
-    }
-  } else {
-    const destinationDefault = modelRecord.destinationDefaultEffort;
-    if (typeof destinationDefault !== "string") {
-      return {
-        ok: false,
-        error: { tag: "destination-default-unknown", app, model: configured.model },
-      };
-    }
-    effort = destinationDefault;
+  const effort = configured.effort;
+  if (!modelRecord.efforts.includes(effort)) {
+    return {
+      ok: false,
+      error: { tag: "effort-not-selectable", app, model: configured.model, effort },
+    };
   }
 
   const lane = parent === app ? "native" : "external";
@@ -190,7 +173,7 @@ export function planLane(input: {
   readonly access: Access;
   readonly role: RoleId;
 }): Result<LanePlan, ResolveError> {
-  const applied = applyOverride(input.binding, input.override, input.role);
+  const applied = applyOverride(input.binding, input.override, input.role, input.parent);
   if (!applied.ok) return applied;
   if (applied.value.kind !== "route") {
     return {
