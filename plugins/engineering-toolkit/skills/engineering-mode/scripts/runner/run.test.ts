@@ -27,7 +27,8 @@ const name = process.argv[1].split("/").at(-1);
 const isPreflight =
   (name === "claude" && args[0] === "auth") ||
   (name === "codex" && args[0] === "login") ||
-  (name === "grok" && args[0] === "models");
+  (name === "grok" && args[0] === "models") ||
+  (name === "cursor-agent" && args[0] === "status");
 const stage = isPreflight ? "preflight" : "model";
 const startedPath = isPreflight
   ? process.env.FAKE_PREFLIGHT_STARTED_PATH
@@ -63,6 +64,10 @@ if (name === "claude" && args[0] === "auth") {
 }
 if (name === "codex" && args[0] === "login") {
   console.log("Logged in using ChatGPT");
+  process.exit(0);
+}
+if (name === "cursor-agent" && args[0] === "status") {
+  console.log("\u2713 Logged in as test@example.com");
   process.exit(0);
 }
 if (name === "grok" && args[0] === "models") {
@@ -116,6 +121,8 @@ if (stage === "model" && process.env.FAKE_SELF_SIGNAL) {
 }
 if (name === "claude") {
   console.log(JSON.stringify({result:"CLAUDE_OK",session_id:"c1",usage:{input_tokens:10,output_tokens:2},total_cost_usd:0.01,modelUsage:{[reportedModel]:{}}}));
+} else if (name === "cursor-agent") {
+  console.log(JSON.stringify({type:"result",subtype:"success",is_error:false,duration_ms:5,duration_api_ms:5,result:"CURSOR_OK",session_id:"u1",request_id:"r1",usage:{inputTokens:40,outputTokens:5,cacheReadTokens:2,cacheWriteTokens:1}}));
 } else if (name === "codex") {
   console.log(JSON.stringify({type:"thread.started",thread_id:"o1"}));
   console.log(JSON.stringify({type:"item.completed",item:{type:"agent_message",text:"CODEX_OK"}}));
@@ -142,12 +149,14 @@ function options(app: App, suffix: string = app): RunnerOptions {
       ? "fable"
       : app === "codex"
         ? "gpt-5.6-sol"
-        : "grok-4.6";
+        : app === "cursor"
+          ? "grok-4.7"
+          : "grok-4.6";
   return {
     parent,
     app,
     model,
-    effort: app === "grok" ? "xhigh" : "max",
+    effort: app === "grok" ? "xhigh" : app === "cursor" ? "high" : "max",
     mode: "read-only",
     promptPath: join(scratch, "prompt.md"),
     cwd: scratch,
@@ -236,7 +245,7 @@ beforeEach(() => {
   bin = join(scratch, "bin");
   mkdirSync(bin);
   writeFileSync(join(scratch, "prompt.md"), "Return the marker.");
-  for (const name of ["claude", "codex", "grok"]) makeExecutable(name);
+  for (const name of ["claude", "codex", "grok", "cursor-agent"]) makeExecutable(name);
   previousPath = process.env.PATH;
   process.env.PATH = `${bin}:${dirname(process.execPath)}:${previousPath ?? ""}`;
   delete process.env.FAKE_TIMEOUT;
@@ -287,7 +296,7 @@ afterEach(() => {
 });
 
 describe("runLane", () => {
-  for (const app of ["claude-code", "codex", "grok"] as const) {
+  for (const app of ["claude-code", "codex", "grok", "cursor"] as const) {
     it(`executes and receipts the ${app} external lane`, async () => {
       const input = options(app);
       const result = await runLane(input);
@@ -299,8 +308,8 @@ describe("runLane", () => {
         status: "complete",
         app,
         model: input.model,
-        modelVerified: app !== "codex",
-        modelEvidence: app === "codex" ? "pinned-argv" : "provider-report",
+        modelVerified: app !== "codex" && app !== "cursor",
+        modelEvidence: app === "codex" || app === "cursor" ? "pinned-argv" : "provider-report",
         preflight: { status: "passed" },
       });
       if (app === "claude-code") {
@@ -320,6 +329,32 @@ describe("runLane", () => {
       modelVerified: false,
       modelEvidence: "pinned-argv",
     });
+  });
+
+  it("runs Cursor with the in-slug model and records usage without a reported model", async () => {
+    const input = options("cursor");
+    const result = await runLane(input);
+    expect(result.exitCode).toBe(0);
+    const written = receipt(input.receiptPath);
+    expect(written).toMatchObject({
+      status: "complete",
+      app: "cursor",
+      model: "grok-4.7",
+      effort: "high",
+      reportedModel: null,
+      modelVerified: false,
+      modelEvidence: "pinned-argv",
+      sessionId: "u1",
+      usage: { inputTokens: 40, outputTokens: 5, cachedInputTokens: 2, cacheCreationInputTokens: 1 },
+    });
+    expect(written.argv).toEqual(expect.arrayContaining(["--model", "grok-4.7-high", "--mode", "plan"]));
+  });
+
+  it("rejects a Cursor effort the model does not accept before launch", async () => {
+    const input = { ...options("cursor"), effort: "max" as const };
+    await expect(runLane(input)).rejects.toThrow("does not accept effort max");
+    expect(existsSync(input.outputPath)).toBe(false);
+    expect(existsSync(input.receiptPath)).toBe(false);
   });
 
   it("classifies an unavailable model without falling back", async () => {
@@ -970,6 +1005,11 @@ describe("childEnvironment", () => {
     });
     expect(childEnvironment("grok", source)).toEqual({
       PATH: "/bin",
+      KEEP_ME: "yes",
+    });
+    expect(childEnvironment("cursor", source)).toEqual({
+      PATH: "/bin",
+      CURSOR_AGENT: "1",
       KEEP_ME: "yes",
     });
   });

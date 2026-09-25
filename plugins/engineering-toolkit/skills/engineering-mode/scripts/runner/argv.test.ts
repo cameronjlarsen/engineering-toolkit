@@ -2,9 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { shippedCatalog } from "../routing/catalog.ts";
 import { planLane } from "../routing/dispatch.ts";
 import {
-  explicitEffort,
   modelSlug,
-  namedApp,
   route,
   type Access,
 } from "../routing/route.ts";
@@ -23,8 +21,8 @@ describe("runnerArgv", () => {
         kind: "route",
         route: route({
           model: grok.value,
-          app: namedApp("grok"),
-          effort: explicitEffort("xhigh"),
+          app: "grok",
+          effort: "xhigh",
         }),
       },
       override: undefined,
