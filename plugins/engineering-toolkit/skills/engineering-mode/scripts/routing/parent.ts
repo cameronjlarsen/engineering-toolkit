@@ -12,6 +12,7 @@ import {
   type Result,
   type RoleBinding,
   type RoleMap,
+  type Route,
   type SingleRoleId,
   modelSlug,
   route,
@@ -103,10 +104,10 @@ export type PinMigration = {
 };
 
 const FAMILY_SEED = [
-  { family: "fable", model: "fable", effort: "max", home: "claude-code" },
-  { family: "sol", model: SOL_CLI_MODEL, effort: "max", home: "codex" },
-  { family: "grok", model: "grok-4.7", effort: "xhigh", home: "grok" },
-  { family: "opus", model: "opus", effort: "xhigh", home: "claude-code" },
+  { family: "fable", model: "fable", effort: "max", homes: ["claude-code"] },
+  { family: "sol", model: SOL_CLI_MODEL, effort: "max", homes: ["codex"] },
+  { family: "grok", model: "grok-4.7", effort: "xhigh", homes: ["grok", "cursor"] },
+  { family: "opus", model: "opus", effort: "xhigh", homes: ["claude-code"] },
 ] as const;
 
 type FamilyId = (typeof FAMILY_SEED)[number]["family"];
@@ -165,10 +166,27 @@ function familyBinding(
     kind: "route",
     route: route({
       model,
-      app: serveLocally(parent, model, catalog) ? parent : row.home,
+      app: serveLocally(parent, model, catalog) ? parent : row.homes[0],
       effort: row.effort,
     }),
   };
+}
+
+export function homeRoutes(
+  parent: ParentHost,
+  candidate: Route,
+  catalog: AppCatalog
+): readonly Route[] {
+  const homes: readonly AppId[] | undefined = FAMILY_SEED.find(
+    (row) => row.model === candidate.model
+  )?.homes;
+  if (candidate.app === parent || homes === undefined || !homes.includes(candidate.app)) {
+    return [candidate];
+  }
+  return homes
+    .slice(homes.indexOf(candidate.app))
+    .filter((app) => catalog.get(app)?.models.get(candidate.model)?.efforts.includes(candidate.effort))
+    .map((app) => route({ model: candidate.model, app, effort: candidate.effort }));
 }
 
 export function detectParent(

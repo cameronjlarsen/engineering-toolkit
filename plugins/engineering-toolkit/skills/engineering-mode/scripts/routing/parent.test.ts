@@ -8,6 +8,7 @@ import {
   applyIntegrationPatch,
   detectParent,
   firstRunRoleMap,
+  homeRoutes,
   nativeHandle,
   parentIdentityKeys,
   parentProfile,
@@ -100,6 +101,37 @@ describe("firstRunRoleMap", () => {
     for (const parent of ["claude-code", "codex", "cursor"] as const satisfies readonly ParentHost[]) {
       const roles = firstRunRoleMap(parent, catalog);
       expect(loadRoleMap(printRoleMap(roles), parent)).toEqual({ ok: true, value: roles });
+    }
+  });
+});
+
+describe("homeRoutes", () => {
+  const grok = slug("grok-4.7");
+
+  it("orders Grok's CLI homes as grok then cursor off a Cursor parent", () => {
+    for (const parent of ["claude-code", "codex"] as const) {
+      expect(homeRoutes(parent, route({ model: grok, app: "grok", effort: "xhigh" }), shippedCatalog())).toEqual([
+        route({ model: grok, app: "grok", effort: "xhigh" }),
+        route({ model: grok, app: "cursor", effort: "xhigh" }),
+      ]);
+    }
+  });
+
+  it("skips a home that does not list the effort instead of lowering it", () => {
+    expect(homeRoutes("claude-code", route({ model: grok, app: "grok", effort: "max" }), shippedCatalog())).toEqual([
+      route({ model: grok, app: "grok", effort: "max" }),
+    ]);
+  });
+
+  it("keeps native, single-home, non-default, and last-home routes as they are", () => {
+    const catalog = shippedCatalog();
+    for (const [parent, candidate] of [
+      ["cursor", route({ model: grok, app: "cursor", effort: "xhigh" })],
+      ["codex", route({ model: slug("fable"), app: "claude-code", effort: "max" })],
+      ["claude-code", route({ model: slug("gpt-6.1-sol"), app: "codex", effort: "high" })],
+      ["claude-code", route({ model: grok, app: "cursor", effort: "high" })],
+    ] as const) {
+      expect(homeRoutes(parent, candidate, catalog)).toEqual([candidate]);
     }
   });
 });
