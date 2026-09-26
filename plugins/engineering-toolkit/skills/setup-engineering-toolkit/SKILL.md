@@ -44,11 +44,12 @@ refresh the Codex model list with `codex debug models`. Never pass `--bundled`.
 Parse that stdout with `parseCodexDebugModels`. A failed refresh is an unknown
 list (`probedModels` omitted), not an empty list: report it. Do not sole-map
 slugs while the list is unknown. When the refresh succeeds, pass that list to
-`proposeStalePinMigrations`. Refresh Cursor's list the same way with
-`cursor-agent models` and parse that stdout with `parseCursorModels`. It
-derives each family's in-slug template and efforts from slugs that end in an
-effort; `-fast` variants add no efforts. Pass each list as that app's
-`probedModels`. A slug on the list is not a proposal. A slug on
+`proposeStalePinMigrations`. Refresh Cursor's list with `cursor-agent models`
+and parse that stdout with `parseCursorModels`. It derives each family's
+in-slug template and efforts from slugs that end in an effort; `-fast`
+variants add no efforts. A failed Cursor refresh is also an unknown list.
+Pass each list as that app's inventory `probedModels`. Only the Codex list
+goes to `proposeStalePinMigrations`. A slug on the list is not a proposal. A slug on
 neither the shipped catalog nor the list stays unmatched for step 3. Do not
 rewrite a route until the operator accepts a proposal. Unaccepted rows stay
 inconsistent at step 3. Also read a `# budget:`
