@@ -23,8 +23,8 @@ Shared skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuesti
 
 A Cursor parent plans `cursor:` routes as native, from `nativeHandle`.
 
-- plugin-agent: Call `Task` with `subagent_type` `pstack-<stem>-<effort>` and `model` set to a live Cursor selector from this session's Task model list that matches the route's family and effort. Opus matches `claude-opus-*`. Fable matches `claude-fable-*`. Do not pass `opus` or `fable`. Do not omit `model`. An omitted or unmatched selector inherits the parent and is a dropout. Do not set `model` to a different family's slug such as `cursor-grok-4.6-high` or `gpt-5.6-sol-medium`. If this session has no matching selector, drop the lane.
-- host-spawn: Call `Task` with `model` set to a live Cursor selector for the route's model and effort. Confirm the slug against this session's Task model list. Grok's historical selector is `grok-4.6-fast-<effort>`; current Cursor lists `cursor-grok-4.6-<effort>`. Do not use a plugin-agent `subagent_type`. Do not invoke Grok CLI for a `cursor:grok-4.7` route; `grok:grok-4.7` is the Grok CLI.
+- plugin-agent: Call `Task` with `subagent_type` `pstack-<stem>-<effort>` and `model` set to a live Cursor selector from this session's Task model list that matches the route's family and effort. Opus matches `claude-opus-*`. Fable matches `claude-fable-*`. Do not pass `opus` or `fable`. Do not omit `model`. An omitted or unmatched selector inherits the parent and is a dropout. Do not set `model` to a different family's slug such as `grok-4.7-high`. If this session has no matching selector, drop the lane.
+- host-spawn: Call `Task` with `model` set to a live Cursor selector for the route's model and effort. Confirm the slug against this session's Task model list. Cursor lists Grok as `grok-4.7-<effort>`, from `low` through `xhigh`. Do not use a plugin-agent `subagent_type`. Do not invoke Grok CLI for a `cursor:grok-4.7` route; `grok:grok-4.7` is the Grok CLI.
 - `inherit-parent` and `auto`: `engineering-agent` with `model` omitted or `inherit`.
 
 Writers get a worktree or a unique output directory. Plugin-agent definitions already forbid nested `Agent` and `Task`.
