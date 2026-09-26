@@ -1,6 +1,6 @@
 # Cursor tool mapping for Engineering Toolkit
 
-Shared skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuestion`) in shared prose. On Cursor the files are the same; only those tool names resolve differently. Model execution is not translated here. Read [`provider-dispatch.md`](provider-dispatch.md) for the parent-owned route table and typed Route values written as `app/model@effort`.
+Shared skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuestion`) in shared prose. On Cursor the files are the same; only those tool names resolve differently. Model execution is not translated here. Read [`provider-dispatch.md`](provider-dispatch.md) for the parent-owned route table and typed Route values written as `provider:model@effort`.
 
 ## Tool actions
 
@@ -21,18 +21,18 @@ Shared skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuesti
 
 ## Native lanes
 
-A Cursor parent plans native routes from `nativeHandle`.
+A Cursor parent plans `cursor:` routes as native, from `nativeHandle`.
 
 - plugin-agent: Call `Task` with `subagent_type` `pstack-<stem>-<effort>` and `model` set to a live Cursor selector from this session's Task model list that matches the route's family and effort. Opus matches `claude-opus-*`. Fable matches `claude-fable-*`. Do not pass `opus` or `fable`. Do not omit `model`. An omitted or unmatched selector inherits the parent and is a dropout. Do not set `model` to a different family's slug such as `cursor-grok-4.6-high` or `gpt-5.6-sol-medium`. If this session has no matching selector, drop the lane.
-- host-spawn: Call `Task` with `model` set to a live Cursor selector for the route's model and effort. Confirm the slug against this session's Task model list. Grok's historical selector is `grok-4.6-fast-<effort>`; current Cursor lists `cursor-grok-4.6-<effort>`. Do not use a plugin-agent `subagent_type`. Do not invoke Grok CLI for a same-host `grok-4.6` route.
+- host-spawn: Call `Task` with `model` set to a live Cursor selector for the route's model and effort. Confirm the slug against this session's Task model list. Grok's historical selector is `grok-4.6-fast-<effort>`; current Cursor lists `cursor-grok-4.6-<effort>`. Do not use a plugin-agent `subagent_type`. Do not invoke Grok CLI for a `cursor:grok-4.7` route; `grok:grok-4.7` is the Grok CLI.
 - `inherit-parent` and `auto`: `engineering-agent` with `model` omitted or `inherit`.
 
 Writers get a worktree or a unique output directory. Plugin-agent definitions already forbid nested `Agent` and `Task`.
 
 ## External lanes
 
-`pstack-runner --parent cursor --app <claude-code|codex|grok>`. Start it through `Shell` in the background and retain the handle. Never put a `Task` in front of the runner. `--app cursor` is not a runner choice.
+`pstack-runner --parent cursor --app <claude-code|codex|grok>` runs `claude:`, `codex:`, and `grok:` routes. Start it through `Shell` in the background and retain the handle. Never put a `Task` in front of the runner. `--app cursor` is for Claude Code and Codex parents; on a Cursor parent the runner rejects it as same-host.
 
 ## Instructions file
 
-Where a skill says "your instructions file", on Cursor that is `AGENTS.md` plus the always-apply grammar 2 body in `~/.cursor/rules/engineering-toolkit-models.mdc`.
+Where a skill says "your instructions file", on Cursor that is `AGENTS.md` plus the always-apply grammar 3 body in `~/.cursor/rules/engineering-toolkit-models.mdc`.

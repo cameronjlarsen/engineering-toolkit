@@ -1,45 +1,17 @@
 import { describe, expect, it } from "bun:test";
 import * as routeDomain from "./route.ts";
-import {
-  currentHost,
-  destinationDefault,
-  explicitEffort,
-  modelSlug,
-  namedApp,
-  route,
-} from "./route.ts";
+import { modelSlug, route } from "./route.ts";
 
-describe("route constructors", () => {
-  it("defaults the app to the current host", () => {
-    const model = modelSlug("fable");
+describe("route constructor", () => {
+  it("keeps the app, model, and effort it was given", () => {
+    const model = modelSlug("grok-4.7");
     if (!model.ok) throw new Error("expected valid model");
 
-    expect(route({ model: model.value }).app).toEqual(currentHost());
-  });
-
-  it("defaults effort to the destination default", () => {
-    const model = modelSlug("fable");
-    if (!model.ok) throw new Error("expected valid model");
-
-    expect(route({ model: model.value }).effort).toEqual(destinationDefault());
-  });
-
-  it("keeps a named app explicit", () => {
-    const model = modelSlug("grok-4.6");
-    if (!model.ok) throw new Error("expected valid model");
-
-    expect(route({ model: model.value, app: namedApp("grok") }).app).toEqual(
-      namedApp("grok")
-    );
-  });
-
-  it("keeps an explicit effort", () => {
-    const model = modelSlug("fable");
-    if (!model.ok) throw new Error("expected valid model");
-
-    expect(route({ model: model.value, effort: explicitEffort("high") }).effort).toEqual(
-      explicitEffort("high")
-    );
+    expect(route({ model: model.value, app: "cursor", effort: "high" })).toEqual({
+      model: model.value,
+      app: "cursor",
+      effort: "high",
+    });
   });
 });
 
@@ -76,7 +48,7 @@ describe("modelSlug", () => {
     expect(model.ok).toBe(true);
     if (!model.ok) return;
 
-    expect(route({ model: model.value }).app).toEqual(currentHost());
+    expect(route({ model: model.value, app: "codex", effort: "low" }).app).toBe("codex");
   });
 
   it("does not export a Provider identifier", () => {

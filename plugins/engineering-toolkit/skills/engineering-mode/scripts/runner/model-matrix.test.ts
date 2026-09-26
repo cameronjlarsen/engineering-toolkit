@@ -1,10 +1,10 @@
 import { describe, expect, it } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { launchableApps, shippedCatalog } from "../routing/catalog.ts";
+import { shippedCatalog } from "../routing/catalog.ts";
 import { firstRunRoleMap } from "../routing/parent.ts";
 import type { ModelSlug } from "../routing/route.ts";
-import { printRoleMap } from "../routing/sheet.ts";
+import { loadRoleMap, printRoleMap } from "../routing/sheet.ts";
 import { EFFORTS, type Effort } from "./types.ts";
 
 const PLUGIN_ROOT = join(import.meta.dir, "../../../..");
@@ -32,7 +32,7 @@ const MATRIX_HEADER = [
 const FAMILY_ORDER = ["fable", "sol", "grok", "opus"] as const;
 const PROVIDERS = ["claude", "codex", "grok"] as const;
 const DESCRIPTOR_RE =
-  /(?:(?:claude-code|codex|grok)\/)?[a-z0-9.-]+@(low|medium|high|xhigh|max)/g;
+  /(?:claude|codex|cursor|grok):[a-z0-9.-]+@(low|medium|high|xhigh|max)/g;
 const PANEL_ROLES = [
   "arena runners",
   "arena cross-judge pool",
@@ -167,13 +167,12 @@ function parseModelMatrix(markdown: string): MatrixRow[] {
   });
 }
 
-function namedApp(row: MatrixRow): string {
-  return row.provider === "claude" ? "claude-code" : row.provider;
+function appOf(row: MatrixRow): "claude-code" | "codex" | "grok" {
+  return row.provider === "claude" ? "claude-code" : (row.provider as "codex" | "grok");
 }
 
 function firstRunDescriptor(row: MatrixRow): string {
-  if (row.provider === "claude") return `${row.model}@${row.defaultEffort}`;
-  return `${namedApp(row)}/${row.model}@${row.defaultEffort}`;
+  return `${row.provider}:${row.model}@${row.defaultEffort}`;
 }
 
 function defaultDescriptors(rows: MatrixRow[]): string[] {
@@ -304,10 +303,7 @@ describe("model matrix", () => {
       .filter((role) => (SHEET_ROLES as readonly string[]).includes(role));
     expect(roles).toEqual([...SHEET_ROLES]);
     const byFamily = new Map<string, MatrixRow>(
-      rows.flatMap((row) => [
-        [`${namedApp(row)}/${row.model}`, row],
-        [row.model, row],
-      ])
+      rows.map((row) => [`${row.provider}:${row.model}`, row])
     );
     for (const descriptor of sheet.match(DESCRIPTOR_RE) ?? []) {
       const at = descriptor.lastIndexOf("@");
@@ -331,9 +327,18 @@ describe("model matrix", () => {
     }
   });
 
+  it("parses setup's first-run sheet, prose included, on every parent", () => {
+    const sheet = firstRunSheet(setup);
+    for (const parent of ["claude-code", "codex", "cursor"] as const) {
+      const loaded = loadRoleMap(sheet, parent);
+      if (!loaded.ok) throw new Error(`${parent}: ${JSON.stringify(loaded.error)}`);
+      expect(loaded.value).toEqual(firstRunRoleMap("claude-code", shippedCatalog()));
+    }
+  });
+
   it("binds the shipped catalog and first-run sheet to the matrix", () => {
     const catalog = shippedCatalog();
-    for (const app of launchableApps()) {
+    for (const app of ["claude-code", "codex", "grok"] as const) {
       const provider = app === "claude-code" ? "claude" : app;
       const matrixModels = rows
         .filter((row) => row.provider === provider)
@@ -345,29 +350,18 @@ describe("model matrix", () => {
       expect(catalogModels).toEqual(matrixModels);
     }
     for (const row of rows) {
-      const home = namedApp(row);
-      const onApp = catalog.get(home as "claude-code" | "codex" | "grok")?.models.get(
-        row.model as ModelSlug
-      );
-      expect(onApp?.selectableEfforts).toEqual(row.selectableEfforts);
+      const onApp = catalog.get(appOf(row))?.models.get(row.model as ModelSlug);
+      expect(onApp?.efforts).toEqual(row.selectableEfforts);
       expect(onApp?.nativeStem).toBe(row.pluginAgentStem);
     }
     const printed = printRoleMap(firstRunRoleMap("claude-code", catalog));
-    expect(printed).toContain("bug-fix: codex/gpt-6-sol@max");
-    expect(printed).toContain("perf-issue: codex/gpt-6-sol@max");
-    expect(printed).toContain("hillclimb: codex/gpt-6-sol@max");
-    const panel =
-      "arena runners: fable@max, codex/gpt-6-sol@max, grok/grok-4.7@xhigh, opus@xhigh";
-    expect(printed).toContain(panel);
-    expect(printed).toContain(
-      "arena cross-judge pool: fable@max, codex/gpt-6-sol@max, grok/grok-4.7@xhigh, opus@xhigh"
-    );
-    expect(printed).toContain(
-      "architect runners: fable@max, codex/gpt-6-sol@max, grok/grok-4.7@xhigh, opus@xhigh"
-    );
-    expect(printed).toContain(
-      "interrogate reviewers: fable@max, codex/gpt-6-sol@max, grok/grok-4.7@xhigh, opus@xhigh"
-    );
+    expect(printed).toContain("bug-fix: codex:gpt-6-sol@max");
+    expect(printed).toContain("perf-issue: codex:gpt-6-sol@max");
+    expect(printed).toContain("hillclimb: codex:gpt-6-sol@max");
+    const panel = quad.join(", ");
+    for (const role of PANEL_ROLES) {
+      expect(printed).toContain(`${role}: ${panel}`);
+    }
   });
 
   it("keeps setup's fail-closed reconfiguration order", () => {
@@ -382,7 +376,7 @@ describe("model matrix", () => {
     expect(setup).toContain("Probe only selected routes");
     expect(setup).toContain("normalized complete role map from step 2");
     expect(setup).toContain("`claude-fable-*` and `claude-opus-*`");
-    expect(setup).toContain("preserving app, effort, role,");
+    expect(setup).toContain("preserving provider, effort, role,");
     expect(setup).toContain("rolling-alias migrations");
     expect(setup).toContain("documented role remains present.");
     expect(setup).toContain("A changed");
@@ -401,7 +395,7 @@ describe("model matrix", () => {
     expect(externalStart).toBeGreaterThan(nativeStart);
     const nativeLanes = dispatch.slice(nativeStart, externalStart);
     expect(nativeLanes).toContain(
-      "match the route's `(app, model)` to one model-matrix row"
+      "match the route's `(provider, model)` to one model-matrix row"
     );
     expect(nativeLanes).toContain("`pstack-<stem>-<effort>`");
     expect(nativeLanes).toContain("host-spawn");

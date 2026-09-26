@@ -114,6 +114,47 @@ function parseGrok(stdout: string, requestedModel: string): ParsedOutput {
   };
 }
 
+function cursorUsage(value: unknown): NormalizedUsage | null {
+  const usage = object(value);
+  if (usage === null) return null;
+  return normalizedUsage({
+    input_tokens: usage.inputTokens,
+    output_tokens: usage.outputTokens,
+    cache_read_input_tokens: usage.cacheReadTokens,
+    cache_write_input_tokens: usage.cacheWriteTokens,
+  });
+}
+
+function parseCursor(stdout: string): ParsedOutput {
+  let result: JsonObject | null = null;
+  for (const line of stdout.split("\n")) {
+    if (line.trim().length === 0) continue;
+    let raw: unknown;
+    try {
+      raw = JSON.parse(line);
+    } catch {
+      throw new Error("cursor emitted a non-JSON line");
+    }
+    const event = object(raw);
+    if (event?.type === "result") result = event;
+  }
+
+  if (result === null) throw new Error("cursor result did not contain a terminal event");
+  if (result.is_error === true || result.subtype !== "success") {
+    throw new Error("cursor reported an error result");
+  }
+  const text = nullableString(result.result);
+  if (text === null) throw new Error("cursor result did not contain final text");
+
+  return {
+    text,
+    reportedModel: null,
+    sessionId: nullableString(result.session_id),
+    usage: cursorUsage(result.usage),
+    costUsd: null,
+  };
+}
+
 function parseCodex(stdout: string): ParsedOutput {
   let text: string | null = null;
   let usage: NormalizedUsage | null = null;
@@ -170,6 +211,8 @@ export function parseAppOutput(
       return parseCodex(stdout);
     case "grok":
       return parseGrok(stdout, requestedModel);
+    case "cursor":
+      return parseCursor(stdout);
     default: {
       const neverApp: never = app;
       throw new Error(`unsupported app: ${neverApp}`);

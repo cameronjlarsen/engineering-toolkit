@@ -1,6 +1,6 @@
 export const PARENT_HOSTS = ["claude-code", "codex", "cursor"] as const;
 export const APP_IDS = ["claude-code", "codex", "cursor", "grok"] as const;
-export const CLI_CHILD_APPS = ["claude-code", "codex", "grok"] as const;
+export const CLI_CHILD_APPS = ["claude-code", "codex", "cursor", "grok"] as const;
 export const EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
 
 export type ParentHost = (typeof PARENT_HOSTS)[number];
@@ -11,18 +11,10 @@ export type ChildLaunch = "cli-auth" | "none";
 export type ModelSlug = string & { readonly __modelSlug: unique symbol };
 export type VendorId = "anthropic" | "openai" | "xai" | "unknown";
 
-export type AppRef =
-  | { readonly kind: "current-host" }
-  | { readonly kind: "named"; readonly app: AppId };
-
-export type EffortRef =
-  | { readonly kind: "destination-default" }
-  | { readonly kind: "explicit"; readonly effort: Effort };
-
 export interface Route {
   readonly model: ModelSlug;
-  readonly app: AppRef;
-  readonly effort: EffortRef;
+  readonly app: AppId;
+  readonly effort: Effort;
 }
 
 export type InheritBinding =
@@ -63,8 +55,8 @@ export type RoleMap = {
 
 export interface RoutePatch {
   readonly model?: ModelSlug;
-  readonly app?: AppRef;
-  readonly effort?: EffortRef;
+  readonly app?: AppId;
+  readonly effort?: Effort;
 }
 
 export type Lane = "native" | "external";
@@ -130,7 +122,6 @@ export type Readiness =
 export interface ProbedModel {
   readonly slug: ModelSlug;
   readonly selectableEfforts: readonly Effort[];
-  readonly destinationDefaultEffort: Effort | { readonly kind: "unknown" };
 }
 
 export interface AppInventoryEntry {
@@ -140,25 +131,28 @@ export interface AppInventoryEntry {
   readonly probedModels?: readonly ProbedModel[];
 }
 
-export interface ModelOnApp {
-  readonly slug: ModelSlug;
+export type CliModel =
+  | { readonly effort: "flag"; readonly model: string }
+  | { readonly effort: "in-slug"; readonly model: `${string}{effort}${string}` };
+
+export interface ModelEntry {
+  readonly family: ModelSlug;
   readonly vendor: VendorId;
-  readonly destinationDefaultEffort: Effort | { readonly kind: "unknown" };
-  readonly selectableEfforts: readonly Effort[];
+  readonly efforts: readonly Effort[];
+  readonly cli: CliModel;
   readonly nativeStem: string | null;
 }
 
 export interface AppRecord {
   readonly id: AppId;
   readonly launch: ChildLaunch;
-  readonly models: ReadonlyMap<ModelSlug, ModelOnApp>;
+  readonly models: ReadonlyMap<ModelSlug, ModelEntry>;
 }
 
 export type ResolveError =
   | { readonly tag: "unsupported-external-override"; readonly role: McpBoundRoleId }
   | { readonly tag: "inherit-does-not-accept-partial-effort" }
   | { readonly tag: "app-does-not-serve-model"; readonly app: AppId; readonly model: ModelSlug }
-  | { readonly tag: "destination-default-unknown"; readonly app: AppId; readonly model: ModelSlug }
   | { readonly tag: "effort-not-selectable"; readonly app: AppId; readonly model: ModelSlug; readonly effort: Effort }
   | { readonly tag: "readiness-unknown"; readonly app: AppId }
   | { readonly tag: "not-launch-ready"; readonly app: AppId; readonly readiness: Readiness }
@@ -190,14 +184,6 @@ export function modelSlug(raw: string): Result<ModelSlug, ResolveError> {
   return { ok: true, value: raw as ModelSlug };
 }
 
-export function currentHost(): AppRef {
-  return { kind: "current-host" };
-}
-
-export function namedApp(app: AppId): AppRef {
-  return { kind: "named", app };
-}
-
 export function isParentHost(id: AppId): id is ParentHost {
   return (PARENT_HOSTS as readonly string[]).includes(id);
 }
@@ -206,22 +192,6 @@ export function isCliChildApp(id: AppId): id is CliChildApp {
   return (CLI_CHILD_APPS as readonly string[]).includes(id);
 }
 
-export function destinationDefault(): EffortRef {
-  return { kind: "destination-default" };
-}
-
-export function explicitEffort(effort: Effort): EffortRef {
-  return { kind: "explicit", effort };
-}
-
-export function route(input: {
-  readonly model: ModelSlug;
-  readonly app?: AppRef;
-  readonly effort?: EffortRef;
-}): Route {
-  return {
-    model: input.model,
-    app: input.app ?? currentHost(),
-    effort: input.effort ?? destinationDefault(),
-  };
+export function route(input: Route): Route {
+  return { model: input.model, app: input.app, effort: input.effort };
 }

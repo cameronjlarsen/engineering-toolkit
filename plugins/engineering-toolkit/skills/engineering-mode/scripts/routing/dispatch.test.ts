@@ -2,14 +2,13 @@ import { describe, expect, it } from "bun:test";
 import { shippedCatalog } from "./catalog.ts";
 import { applyOverride, planLane, resolveRoute } from "./dispatch.ts";
 import {
-  currentHost,
   EFFORTS,
-  explicitEffort,
   modelSlug,
-  namedApp,
   route,
   type Access,
+  type AppId,
   type AppInventoryEntry,
+  type Effort,
   type RoleBinding,
 } from "./route.ts";
 
@@ -25,15 +24,15 @@ function inventory(app: AppInventoryEntry["app"], readiness: AppInventoryEntry["
   return { app, readiness };
 }
 
-function routeBinding(raw: string, app = currentHost(), effort = explicitEffort("high" as const)): RoleBinding {
+function routeBinding(raw: string, app: AppId, effort: Effort = "high"): RoleBinding {
   return { kind: "route", route: route({ model: model(raw), app, effort }) };
 }
 
 describe("dispatch", () => {
-  it("plans an omitted-app route as native on the parent", () => {
+  it("plans a route whose provider is the parent as native", () => {
     const result = planLane({
       parent: "claude-code",
-      binding: routeBinding("fable"),
+      binding: routeBinding("fable", "claude-code"),
       override: undefined,
       catalog: shippedCatalog(),
       inventory: [inventory("claude-code", { kind: "launch-ready" })],
@@ -51,7 +50,7 @@ describe("dispatch", () => {
   it("plans a named grok route as external", () => {
     const result = planLane({
       parent: "claude-code",
-      binding: routeBinding("grok-4.7", namedApp("grok"), explicitEffort("xhigh")),
+      binding: routeBinding("grok-4.7", "grok", "xhigh"),
       override: undefined,
       catalog: shippedCatalog(),
       inventory: [inventory("grok", { kind: "launch-ready" })],
@@ -64,19 +63,38 @@ describe("dispatch", () => {
     if (result.value.kind === "external") expect(result.value.route.app).toBe("grok");
   });
 
-  it("rejects an unknown destination default", () => {
+  it("plans cursor:grok-4.7 through the Cursor CLI from Claude Code and Codex parents", () => {
+    for (const parent of ["claude-code", "codex"] as const) {
+      const result = planLane({
+        parent,
+        binding: routeBinding("grok-4.7", "cursor", "high"),
+        override: undefined,
+        catalog: shippedCatalog(),
+        inventory: [inventory("cursor", { kind: "launch-ready" })],
+        access,
+        role: "arena runners",
+      });
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value.kind).toBe("external");
+      if (result.value.kind !== "external") return;
+      expect(result.value.launch).toEqual({ app: "cursor", model: model("grok-4.7"), effort: "high" });
+    }
+  });
+
+  it("rejects cursor:grok-4.7@max before launch", () => {
     const result = planLane({
       parent: "claude-code",
-      binding: { kind: "route", route: route({ model: model("fable") }) },
+      binding: routeBinding("grok-4.7", "cursor", "max"),
       override: undefined,
       catalog: shippedCatalog(),
-      inventory: [inventory("claude-code", { kind: "launch-ready" })],
+      inventory: [inventory("cursor", { kind: "launch-ready" })],
       access,
-      role: "feature, refactoring",
+      role: "arena runners",
     });
     expect(result).toEqual({
       ok: false,
-      error: { tag: "destination-default-unknown", app: "claude-code", model: model("fable") },
+      error: { tag: "effort-not-selectable", app: "cursor", model: model("grok-4.7"), effort: "max" },
     });
   });
 
@@ -84,7 +102,7 @@ describe("dispatch", () => {
     const result = planLane({
       parent: "claude-code",
       binding: { kind: "inherit-parent" },
-      override: { app: namedApp("grok") },
+      override: { app: "grok" },
       catalog: shippedCatalog(),
       inventory: [],
       access,
@@ -99,8 +117,9 @@ describe("dispatch", () => {
   it("rejects an inherit effort-only override", () => {
     const result = applyOverride(
       { kind: "inherit-parent" },
-      { effort: explicitEffort("high") },
-      "feature, refactoring"
+      { effort: "high" },
+      "feature, refactoring",
+      "claude-code"
     );
     expect(result).toEqual({
       ok: false,
@@ -136,7 +155,7 @@ describe("dispatch", () => {
   it("rejects unknown readiness for a selected external app", () => {
     const result = planLane({
       parent: "claude-code",
-      binding: routeBinding("grok-4.7", namedApp("grok")),
+      binding: routeBinding("grok-4.7", "grok"),
       override: undefined,
       catalog: shippedCatalog(),
       inventory: [],
@@ -146,26 +165,10 @@ describe("dispatch", () => {
     expect(result).toEqual({ ok: false, error: { tag: "readiness-unknown", app: "grok" } });
   });
 
-  it("rejects cursor as an unlistable child without substituting another app", () => {
-    const result = planLane({
-      parent: "claude-code",
-      binding: routeBinding("fable", namedApp("cursor")),
-      override: undefined,
-      catalog: shippedCatalog(),
-      inventory: [inventory("cursor", { kind: "launch-ready" })],
-      access,
-      role: "feature, refactoring",
-    });
-    expect(result).toEqual({
-      ok: false,
-      error: { tag: "no-launch-interface", app: "cursor" },
-    });
-  });
-
-  it("plans omitted-app fable as native on a cursor parent", () => {
+  it("plans cursor:fable as native on a cursor parent", () => {
     const result = planLane({
       parent: "cursor",
-      binding: routeBinding("fable"),
+      binding: routeBinding("fable", "cursor"),
       override: undefined,
       catalog: shippedCatalog(),
       inventory: [],
@@ -180,10 +183,10 @@ describe("dispatch", () => {
     }
   });
 
-  it("plans omitted-app grok as native on a cursor parent", () => {
+  it("plans cursor:grok-4.7 as native on a cursor parent", () => {
     const result = planLane({
       parent: "cursor",
-      binding: routeBinding("grok-4.7", currentHost(), explicitEffort("xhigh")),
+      binding: routeBinding("grok-4.7", "cursor", "xhigh"),
       override: undefined,
       catalog: shippedCatalog(),
       inventory: [],
@@ -198,10 +201,10 @@ describe("dispatch", () => {
     }
   });
 
-  it("plans named grok as external from a cursor parent", () => {
+  it("plans grok:grok-4.7 as external from a cursor parent", () => {
     const result = planLane({
       parent: "cursor",
-      binding: routeBinding("grok-4.7", namedApp("grok"), explicitEffort("xhigh")),
+      binding: routeBinding("grok-4.7", "grok", "xhigh"),
       override: undefined,
       catalog: shippedCatalog(),
       inventory: [inventory("grok", { kind: "launch-ready" })],
@@ -214,10 +217,10 @@ describe("dispatch", () => {
     if (result.value.kind === "external") expect(result.value.launch.app).toBe("grok");
   });
 
-  it("plans named claude-code fable as external from a cursor parent", () => {
+  it("plans claude:fable as external from a cursor parent", () => {
     const result = planLane({
       parent: "cursor",
-      binding: routeBinding("fable", namedApp("claude-code")),
+      binding: routeBinding("fable", "claude-code"),
       override: undefined,
       catalog: shippedCatalog(),
       inventory: [inventory("claude-code", { kind: "launch-ready" })],
@@ -237,8 +240,8 @@ describe("dispatch", () => {
       "claude-code",
       route({
         model: probedSlug,
-        app: namedApp("codex"),
-        effort: explicitEffort("high"),
+        app: "codex",
+        effort: "high",
       }),
       shippedCatalog(),
       [
@@ -249,7 +252,6 @@ describe("dispatch", () => {
             {
               slug: probedSlug,
               selectableEfforts: [...EFFORTS],
-              destinationDefaultEffort: "medium",
             },
           ],
         },
@@ -273,8 +275,8 @@ describe("dispatch", () => {
         "claude-code",
         route({
           model: probedSlug,
-          app: namedApp("codex"),
-          effort: explicitEffort("high"),
+          app: "codex",
+          effort: "high",
         }),
         shippedCatalog(),
         [{ app: "codex", readiness: { kind: "launch-ready" } }]
@@ -292,8 +294,8 @@ describe("dispatch", () => {
         "claude-code",
         route({
           model: probedSlug,
-          app: namedApp("codex"),
-          effort: explicitEffort("high"),
+          app: "codex",
+          effort: "high",
         }),
         shippedCatalog(),
         [
@@ -304,7 +306,6 @@ describe("dispatch", () => {
               {
                 slug: probedSlug,
                 selectableEfforts: [],
-                destinationDefaultEffort: { kind: "unknown" },
               },
             ],
           },

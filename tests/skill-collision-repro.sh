@@ -163,6 +163,8 @@ fi
 # Active configuration must use Claude's rolling family aliases. Concrete
 # provider reports may still appear in runner fixtures, but no shipped
 # descriptor, native-agent model field, or live test invocation may pin one.
+# Cursor has no rolling alias, so its catalog in-slug templates
+# (claude-opus-5-5-{effort}) are the one allowed code pin.
 legacy_model_pins="$(
   grep -REn \
     --include='*.md' --include='*.ts' --include='*.sh' \
@@ -176,7 +178,7 @@ standalone_code_pins="$(
     --exclude='*.test.ts' --exclude='*.test.js' \
     "['\"]claude-(fable|opus)-[0-9]" \
     "$repo/plugins/engineering-toolkit" \
-    2>/dev/null || true
+    2>/dev/null | grep -v '{effort}' || true
 )"
 if [ -n "$legacy_model_pins" ] || [ -n "$standalone_code_pins" ]; then
   note "FAIL: active Fable or Opus configuration still pins a model revision:"
@@ -189,8 +191,7 @@ fi
 
 setup="$repo/plugins/engineering-toolkit/skills/setup-engineering-toolkit/SKILL.md"
 dispatch="$repo/plugins/engineering-toolkit/skills/engineering-mode/references/provider-dispatch.md"
-quad_of() { { grep -oE '(claude-code|codex|grok)/[a-z0-9.-]+@(low|medium|high|xhigh|max)' || true; } | tr '\n' ' ' | sed 's/ $//'; }
-omit_of() { { grep -oE '((claude-code|codex|grok)/)?[a-z0-9.-]+@(low|medium|high|xhigh|max)' || true; } | tr '\n' ' ' | sed 's/ $//'; }
+quad_of() { { grep -oE '(claude|codex|cursor|grok):[a-z0-9.-]+@(low|medium|high|xhigh|max)' || true; } | tr '\n' ' ' | sed 's/ $//'; }
 canon_quad="$(awk '
   $0 == "## Model matrix" { in_matrix = 1; next }
   in_matrix && /^## / { exit }
@@ -208,38 +209,13 @@ canon_quad="$(awk '
     provider = cells[3]
     model = cells[4]
     effort = cells[5]
-    app = (provider == "claude") ? "claude-code" : provider
     if (out != "") out = out " "
-    out = out app "/" model "@" effort
-  }
-  END { print out }
-' "$dispatch")"
-omit_quad="$(awk '
-  $0 == "## Model matrix" { in_matrix = 1; next }
-  in_matrix && /^## / { exit }
-  in_matrix && /^\|/ {
-    line = $0
-    sub(/^\|/, "", line)
-    sub(/\|$/, "", line)
-    n = split(line, cells, "|")
-    for (i = 1; i <= n; i++) {
-      gsub(/^ +| +$/, "", cells[i])
-      gsub(/`/, "", cells[i])
-    }
-    family = cells[1]
-    if (family == "Family" || family ~ /^:?-+:?$/) next
-    provider = cells[3]
-    model = cells[4]
-    effort = cells[5]
-    descriptor = (provider == "claude") ? (model "@" effort) : (provider "/" model "@" effort)
-    if (out != "") out = out " "
-    out = out descriptor
+    out = out provider ":" model "@" effort
   }
   END { print out }
 ' "$dispatch")"
 quad_bad=""
 [ -n "$canon_quad" ] || quad_bad="could not read the canonical quad from $dispatch"$'\n'
-[ -n "$omit_quad" ] || quad_bad="${quad_bad}could not read the omit-when-served quad from $dispatch"$'\n'
 # Anchor on the quad's last slug rather than a hard-coded one, so a model swap in
 # setup-engineering-toolkit cannot leave this check hunting for a slug nobody ships any more.
 anchor="${canon_quad##* }"
@@ -259,15 +235,15 @@ interrogate="$repo/plugins/engineering-toolkit/skills/interrogate/SKILL.md"
 got="$(grep -E '^\| Reviewer [A-Z] \|' "$interrogate" | quad_of)"
 [ "$got" = "$canon_quad" ] || quad_bad="$quad_bad$interrogate reviewer table: [$got] != [$canon_quad]"$'\n'
 while IFS= read -r line; do
-  got="$(printf '%s\n' "$line" | omit_of)"
-  [ "$got" = "$omit_quad" ] || quad_bad="$quad_bad$setup role row: [$got] != [$omit_quad]"$'\n'
+  got="$(printf '%s\n' "$line" | quad_of)"
+  [ "$got" = "$canon_quad" ] || quad_bad="$quad_bad$setup role row: [$got] != [$canon_quad]"$'\n'
 done < <(grep -E '^(arena runners|arena cross-judge pool|architect runners|interrogate reviewers):' "$setup")
 if [ -n "$quad_bad" ]; then
   note "FAIL: the default model quad is not identical across provider dispatch, the panel skills, and setup-engineering-toolkit:"
   note "$quad_bad"
   fail=1
 else
-  note "ok: named quad in panel skills ($canon_quad); omit-when-served first-run in setup-engineering-toolkit ($omit_quad)"
+  note "ok: default quad in panel skills and setup-engineering-toolkit first-run ($canon_quad)"
 fi
 
 plugin="$repo/plugins/engineering-toolkit"
@@ -491,8 +467,7 @@ fi
 sol_descriptor="$(awk -F '|' '
   $2 ~ /^[[:space:]]*sol[[:space:]]*$/ {
     for (i = 4; i <= 6; i++) gsub(/^[[:space:]]+|[[:space:]]+$/, "", $i)
-    app = ($4 == "claude") ? "claude-code" : $4
-    print app "/" $5 "@" $6
+    print $4 ":" $5 "@" $6
   }
 ' "$dispatch")"
 solo_code_bad=""

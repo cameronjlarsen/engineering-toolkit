@@ -7,7 +7,7 @@ description: "Spawn N parallel candidates at the same task, pick a base, graft t
 
 Fan out N parallel attempts at the same task. Read every candidate end to end. Pick the strongest as the base. Graft the best ideas from the others into it. Verify the synthesized result.
 
-**Dispatch contract.** Read [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md) before fan-out. Configured values are typed Routes written as `app/model@effort`, not host-native model slugs. The parent starts native and external lanes directly; children never route themselves. On Codex, resolve the remaining Claude tool names via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
+**Dispatch contract.** Read [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md) before fan-out. Configured values are typed Routes written as `provider:model@effort`, not host-native model slugs. The parent starts native and external lanes directly; children never route themselves. On Codex, resolve the remaining Claude tool names via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
 
 ## Start
 
@@ -26,7 +26,7 @@ The N candidates will receive the same prompt, so the prompt is the contract.
 
 1. State the artifact each candidate is producing.
 2. Derive the rubric. State what success looks like for *this* task, then turn it into 3-6 concrete gradeable criteria. The rubric is the picker's tool in Phase D. Candidates only see the task.
-3. Pick the runners. Use the `arena runners` line in the current harness's `engineering-toolkit-models` sheet. If the sheet or that line is missing, default to one each on `claude-code/fable@max`, `codex/gpt-6-sol@max`, `grok/grok-4.7@xhigh`, `claude-code/opus@xhigh`. An `auto` or `inherit-parent` entry in this line or the cross-judge line means the parent model. If a provider, login, or model is unavailable, record a dropout and continue. Never pick the closest model or silently fall back. Spawn more when the arena covers multiple design directions. Same descriptor N times when the work is generation-bound rather than judgment-sensitive.
+3. Pick the runners. Use the `arena runners` line in the current harness's `engineering-toolkit-models` sheet. If the sheet or that line is missing, default to one each on `claude:fable@max`, `codex:gpt-6-sol@max`, `grok:grok-4.7@xhigh`, `claude:opus@xhigh`. An `auto` or `inherit-parent` entry in this line or the cross-judge line means the parent model. If a provider, login, or model is unavailable, record a dropout and continue. Never pick the closest model or silently fall back. Spawn more when the arena covers multiple design directions. Same descriptor N times when the work is generation-bound rather than judgment-sensitive.
 4. Assign output paths. Each candidate writes to its own location (a git worktree where possible, otherwise `/tmp/arena-<slug>/candidate-<n>/`), per the **separate-before-serializing-shared-state** principle skill.
 
 ## Phase B: Fan out
