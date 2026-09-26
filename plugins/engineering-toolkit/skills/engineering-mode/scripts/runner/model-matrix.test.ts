@@ -383,7 +383,7 @@ describe("model matrix", () => {
     expect(setup).toContain("<!-- engineering-toolkit:models:begin -->");
     expect(setup).toContain("<!-- engineering-toolkit:models:end -->");
     expect(setup).toContain(
-      "| Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | native Task host-spawn |"
+      "| Grok | Grok matrix row + selected effort | Grok CLI, then Cursor CLI | Grok CLI, then Cursor CLI | native Task host-spawn |"
     );
   });
 

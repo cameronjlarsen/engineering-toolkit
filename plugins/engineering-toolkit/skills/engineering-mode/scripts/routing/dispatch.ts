@@ -120,7 +120,7 @@ function modelOnApp(
     family: probed.slug,
     vendor: vendorOnApp(appRecord),
     efforts: probed.selectableEfforts,
-    cli: { effort: "flag", model: probed.slug },
+    cli: probed.cli ?? { effort: "flag", model: probed.slug },
     nativeStem: null,
   };
 }

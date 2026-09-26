@@ -122,6 +122,7 @@ export type Readiness =
 export interface ProbedModel {
   readonly slug: ModelSlug;
   readonly selectableEfforts: readonly Effort[];
+  readonly cli?: CliModel;
 }
 
 export interface AppInventoryEntry {

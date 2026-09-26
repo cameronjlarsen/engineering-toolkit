@@ -44,7 +44,12 @@ refresh the Codex model list with `codex debug models`. Never pass `--bundled`.
 Parse that stdout with `parseCodexDebugModels`. A failed refresh is an unknown
 list (`probedModels` omitted), not an empty list: report it. Do not sole-map
 slugs while the list is unknown. When the refresh succeeds, pass that list to
-`proposeStalePinMigrations`. A slug on the list is not a proposal. A slug on
+`proposeStalePinMigrations`. Refresh Cursor's list with `cursor-agent models`
+and parse that stdout with `parseCursorModels`. It derives each family's
+in-slug template and efforts from slugs that end in an effort; `-fast`
+variants add no efforts. A failed Cursor refresh is also an unknown list.
+Pass each list as that app's inventory `probedModels`. Only the Codex list
+goes to `proposeStalePinMigrations`. A slug on the list is not a proposal. A slug on
 neither the shipped catalog nor the list stays unmatched for step 3. Do not
 rewrite a route until the operator accepts a proposal. Unaccepted rows stay
 inconsistent at step 3. Also read a `# budget:`
@@ -63,7 +68,7 @@ parser ignores every line that is not a role row, so prose stays readable.
 
 The four-row model matrix names each family's blank-sheet default. It is not
 the allowlist. A slug is consistent when the shipped catalog or this session's
-refreshed Codex model list contains it. Parse Route wire values as
+refreshed Codex or Cursor model list for that provider contains it. Parse Route wire values as
 `provider:model@effort`. The effort is required; a migrated grammar 2 route
 without one is inconsistent until the operator names its effort.
 `inherit-parent` and `auto` carry no Route. Do not infer a provider from a
@@ -95,15 +100,21 @@ rerun keeps any role whose model differs from the default.
 Probe only selected routes used by the sheet, after the step 4 budget remap, not the pre-budget efforts. Do not blindly probe four
 families when the sheet does not use them. If first-run still proposes the
 four matrix families, probe those selected rows only. Distinguish installed,
-launch-ready, and unknown. A failed probe writes nothing: report the failing
-route and keep the active sheet plus parent integration bytes unchanged. A
-failed first run creates neither artifact.
+launch-ready, and unknown. A family's CLI homes are ordered, and Grok's are
+`grok` then `cursor`. `homeRoutes(parent, route, catalog)` lists a route's
+candidates from its own home onward, skipping a home whose catalog entry does
+not list the route's effort. Probe them in order and keep the first that
+passes, for example `cursor:grok-4.7@xhigh` when the Grok CLI is missing and
+`cursor-agent` passes. Each home runs the same model at the same effort, so
+this is not a weaker-model fallback. A failed probe writes nothing: when
+every candidate fails, report the failing routes and keep the active sheet
+plus parent integration bytes unchanged. A failed first run creates neither artifact.
 
 | Family | Pair source | Claude parent | Codex parent | Cursor parent | Availability proof |
 |---|---|---|---|---|---|
 | Fable | Fable matrix row + selected effort | native Agent `pstack-fable-<effort>` | Claude CLI | native Task `pstack-fable-<effort>` plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
 | Sol | Sol matrix row + selected effort | `codex exec` | native `spawn_agent` | Codex CLI | `codex debug models` without `--bundled` as the model list, plus `codex login status` plus one-turn probe or native one-turn probe |
-| Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | native Task host-spawn | native one-turn probe or `grok models` plus one-turn probe |
+| Grok | Grok matrix row + selected effort | Grok CLI, then Cursor CLI | Grok CLI, then Cursor CLI | native Task host-spawn | native one-turn probe, or `grok models` or `cursor-agent status` plus one-turn probe |
 | Opus | Opus matrix row + selected effort | native Agent `pstack-opus-<effort>` | Claude CLI | native Task `pstack-opus-<effort>` plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
 
 Use a tiny read-only probe that returns a unique marker. A login-status
@@ -140,7 +151,8 @@ documented role key.
 
 Show app discovery, readiness, rolling-alias migrations, the chosen budget
 label and target effort, the route table for this parent, every rendered
-role and Route wire value, and each line step 2 dropped. Ask for confirmation before writing.
+role and Route wire value, each route step 5 moved to a later CLI home, and
+each line step 2 dropped. Ask for confirmation before writing.
 
 Every selected route must have passed step 5. Why and Reflect require the
 parent's live MCP surface. Keep their roles on `inherit-parent` or `auto`;
@@ -157,7 +169,7 @@ Descriptor grammar: 3
 
 Route choices. Each route is provider:model@effort. First-run uses the
 parent's provider when the live parent already serves that model, and the
-family's CLI home otherwise. The example below is the Claude Code render. On
+family's first CLI home otherwise. The example below is the Claude Code render. On
 Cursor, Fable, Opus, and Grok use cursor. On Codex, Sol uses codex natively
 and Fable and Opus use claude. Every documented role remains present.
 `inherit-parent` and `auto` use the parent model natively and still count as
