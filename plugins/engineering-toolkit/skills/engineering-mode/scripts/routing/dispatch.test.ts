@@ -81,7 +81,7 @@ describe("dispatch", () => {
       effort: "medium",
       lane: "external",
     });
-    expect(result.value.launch.model).toBe("claude-sonnet-5-5");
+    expect(result.value.launch.model).toBe(model("claude-sonnet-5-5"));
   });
 
   it("plans Sonnet 5.5 natively on both plugin-agent parents", () => {
@@ -103,7 +103,7 @@ describe("dispatch", () => {
       if (result.value.kind !== "native" || result.value.inherit === true) {
         throw new Error(`expected a Sonnet plugin route for ${parent}`);
       }
-      expect(result.value.route.model).toBe("claude-sonnet-5-5");
+      expect(result.value.route.model).toBe(model("claude-sonnet-5-5"));
     }
   });
 

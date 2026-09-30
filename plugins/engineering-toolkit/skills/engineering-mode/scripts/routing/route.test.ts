@@ -53,7 +53,8 @@ describe("modelSlug", () => {
 
   it("accepts the exact fixed Sonnet 5.5 model ID", () => {
     const model = modelSlug("claude-sonnet-5-5");
-    expect(model).toEqual({ ok: true, value: "claude-sonnet-5-5" });
+    if (!model.ok) throw new Error("expected valid Sonnet model");
+    expect(model.value as string).toBe("claude-sonnet-5-5");
   });
 
   it("does not treat a model slug as an app id", () => {

@@ -161,7 +161,7 @@ describe("nativeHandle", () => {
       }
       expect(nativeHandle(planned.value, shippedCatalog())).toEqual({
         kind: "plugin-agent",
-        name: "pstack-sonnet-medium",
+        name: pluginAgentName("sonnet", "medium"),
       });
     }
   });
