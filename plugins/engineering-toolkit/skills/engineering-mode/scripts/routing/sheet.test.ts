@@ -74,6 +74,20 @@ describe("sheet grammar 2", () => {
     );
   });
 
+  it("round-trips the fixed Sonnet 5.5 route ID", () => {
+    const result = loadRoleMap(
+      sheet({ "feature, refactoring": "claude-code/claude-sonnet-5-5@medium" })
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value["feature, refactoring"]).toEqual(
+      routeValue("claude-sonnet-5-5", namedApp("claude-code"), explicitEffort("medium"))
+    );
+    expect(printRoleMap(result.value)).toContain(
+      "feature, refactoring: claude-code/claude-sonnet-5-5@medium"
+    );
+  });
+
   it("rejects a provider-qualified descriptor in grammar 2", () => {
     expect(loadRoleMap(sheet({ "feature, refactoring": "claude:fable@max" }))).toEqual({
       ok: false,

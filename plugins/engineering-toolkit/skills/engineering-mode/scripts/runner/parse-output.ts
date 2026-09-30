@@ -7,6 +7,7 @@ import {
   concreteModelMatchesRollingAlias,
   isRollingClaudeAlias,
 } from "./model-aliases.ts";
+import { SONNET_5_5_MODEL } from "../routing/route.ts";
 
 type JsonObject = Record<string, unknown>;
 
@@ -185,6 +186,12 @@ export function reportedModelMatches(
   if (reported === null) return false;
   if (app === "claude-code" && isRollingClaudeAlias(requested)) {
     return concreteModelMatchesRollingAlias(requested, reported);
+  }
+  if (app === "claude-code" && requested === SONNET_5_5_MODEL) {
+    return (
+      reported === requested ||
+      new RegExp(`^${SONNET_5_5_MODEL}-[0-9]+(?:-[0-9]+)*$`).test(reported)
+    );
   }
   if (reported === requested || reported.startsWith(`${requested}-`)) {
     return true;

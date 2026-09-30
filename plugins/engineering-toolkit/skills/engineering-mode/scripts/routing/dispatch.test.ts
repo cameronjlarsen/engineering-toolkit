@@ -64,6 +64,50 @@ describe("dispatch", () => {
     if (result.value.kind === "external") expect(result.value.route.app).toBe("grok");
   });
 
+  it("plans the fixed Sonnet 5.5 route externally from Codex", () => {
+    const result = planLane({
+      parent: "codex",
+      binding: routeBinding("claude-sonnet-5-5", namedApp("claude-code"), explicitEffort("medium")),
+      override: undefined,
+      catalog: shippedCatalog(),
+      inventory: [inventory("claude-code", { kind: "launch-ready" })],
+      access,
+      role: "feature, refactoring",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok || result.value.kind !== "external") return;
+    expect(result.value.route).toMatchObject({
+      app: "claude-code",
+      model: "claude-sonnet-5-5",
+      effort: "medium",
+      lane: "external",
+    });
+    expect(result.value.launch.model).toBe("claude-sonnet-5-5");
+  });
+
+  it("plans Sonnet 5.5 natively on both plugin-agent parents", () => {
+    for (const parent of ["claude-code", "cursor"] as const) {
+      const result = planLane({
+        parent,
+        binding: routeBinding("claude-sonnet-5-5", currentHost(), explicitEffort("medium")),
+        override: undefined,
+        catalog: shippedCatalog(),
+        inventory: parent === "claude-code"
+          ? [inventory("claude-code", { kind: "launch-ready" })]
+          : [],
+        access,
+        role: "feature, refactoring",
+      });
+      expect(result.ok).toBe(true);
+      if (!result.ok) throw new Error(`route failed for ${parent}`);
+      expect(result.value.kind).toBe("native");
+      if (result.value.kind !== "native" || result.value.inherit === true) {
+        throw new Error(`expected a Sonnet plugin route for ${parent}`);
+      }
+      expect(result.value.route.model).toBe("claude-sonnet-5-5");
+    }
+  });
+
   it("rejects an unknown destination default", () => {
     const result = planLane({
       parent: "claude-code",

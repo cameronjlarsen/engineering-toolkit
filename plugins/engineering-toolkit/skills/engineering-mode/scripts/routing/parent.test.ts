@@ -85,6 +85,7 @@ describe("firstRunRoleMap", () => {
     );
     expect(cursor).not.toContain("claude-code/fable");
     expect(cursor).not.toContain("grok/grok-4.7");
+    expect(cursor).not.toContain("claude-sonnet-5-5");
     expect(claude).toContain(
       "arena runners: fable@max, codex/gpt-6-sol@max, grok/grok-4.7@xhigh, opus@xhigh"
     );
@@ -122,6 +123,39 @@ describe("nativeHandle", () => {
       kind: "plugin-agent",
       name: pluginAgentName("fable", "max"),
     });
+  });
+
+  it("names the Sonnet 5.5 plugin agent on Claude Code and Cursor", () => {
+    for (const parent of ["claude-code", "cursor"] as const) {
+      const planned = planLane({
+        parent,
+        binding: {
+          kind: "route",
+          route: route({
+            model: slug("claude-sonnet-5-5"),
+            app: currentHost(),
+            effort: explicitEffort("medium"),
+          }),
+        },
+        override: undefined,
+        catalog: shippedCatalog(),
+        inventory: parent === "claude-code"
+          ? [{ app: "claude-code", readiness: { kind: "launch-ready" } }]
+          : [],
+        access,
+        role: "feature, refactoring",
+      });
+      expect(planned.ok).toBe(true);
+      if (!planned.ok) throw new Error(`route failed for ${parent}`);
+      expect(planned.value.kind).toBe("native");
+      if (planned.value.kind !== "native") {
+        throw new Error(`expected a native Sonnet route for ${parent}`);
+      }
+      expect(nativeHandle(planned.value, shippedCatalog())).toEqual({
+        kind: "plugin-agent",
+        name: "pstack-sonnet-medium",
+      });
+    }
   });
 
   it("maps omitted-app grok on cursor to host-spawn", () => {

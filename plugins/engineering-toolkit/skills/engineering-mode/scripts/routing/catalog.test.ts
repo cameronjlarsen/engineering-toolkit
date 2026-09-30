@@ -10,6 +10,21 @@ describe("shipped catalog", () => {
     expect(shippedCatalog().get("grok")?.models.has("fable" as never)).toBe(false);
   });
 
+  it("serves fixed Sonnet 5.5 natively through Claude Code and Cursor", () => {
+    const catalog = shippedCatalog();
+    const claudeSonnet = catalog.get("claude-code")?.models.get("claude-sonnet-5-5" as never);
+    expect(claudeSonnet).toEqual({
+      slug: "claude-sonnet-5-5",
+      vendor: "anthropic",
+      destinationDefaultEffort: { kind: "unknown" },
+      selectableEfforts: ["low", "medium", "high", "xhigh", "max"],
+      nativeStem: "sonnet",
+    });
+    expect(catalog.get("cursor")?.models.get("claude-sonnet-5-5" as never)).toEqual(claudeSonnet);
+    expect(catalog.get("codex")?.models.has("claude-sonnet-5-5" as never)).toBe(false);
+    expect(catalog.get("grok")?.models.has("claude-sonnet-5-5" as never)).toBe(false);
+  });
+
   it("makes cursor a parent that serves plugin agents and grok natively and cannot be launched", () => {
     const catalog = shippedCatalog();
     const cursor = catalog.get("cursor");
@@ -31,10 +46,12 @@ describe("shipped catalog", () => {
     const fable = catalog.get("claude-code")?.models.get("fable" as never);
     const sol = catalog.get("codex")?.models.get(SOL_CLI_MODEL);
     const grok = catalog.get("grok")?.models.get("grok-4.7" as never);
-    if (!fable || !sol || !grok) throw new Error("missing shipped models");
+    const claudeSonnet = catalog.get("claude-code")?.models.get("claude-sonnet-5-5" as never);
+    if (!fable || !sol || !grok || !claudeSonnet) throw new Error("missing shipped models");
     expect(launchHome(fable.slug, catalog)).toBe("claude-code");
     expect(launchHome(sol.slug, catalog)).toBe("codex");
     expect(launchHome(grok.slug, catalog)).toBe("grok");
+    expect(launchHome(claudeSonnet.slug, catalog)).toBe("claude-code");
   });
 
   it("keeps fable destination default unknown", () => {

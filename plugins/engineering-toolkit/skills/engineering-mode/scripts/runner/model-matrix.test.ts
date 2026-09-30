@@ -28,9 +28,22 @@ const MATRIX_HEADER = [
   "Selectable efforts",
   "Plugin-agent stem",
 ] as const;
+const ADDITIONAL_HEADER = [
+  "Model",
+  "Provider",
+  "Selectable efforts",
+  "Plugin-agent stem",
+] as const;
 
 const FAMILY_ORDER = ["fable", "sol", "grok", "opus"] as const;
 const PROVIDERS = ["claude", "codex", "grok"] as const;
+const SONNET_CURSOR_SELECTORS: Record<Effort, string> = {
+  low: "claude-sonnet-5-5-low",
+  medium: "claude-sonnet-5-5-medium",
+  high: "claude-sonnet-5-5-high",
+  xhigh: "claude-sonnet-5-5-xhigh",
+  max: "claude-sonnet-5-5-max",
+};
 const DESCRIPTOR_RE =
   /(?:(?:claude-code|codex|grok)\/)?[a-z0-9.-]+@(low|medium|high|xhigh|max)/g;
 const PANEL_ROLES = [
@@ -65,14 +78,17 @@ const SETUP_SECTION_ORDER = [
   "### 7. Confirm and commit",
 ] as const;
 
-interface MatrixRow {
-  family: string;
-  upstreamChoice: string;
+interface SupportedModel {
   provider: string;
   model: string;
-  defaultEffort: Effort;
   selectableEfforts: Effort[];
   pluginAgentStem: string | null;
+}
+
+interface MatrixRow extends SupportedModel {
+  family: string;
+  upstreamChoice: string;
+  defaultEffort: Effort;
 }
 
 function splitRow(line: string): string[] {
@@ -167,7 +183,51 @@ function parseModelMatrix(markdown: string): MatrixRow[] {
   });
 }
 
-function namedApp(row: MatrixRow): string {
+function parseAdditionalModels(markdown: string): SupportedModel[] {
+  const lines = markdown.split(/\r?\n/);
+  const start = lines.findIndex((line) => line.trim() === "## Additional selectable models");
+  if (start < 0) throw new Error("missing ## Additional selectable models");
+  let end = lines.length;
+  for (let i = start + 1; i < lines.length; i++) {
+    if (lines[i].startsWith("## ")) {
+      end = i;
+      break;
+    }
+  }
+  const table = lines
+    .slice(start + 1, end)
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("|"));
+  if (table.length < 3) throw new Error("additional selectable models table is empty");
+  const header = splitRow(table[0]);
+  if (header.join("|") !== ADDITIONAL_HEADER.join("|")) {
+    throw new Error(`unexpected additional-model header: ${header.join(" | ")}`);
+  }
+  if (!isSeparator(splitRow(table[1]))) {
+    throw new Error("additional-model table separator missing");
+  }
+  return table.slice(2).map((line) => {
+    const cells = splitRow(line);
+    if (cells.length !== ADDITIONAL_HEADER.length) {
+      throw new Error(`additional-model row has ${cells.length} cells: ${line}`);
+    }
+    const [model, provider, selectableRaw, stemRaw] = cells;
+    if (!(PROVIDERS as readonly string[]).includes(provider)) {
+      throw new Error(`invalid provider: ${provider}`);
+    }
+    const selectableEfforts = selectableRaw.split(/\s+/).map(asEffort);
+    const pluginAgentStem = stemRaw === "-" ? null : stemRaw;
+    if (pluginAgentStem !== null && !/^[a-z0-9-]+$/.test(pluginAgentStem)) {
+      throw new Error(`invalid plugin-agent stem: ${stemRaw}`);
+    }
+    if ((provider === "claude") !== (pluginAgentStem !== null)) {
+      throw new Error(`${model} stem must be present iff provider is claude`);
+    }
+    return { model, provider, selectableEfforts, pluginAgentStem };
+  });
+}
+
+function namedApp(row: Pick<SupportedModel, "provider">): string {
   return row.provider === "claude" ? "claude-code" : row.provider;
 }
 
@@ -213,9 +273,10 @@ function firstRunSheet(setup: string): string {
 }
 
 describe("model matrix", () => {
-  const rows = parseModelMatrix(
-    readFileSync(DISPATCH_PATH, "utf8").replaceAll("\r\n", "\n")
-  );
+  const dispatch = readFileSync(DISPATCH_PATH, "utf8").replaceAll("\r\n", "\n");
+  const rows = parseModelMatrix(dispatch);
+  const additionalModels = parseAdditionalModels(dispatch);
+  const supportedModels: SupportedModel[] = [...rows, ...additionalModels];
   const setup = readFileSync(SETUP_PATH, "utf8").replaceAll("\r\n", "\n");
   const quad = defaultDescriptors(rows);
 
@@ -251,7 +312,7 @@ describe("model matrix", () => {
   it("ships exactly the declared Claude-native frontier agents", () => {
     const expected = new Set<string>();
     const familyBodies = new Map<string, string>();
-    for (const row of rows) {
+    for (const row of supportedModels) {
       const stem = row.pluginAgentStem;
       if (stem === null) {
         continue;
@@ -280,7 +341,7 @@ describe("model matrix", () => {
         }
       }
     }
-    const declaredCount = rows.reduce(
+    const declaredCount = supportedModels.reduce(
       (count, row) =>
         count +
         (row.pluginAgentStem === null
@@ -293,6 +354,19 @@ describe("model matrix", () => {
       .filter((name) => name.startsWith("pstack-") && name.endsWith(".md"))
       .sort();
     expect(shipped).toEqual([...expected].sort());
+  });
+
+  it("keeps Sonnet 5.5 explicitly selectable outside the default matrix", () => {
+    expect(additionalModels).toEqual([
+      {
+        model: "claude-sonnet-5-5",
+        provider: "claude",
+        selectableEfforts: [...EFFORTS],
+        pluginAgentStem: "sonnet",
+      },
+    ]);
+    expect(rows).toHaveLength(4);
+    expect(setup).not.toContain("claude-sonnet-5-5@");
   });
 
   it("keeps setup's first-run default panel copy aligned with the matrix", () => {
@@ -331,20 +405,26 @@ describe("model matrix", () => {
     }
   });
 
-  it("binds the shipped catalog and first-run sheet to the matrix", () => {
+  it("binds the catalog to defaults without changing the first-run sheet", () => {
     const catalog = shippedCatalog();
     for (const app of launchableApps()) {
       const provider = app === "claude-code" ? "claude" : app;
-      const matrixModels = rows
+      const expectedModels = supportedModels
         .filter((row) => row.provider === provider)
         .map((row) => row.model)
         .sort();
       const catalogModels = [...(catalog.get(app)?.models.keys() ?? [])]
         .map((slug) => String(slug))
         .sort();
-      expect(catalogModels).toEqual(matrixModels);
+      expect(catalogModels).toEqual(expectedModels);
     }
-    for (const row of rows) {
+    const cursorModels = [...(catalog.get("cursor")?.models.keys() ?? [])]
+      .map((slug) => String(slug))
+      .sort();
+    expect(cursorModels).toEqual(
+      supportedModels.filter((row) => row.provider !== "codex").map((row) => row.model).sort()
+    );
+    for (const row of supportedModels) {
       const home = namedApp(row);
       const onApp = catalog.get(home as "claude-code" | "codex" | "grok")?.models.get(
         row.model as ModelSlug
@@ -391,9 +471,12 @@ describe("model matrix", () => {
     expect(setup).toContain(
       "| Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | native Task host-spawn |"
     );
+    expect(setup).toContain(
+      "| Sonnet 5.5 | Additional selectable-model row + selected effort | native Agent `pstack-sonnet-<effort>` | Claude CLI | native Task `pstack-sonnet-<effort>` plus exact live selector for the resolved effort |"
+    );
   });
 
-  it("binds Claude-native dispatch to the matrix mapping", () => {
+  it("binds Claude-native dispatch to the catalog mapping", () => {
     const dispatch = readFileSync(DISPATCH_PATH, "utf8").replaceAll("\r\n", "\n");
     const nativeStart = dispatch.indexOf("## Native lanes");
     const externalStart = dispatch.indexOf("## External lanes");
@@ -401,13 +484,12 @@ describe("model matrix", () => {
     expect(externalStart).toBeGreaterThan(nativeStart);
     const nativeLanes = dispatch.slice(nativeStart, externalStart);
     expect(nativeLanes).toContain(
-      "match the route's `(app, model)` to one model-matrix row"
+      "match the route's `(app, model)` to a shipped catalog entry"
     );
     expect(nativeLanes).toContain("`pstack-<stem>-<effort>`");
     expect(nativeLanes).toContain("host-spawn");
-    expect(nativeLanes).toContain(
-      "Set `Task` `model` to a live Cursor selector"
-    );
+    expect(nativeLanes).toContain("Set `Task`");
+    expect(nativeLanes).toContain("live Cursor selector");
     expect(nativeLanes).toContain("Do not pass `opus` or `fable`");
     expect(nativeLanes).not.toContain(
       "Do not pass a Cursor host model slug onto a plugin-agent Task"
@@ -428,21 +510,28 @@ describe("model matrix", () => {
     expect(pluginAgent).toContain("live Cursor selector");
     expect(pluginAgent).toContain("this session's Task model list");
     expect(pluginAgent).toContain("Do not pass `opus` or `fable`");
+    expect(pluginAgent).toContain("Sonnet 5.5 selectors are");
+    for (const effort of EFFORTS) {
+      const selector = SONNET_CURSOR_SELECTORS[effort];
+      expect(selector).toBe(`claude-sonnet-5-5-${effort}`);
+      expect(pluginAgent).toContain(selector);
+    }
     expect(pluginAgent).toContain("Do not omit `model`");
     expect(pluginAgent).toContain("inherits the parent");
     expect(pluginAgent).not.toContain(
       "Do not set `Task` `model` to a Cursor host slug"
     );
     const cursorNative = readFileSync(DISPATCH_PATH, "utf8").replaceAll("\r\n", "\n");
-    const cursorBullet = cursorNative
-      .split(/\r?\n/)
-      .filter((line) => line.includes("plugin-agent") || line.includes("`opus`"))
-      .join("\n");
-    expect(cursorBullet).toContain("live Cursor selector");
+    const normalizedCursorNative = cursorNative.replace(/\s+/g, " ");
+    expect(normalizedCursorNative).toContain(
+      "Sonnet 5.5 must use the exact `claude-sonnet-5-5-<effort>` selector for the route effort"
+    );
+    expect(normalizedCursorNative).toContain("live Cursor selector");
     expect(setup).toContain(
       "A Cursor plugin-agent probe must also prove the child is the requested family"
     );
     expect(setup).toContain("A reply that names the parent model");
+    expect(setup).toContain("Only the exact Cursor selector for the resolved Sonnet effort qualifies");
   });
 
   it("normalizes old rolling-family pins before any runtime route", () => {

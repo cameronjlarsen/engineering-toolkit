@@ -5,6 +5,7 @@ import {
   type CliChildApp,
   type ModelOnApp,
   type ModelSlug,
+  SONNET_5_5_MODEL,
 } from "./route.ts";
 
 export type AppCatalog = ReadonlyMap<AppId, AppRecord>;
@@ -30,9 +31,11 @@ function model(
 export function shippedCatalog(): AppCatalog {
   const fable = model("fable", "anthropic", "fable");
   const opus = model("opus", "anthropic", "opus");
+  const sonnet = model(SONNET_5_5_MODEL, "anthropic", "sonnet");
   const pluginAgents = new Map<ModelSlug, ModelOnApp>([
     [fable.slug, fable],
     [opus.slug, opus],
+    [sonnet.slug, sonnet],
   ]);
   const claudeCode: AppRecord = {
     id: "claude-code",

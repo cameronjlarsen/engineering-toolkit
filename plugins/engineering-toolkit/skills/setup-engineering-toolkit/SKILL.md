@@ -101,6 +101,7 @@ failed first run creates neither artifact.
 | Sol | Sol matrix row + selected effort | `codex exec` | native `spawn_agent` | Codex CLI | `codex debug models` without `--bundled` as the model list, plus `codex login status` plus one-turn probe or native one-turn probe |
 | Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | native Task host-spawn | native one-turn probe or `grok models` plus one-turn probe |
 | Opus | Opus matrix row + selected effort | native Agent `pstack-opus-<effort>` | Claude CLI | native Task `pstack-opus-<effort>` plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
+| Sonnet 5.5 | Additional selectable-model row + selected effort | native Agent `pstack-sonnet-<effort>` | Claude CLI | native Task `pstack-sonnet-<effort>` plus exact live selector for the resolved effort | native one-turn probe or `claude auth status --json` plus one-turn probe |
 
 Use a tiny read-only probe that returns a unique marker. A login-status
 command alone proves credentials, not that the selected model and effort run.
@@ -109,6 +110,9 @@ Ask the child which model it is. A reply that names the parent model, or that
 matches `inherit`, fails the probe. Passing only the unique marker is not
 enough. If this session's Task model list has no selector for that family and
 effort, the route is unknown, not launch-ready.
+Only the exact Cursor selector for the resolved Sonnet effort qualifies. The
+selector suffix must match the effort, such as `claude-sonnet-5-5-xhigh`. Do
+not guess a selector or accept another Sonnet revision.
 Record native and external results separately. Never call the external
 launcher for a same-host route. Cursor cannot be launched as a child.
 
@@ -155,7 +159,8 @@ the Claude Code render. On Cursor, Fable, Opus, and Grok omit the app. On
 Codex, Sol omits the app and Fable and Opus name `claude-code`. Omit effort
 for the destination default. Every documented role remains present.
 `inherit-parent` and `auto` use the parent model natively and still count as
-one panel lane.
+one panel lane. For an explicitly selected Sonnet 5.5 route, omit the app on
+Claude Code or Cursor, and name `claude-code` on Codex.
 
 # budget: unlimited (max)
 feature, refactoring: grok/grok-4.7@xhigh
