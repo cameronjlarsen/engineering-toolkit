@@ -67,4 +67,45 @@ describe("runnerArgv", () => {
     expect(parsed?.app).toBe("grok");
     expect(parsed?.timeoutMs).toBeNull();
   });
+
+  it("preserves the fixed Sonnet 5.5 ID in Claude CLI arguments", () => {
+    const sonnet = modelSlug("claude-sonnet-5-5");
+    if (!sonnet.ok) throw new Error("sonnet");
+    const planned = planLane({
+      parent: "codex",
+      binding: {
+        kind: "route",
+        route: route({
+          model: sonnet.value,
+          app: "claude-code",
+          effort: "medium",
+        }),
+      },
+      override: undefined,
+      catalog: shippedCatalog(),
+      inventory: [{ app: "claude-code", readiness: { kind: "launch-ready" } }],
+      access,
+      role: "feature, refactoring",
+    });
+    expect(planned.ok).toBe(true);
+    if (!planned.ok || planned.value.kind !== "external") return;
+    const argv = runnerArgv(planned.value, {
+      promptPath: "prompt.md",
+      cwd: "/repo",
+      outputPath: "out.md",
+      receiptPath: "receipt.json",
+      mode: "read-only",
+      timeoutMs: null,
+    });
+    expect(argv.slice(0, 8)).toEqual([
+      "--parent",
+      "codex",
+      "--app",
+      "claude-code",
+      "--model",
+      "claude-sonnet-5-5",
+      "--effort",
+      "medium",
+    ]);
+  });
 });

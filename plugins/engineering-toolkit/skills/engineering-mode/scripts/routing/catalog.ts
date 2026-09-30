@@ -8,6 +8,7 @@ import {
   type Effort,
   type ModelEntry,
   type ModelSlug,
+  SONNET_5_5_MODEL,
 } from "./route.ts";
 
 export type AppCatalog = ReadonlyMap<AppId, AppRecord>;
@@ -37,12 +38,14 @@ function byFamily(entries: readonly ModelEntry[]): ReadonlyMap<ModelSlug, ModelE
 }
 
 export function shippedCatalog(): AppCatalog {
+  const sonnet = model(SONNET_5_5_MODEL, "anthropic", flag(SONNET_5_5_MODEL), "sonnet");
   const claudeCode: AppRecord = {
     id: "claude-code",
     launch: "cli-auth",
     models: byFamily([
       model("fable", "anthropic", flag("fable"), "fable"),
       model("opus", "anthropic", flag("opus"), "opus"),
+      sonnet,
     ]),
   };
   const codex: AppRecord = {
@@ -61,7 +64,18 @@ export function shippedCatalog(): AppCatalog {
     models: byFamily([
       model("fable", "anthropic", inSlug("claude-fable-5-1-{effort}"), "fable"),
       model("opus", "anthropic", inSlug("claude-opus-5-5-{effort}"), "opus"),
-      model("grok-4.7", "xai", inSlug("grok-4.7-{effort}"), null, ["low", "medium", "high", "xhigh"]),
+      model(
+        SONNET_5_5_MODEL,
+        "anthropic",
+        inSlug("claude-sonnet-5-5-{effort}"),
+        "sonnet"
+      ),
+      model("grok-4.7", "xai", inSlug("grok-4.7-{effort}"), null, [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+      ]),
     ]),
   };
   return new Map<AppId, AppRecord>([

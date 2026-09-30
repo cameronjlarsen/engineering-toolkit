@@ -2,6 +2,7 @@ export const PARENT_HOSTS = ["claude-code", "codex", "cursor"] as const;
 export const APP_IDS = ["claude-code", "codex", "cursor", "grok"] as const;
 export const CLI_CHILD_APPS = ["claude-code", "codex", "cursor", "grok"] as const;
 export const EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
+export const SONNET_5_5_MODEL = "claude-sonnet-5-5";
 
 export type ParentHost = (typeof PARENT_HOSTS)[number];
 export type AppId = (typeof APP_IDS)[number];
@@ -177,7 +178,11 @@ export function modelSlug(raw: string): Result<ModelSlug, ResolveError> {
     return { ok: true, value: rollingAlias as ModelSlug };
   }
 
-  if (/^claude-.+-[0-9]+(?:-[0-9]+)*$/.test(raw)) {
+  if (raw === SONNET_5_5_MODEL) {
+    return { ok: true, value: raw as ModelSlug };
+  }
+
+  if (/^claude-.+-[0-9]+(?:-[a-z0-9]+)*$/i.test(raw)) {
     return { ok: false, error: { tag: "invalid-model-slug", raw } };
   }
 

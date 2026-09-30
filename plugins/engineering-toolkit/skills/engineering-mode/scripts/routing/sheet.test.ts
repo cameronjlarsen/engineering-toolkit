@@ -68,6 +68,43 @@ describe("sheet grammar 3", () => {
     expect(result.value["how explainer"]).toEqual(routeValue("grok-4.7", "grok", "xhigh"));
   });
 
+  it("round-trips the fixed Sonnet 5.5 route ID through Claude and Cursor", () => {
+    const result = loadRoleMap(
+      sheet({ "feature, refactoring": "claude:claude-sonnet-5-5@medium" }),
+      "codex"
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value["feature, refactoring"]).toEqual(
+      routeValue("claude-sonnet-5-5", "claude-code", "medium")
+    );
+    expect(printRoleMap(result.value)).toContain(
+      "feature, refactoring: claude:claude-sonnet-5-5@medium"
+    );
+    const cursor = loadRoleMap(
+      sheet({ "feature, refactoring": "cursor:claude-sonnet-5-5@medium" }),
+      "claude-code"
+    );
+    expect(cursor.ok && cursor.value["feature, refactoring"]).toEqual(
+      routeValue("claude-sonnet-5-5", "cursor", "medium")
+    );
+  });
+
+  it("migrates a grammar 2 Sonnet route to grammar 3", () => {
+    const result = loadRoleMap(
+      sheet({ "feature, refactoring": "claude-code/claude-sonnet-5-5@medium" }, "2"),
+      "codex"
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value["feature, refactoring"]).toEqual(
+      routeValue("claude-sonnet-5-5", "claude-code", "medium")
+    );
+    expect(printRoleMap(result.value)).toContain(
+      "feature, refactoring: claude:claude-sonnet-5-5@medium"
+    );
+  });
+
   it("names the same family on two providers without rewriting it", () => {
     const result = loadRoleMap(
       sheet({ "arena runners": "claude:opus@high, cursor:opus@high" }),

@@ -41,6 +41,20 @@ describe("modelSlug", () => {
       ok: false,
       error: { tag: "invalid-model-slug", raw: "claude-sonnet-4-5" },
     });
+    expect(modelSlug("claude-sonnet-5-6")).toEqual({
+      ok: false,
+      error: { tag: "invalid-model-slug", raw: "claude-sonnet-5-6" },
+    });
+    expect(modelSlug("claude-sonnet-5-5-preview")).toEqual({
+      ok: false,
+      error: { tag: "invalid-model-slug", raw: "claude-sonnet-5-5-preview" },
+    });
+  });
+
+  it("accepts the exact fixed Sonnet 5.5 model ID", () => {
+    const model = modelSlug("claude-sonnet-5-5");
+    if (!model.ok) throw new Error("expected valid Sonnet model");
+    expect(model.value as string).toBe("claude-sonnet-5-5");
   });
 
   it("does not treat a model slug as an app id", () => {

@@ -10,14 +10,40 @@ describe("shipped catalog", () => {
     expect(shippedCatalog().get("grok")?.models.has("fable" as never)).toBe(false);
   });
 
-  it("makes cursor a launchable app that serves fable, opus, and grok by family name", () => {
+  it("serves fixed Sonnet 5.5 natively through Claude Code and Cursor", () => {
+    const catalog = shippedCatalog();
+    const claudeSonnet = catalog.get("claude-code")?.models.get("claude-sonnet-5-5" as never);
+    expect(claudeSonnet).toMatchObject({
+      family: "claude-sonnet-5-5",
+      vendor: "anthropic",
+      efforts: ["low", "medium", "high", "xhigh", "max"],
+      cli: { effort: "flag", model: "claude-sonnet-5-5" },
+      nativeStem: "sonnet",
+    });
+    const cursorSonnet = catalog.get("cursor")?.models.get("claude-sonnet-5-5" as never);
+    expect(cursorSonnet).toMatchObject({
+      family: "claude-sonnet-5-5",
+      nativeStem: "sonnet",
+    });
+    if (cursorSonnet === undefined) throw new Error("missing Cursor Sonnet model");
+    expect(cliModelFor(cursorSonnet, "xhigh")).toBe("claude-sonnet-5-5-xhigh");
+    expect(catalog.get("codex")?.models.has("claude-sonnet-5-5" as never)).toBe(false);
+    expect(catalog.get("grok")?.models.has("claude-sonnet-5-5" as never)).toBe(false);
+  });
+
+  it("makes Cursor a launchable app that serves Fable, Opus, Sonnet, and Grok", () => {
     const cursor = shippedCatalog().get("cursor");
     expect(cursor?.launch).toBe("cli-auth");
-    expect([...(cursor?.models.keys() ?? [])].map(String).sort()).toEqual(["fable", "grok-4.7", "opus"]);
+    expect([...(cursor?.models.keys() ?? [])].map(String).sort()).toEqual([
+      "claude-sonnet-5-5",
+      "fable",
+      "grok-4.7",
+      "opus",
+    ]);
     expect(cursor?.models.get("grok-4.7" as never)?.nativeStem).toBeNull();
   });
 
-  it("puts the effort in the Cursor slug and keeps a flag elsewhere", () => {
+  it("puts the effort in Cursor slugs and keeps a flag for CLI apps", () => {
     const catalog = shippedCatalog();
     const cursorOpus = catalog.get("cursor")?.models.get("opus" as never);
     const cursorFable = catalog.get("cursor")?.models.get("fable" as never);
@@ -30,7 +56,7 @@ describe("shipped catalog", () => {
     expect(cliModelFor(claudeOpus, "high")).toBe("opus");
   });
 
-  it("lists per-entry efforts, and Cursor grok stops at xhigh", () => {
+  it("lists per-entry efforts, and Cursor Grok stops at xhigh", () => {
     const catalog = shippedCatalog();
     expect(catalog.get("cursor")?.models.get("grok-4.7" as never)?.efforts).toEqual([
       "low",
@@ -48,7 +74,7 @@ describe("shipped catalog", () => {
     expect(catalog.get("grok")?.models.get("grok-4.7" as never)?.efforts).toContain("max");
   });
 
-  it("exposes every app, cursor included, as a CLI child", () => {
+  it("exposes every app, Cursor included, as a CLI child", () => {
     expect(launchableApps()).toEqual(["claude-code", "codex", "cursor", "grok"]);
   });
 

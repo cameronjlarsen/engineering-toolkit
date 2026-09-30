@@ -164,6 +164,29 @@ describe("parseAppOutput", () => {
     expect(reportedModelMatches("grok", "fable", "claude-fable-9-9")).toBe(false);
   });
 
+  it("verifies the fixed Sonnet 5.5 ID without accepting another selector", () => {
+    expect(
+      reportedModelMatches("claude-code", "claude-sonnet-5-5", "claude-sonnet-5-5")
+    ).toBe(true);
+    expect(
+      reportedModelMatches(
+        "claude-code",
+        "claude-sonnet-5-5",
+        "claude-sonnet-5-5-20260929"
+      )
+    ).toBe(true);
+    expect(
+      reportedModelMatches(
+        "claude-code",
+        "claude-sonnet-5-5",
+        "claude-sonnet-5-5-preview"
+      )
+    ).toBe(false);
+    expect(
+      reportedModelMatches("claude-code", "claude-sonnet-5-5", "claude-sonnet-5-6")
+    ).toBe(false);
+  });
+
   it("rejects malformed or textless responses", () => {
     expect(() =>
       parseAppOutput("claude-code", "not-json", "", "fable")

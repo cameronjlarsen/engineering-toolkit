@@ -27,11 +27,26 @@ provider. Every role is written inline; there are no named or shared routes.
 
 The allowed effort universe is exactly `low`, `medium`, `high`, `xhigh`, `max`. First-run requested efforts are the Default effort cell of each row. A plugin-agent stem of `-` means the family has no plugin-agent. Otherwise the shipped agent name is `pstack-<stem>-<effort>`.
 
+## Additional selectable models
+
+These models do not add a family or seed a first-run role.
+Use `claude:claude-sonnet-5-5@<effort>` on Claude Code or Codex, and
+`cursor:claude-sonnet-5-5@<effort>` on Cursor.
+
+| Model | Provider | Selectable efforts | Plugin-agent stem |
+|---|---|---|---|
+| claude-sonnet-5-5 | claude | low medium high xhigh max | sonnet |
+
 `fable` and `opus` are Claude Code's rolling aliases. Claude resolves each
 alias to the latest available family revision. A runner receipt keeps the
 requested alias in `model` and the concrete provider-reported revision in
 `reportedModel`; verification accepts only a numeric `claude-fable-*` or
 `claude-opus-*` revision from the matching family.
+
+`claude-sonnet-5-5` is a fixed model ID. Preserve it in the sheet, route, and
+runner argv. Select an explicit effort because its destination default is
+unknown. Other numbered Claude IDs, including preview suffixes, remain
+invalid.
 
 The matrix names each family's blank-sheet default. A cli-auth app also accepts
 any slug in the refreshed CLI model list for that session. `codex debug models`
@@ -102,6 +117,10 @@ Native dispatch avoids a second CLI startup and its base context.
   dispatches through host-spawn: `Task` with `model` set to a live Cursor
   selector for that model and effort. Pass the complete task, grounding paths,
   access mode, and unique output location in the `Task` prompt.
+  Sonnet 5.5 must use the exact `claude-sonnet-5-5-<effort>` selector for the
+  route effort. Do not pass `sonnet`, guess a selector, or use another
+  Sonnet revision. An omitted or unmatched selector inherits the parent and
+  is a dropout.
   `inherit-parent` uses `engineering-agent`.
 
 Do not send a same-host route to the external runner. It is rejected with exit
