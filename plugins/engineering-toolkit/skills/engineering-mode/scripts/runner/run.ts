@@ -354,6 +354,8 @@ function preflightPassed(app: App, model: string, result: ProcessResult): boolea
       return /logged in/i.test(combined);
     case "grok":
       return /logged in/i.test(combined) && combined.includes(model);
+    case "cursor":
+      return /logged in/i.test(combined) && !/not logged in/i.test(combined);
     default: {
       const neverApp: never = app;
       throw new Error(`unsupported app: ${neverApp}`);
@@ -371,7 +373,7 @@ function unavailableStatus(value: string): ReceiptStatus {
   if (/not logged in|unauthenticated|authentication|sign in|login required/i.test(value)) {
     return "unauthenticated";
   }
-  if (/model.{0,40}(not found|unknown|unavailable|unsupported|not supported|invalid)|invalid.{0,20}model/i.test(value)) {
+  if (/model.{0,40}(not found|unknown|unavailable|unsupported|not supported|invalid)|invalid.{0,20}model|cannot use this model/i.test(value)) {
     return "unavailable-model";
   }
   return "child-failed";
@@ -438,7 +440,7 @@ function modelProof(
       modelEvidence: "provider-report",
     };
   }
-  if (app === "codex" && reported === null) {
+  if ((app === "codex" || app === "cursor") && reported === null) {
     return {
       reportedModel: null,
       modelVerified: false,

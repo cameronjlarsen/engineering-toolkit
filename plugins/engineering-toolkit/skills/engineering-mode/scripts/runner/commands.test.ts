@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { invocationCommand } from "./commands.ts";
+import { invocationCommand, preflightCommand } from "./commands.ts";
 import type { RunnerOptions } from "./types.ts";
 
 function options(overrides: Partial<RunnerOptions> = {}): RunnerOptions {
@@ -111,6 +111,56 @@ describe("invocationCommand", () => {
       "--disable-web-search",
       "--verbatim",
     ]);
+  });
+
+  it("runs cursor-agent in print mode with the catalog's in-slug model", () => {
+    const spec = invocationCommand(
+      options({ app: "cursor", model: "grok-4.7", effort: "high" })
+    );
+    expect(spec.command).toBe("cursor-agent");
+    expect(spec.stdin).toBe("prompt");
+    expect(spec.args).toEqual([
+      "-p",
+      "--output-format",
+      "json",
+      "--mode",
+      "plan",
+      "--trust",
+      "--model",
+      "grok-4.7-high",
+    ]);
+    expect(spec.args).not.toContain("--force");
+    expect(preflightCommand("cursor")).toEqual({
+      command: "cursor-agent",
+      args: ["status"],
+      stdin: "none",
+    });
+  });
+
+  it("maps Cursor opus and fable efforts into their slugs and forces writes", () => {
+    const opus = invocationCommand(
+      options({ app: "cursor", model: "opus", effort: "medium", mode: "isolated-write" })
+    );
+    expect(opus.args).toEqual([
+      "-p",
+      "--output-format",
+      "json",
+      "--force",
+      "--model",
+      "claude-opus-5-5-medium",
+    ]);
+    expect(opus.args).not.toContain("plan");
+    const fable = invocationCommand(options({ app: "cursor", model: "fable", effort: "max" }));
+    expect(fable.args.at(-1)).toBe("claude-fable-5-1-max");
+  });
+
+  it("rejects a Cursor model or effort the catalog does not list", () => {
+    expect(() =>
+      invocationCommand(options({ app: "cursor", model: "grok-4.7", effort: "max" }))
+    ).toThrow("does not accept effort max");
+    expect(() =>
+      invocationCommand(options({ app: "cursor", model: "gpt-6-sol", effort: "high" }))
+    ).toThrow("cursor does not serve model gpt-6-sol");
   });
 
   it("uses bounded write modes without blanket bypasses", () => {

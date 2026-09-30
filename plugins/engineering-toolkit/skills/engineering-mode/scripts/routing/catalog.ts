@@ -1,9 +1,12 @@
 import {
   CLI_CHILD_APPS,
+  EFFORTS,
   type AppId,
   type AppRecord,
   type CliChildApp,
-  type ModelOnApp,
+  type CliModel,
+  type Effort,
+  type ModelEntry,
   type ModelSlug,
   SONNET_5_5_MODEL,
 } from "./route.ts";
@@ -12,52 +15,68 @@ export type AppCatalog = ReadonlyMap<AppId, AppRecord>;
 
 export const SOL_CLI_MODEL = "gpt-6-sol" as ModelSlug;
 
-const SELECTABLE_EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
-
 function model(
-  slug: string,
-  vendor: ModelOnApp["vendor"],
-  nativeStem: string | null
-): ModelOnApp {
-  return {
-    slug: slug as ModelSlug,
-    vendor,
-    destinationDefaultEffort: { kind: "unknown" },
-    selectableEfforts: SELECTABLE_EFFORTS,
-    nativeStem,
-  };
+  family: string,
+  vendor: ModelEntry["vendor"],
+  cli: CliModel,
+  nativeStem: string | null,
+  efforts: readonly Effort[] = EFFORTS
+): ModelEntry {
+  return { family: family as ModelSlug, vendor, efforts, cli, nativeStem };
+}
+
+function flag(slug: string): CliModel {
+  return { effort: "flag", model: slug };
+}
+
+function inSlug(template: `${string}{effort}${string}`): CliModel {
+  return { effort: "in-slug", model: template };
+}
+
+function byFamily(entries: readonly ModelEntry[]): ReadonlyMap<ModelSlug, ModelEntry> {
+  return new Map(entries.map((entry) => [entry.family, entry]));
 }
 
 export function shippedCatalog(): AppCatalog {
-  const fable = model("fable", "anthropic", "fable");
-  const opus = model("opus", "anthropic", "opus");
-  const sonnet = model(SONNET_5_5_MODEL, "anthropic", "sonnet");
-  const pluginAgents = new Map<ModelSlug, ModelOnApp>([
-    [fable.slug, fable],
-    [opus.slug, opus],
-    [sonnet.slug, sonnet],
-  ]);
+  const sonnet = model(SONNET_5_5_MODEL, "anthropic", flag(SONNET_5_5_MODEL), "sonnet");
   const claudeCode: AppRecord = {
     id: "claude-code",
     launch: "cli-auth",
-    models: pluginAgents,
+    models: byFamily([
+      model("fable", "anthropic", flag("fable"), "fable"),
+      model("opus", "anthropic", flag("opus"), "opus"),
+      sonnet,
+    ]),
   };
-  const sol = model(SOL_CLI_MODEL, "openai", null);
   const codex: AppRecord = {
     id: "codex",
     launch: "cli-auth",
-    models: new Map([[SOL_CLI_MODEL, sol]]),
+    models: byFamily([model(SOL_CLI_MODEL, "openai", flag(SOL_CLI_MODEL), null)]),
   };
-  const grokModel = model("grok-4.7", "xai", null);
   const grok: AppRecord = {
     id: "grok",
     launch: "cli-auth",
-    models: new Map([[grokModel.slug, grokModel]]),
+    models: byFamily([model("grok-4.7", "xai", flag("grok-4.7"), null)]),
   };
   const cursor: AppRecord = {
     id: "cursor",
-    launch: "none",
-    models: new Map([...pluginAgents, [grokModel.slug, grokModel]]),
+    launch: "cli-auth",
+    models: byFamily([
+      model("fable", "anthropic", inSlug("claude-fable-5-1-{effort}"), "fable"),
+      model("opus", "anthropic", inSlug("claude-opus-5-5-{effort}"), "opus"),
+      model(
+        SONNET_5_5_MODEL,
+        "anthropic",
+        inSlug("claude-sonnet-5-5-{effort}"),
+        "sonnet"
+      ),
+      model("grok-4.7", "xai", inSlug("grok-4.7-{effort}"), null, [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+      ]),
+    ]),
   };
   return new Map<AppId, AppRecord>([
     ["claude-code", claudeCode],
@@ -65,6 +84,12 @@ export function shippedCatalog(): AppCatalog {
     ["grok", grok],
     ["cursor", cursor],
   ]);
+}
+
+export function cliModelFor(entry: ModelEntry, effort: Effort): string {
+  return entry.cli.effort === "in-slug"
+    ? entry.cli.model.replace("{effort}", effort)
+    : entry.cli.model;
 }
 
 export function soleModel(app: AppId, catalog: AppCatalog): ModelSlug | null {
@@ -76,18 +101,4 @@ export function soleModel(app: AppId, catalog: AppCatalog): ModelSlug | null {
 
 export function launchableApps(): readonly CliChildApp[] {
   return CLI_CHILD_APPS;
-}
-
-export function launchHome(
-  model: ModelSlug,
-  catalog: AppCatalog
-): CliChildApp | null {
-  const homes = [...catalog.values()].filter(
-    (app): app is AppRecord & { readonly id: CliChildApp; readonly launch: "cli-auth" } =>
-      app.launch === "cli-auth" &&
-      (CLI_CHILD_APPS as readonly string[]).includes(app.id) &&
-      app.models.has(model)
-  );
-  if (homes.length !== 1) return null;
-  return homes[0].id;
 }

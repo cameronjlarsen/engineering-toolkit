@@ -9,7 +9,7 @@ function slug(raw: string) {
 }
 
 describe("parseCodexDebugModels", () => {
-  it("filters ultra and keeps a surviving destination default", () => {
+  it("filters ultra from the selectable efforts", () => {
     const result = parseCodexDebugModels(
       JSON.stringify({
         models: [
@@ -30,7 +30,6 @@ describe("parseCodexDebugModels", () => {
       {
         slug: slug("gpt-6.1-sol"),
         selectableEfforts: ["high"],
-        destinationDefaultEffort: "high",
       },
     ]);
     expect(result.value[0]?.selectableEfforts).toContain("high");
@@ -55,7 +54,6 @@ describe("parseCodexDebugModels", () => {
       {
         slug: slug("gpt-6-sol"),
         selectableEfforts: [...EFFORTS],
-        destinationDefaultEffort: "medium",
       },
     ]);
   });

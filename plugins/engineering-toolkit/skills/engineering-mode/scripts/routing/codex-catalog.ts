@@ -8,10 +8,6 @@ import {
 
 const INVALID = { tag: "invalid-codex-model-catalog" as const };
 
-function isEffort(value: string): value is Effort {
-  return (EFFORTS as readonly string[]).includes(value);
-}
-
 function selectableEffortsFrom(levels: unknown): readonly Effort[] {
   if (!Array.isArray(levels)) return [];
   const raw = new Set<string>();
@@ -45,24 +41,14 @@ export function parseCodexDebugModels(
     if (typeof entry !== "object" || entry === null) continue;
     const record = entry as {
       readonly slug?: unknown;
-      readonly default_reasoning_level?: unknown;
       readonly supported_reasoning_levels?: unknown;
     };
     if (typeof record.slug !== "string") continue;
     const branded = modelSlug(record.slug);
     if (!branded.ok) continue;
-    const selectableEfforts = selectableEffortsFrom(record.supported_reasoning_levels);
-    const defaultRaw = record.default_reasoning_level;
-    const destinationDefaultEffort =
-      typeof defaultRaw === "string" &&
-      isEffort(defaultRaw) &&
-      selectableEfforts.includes(defaultRaw)
-        ? defaultRaw
-        : { kind: "unknown" as const };
     probed.push({
       slug: branded.value,
-      selectableEfforts,
-      destinationDefaultEffort,
+      selectableEfforts: selectableEffortsFrom(record.supported_reasoning_levels),
     });
   }
   return { ok: true, value: probed };

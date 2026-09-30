@@ -41,7 +41,7 @@ describe("runner CLI parsing", () => {
     );
   });
 
-  it("accepts cursor as a parent and rejects it as an app", () => {
+  it("accepts cursor as a parent and as an app", () => {
     const parsed = parseArgs([
       "--parent",
       "cursor",
@@ -64,27 +64,26 @@ describe("runner CLI parsing", () => {
     ]);
     expect(parsed?.parent).toBe("cursor");
     expect(parsed?.app).toBe("grok");
-    expect(() =>
-      parseArgs([
-        "--parent",
-        "claude-code",
-        "--app",
-        "cursor",
-        "--model",
-        "fable",
-        "--effort",
-        "max",
-        "--mode",
-        "read-only",
-        "--prompt",
-        join(process.cwd(), "prompt.md"),
-        "--cwd",
-        process.cwd(),
-        "--output",
-        join(process.cwd(), "output.md"),
-        "--receipt",
-        join(process.cwd(), "receipt.json"),
-      ])
-    ).toThrow("app must be one of");
+    const child = parseArgs([
+      "--parent",
+      "claude-code",
+      "--app",
+      "cursor",
+      "--model",
+      "grok-4.7",
+      "--effort",
+      "high",
+      "--mode",
+      "read-only",
+      "--prompt",
+      join(process.cwd(), "prompt.md"),
+      "--cwd",
+      process.cwd(),
+      "--output",
+      join(process.cwd(), "output.md"),
+      "--receipt",
+      join(process.cwd(), "receipt.json"),
+    ]);
+    expect(child?.app).toBe("cursor");
   });
 });

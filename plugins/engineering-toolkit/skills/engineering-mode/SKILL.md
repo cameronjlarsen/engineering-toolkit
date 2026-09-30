@@ -10,7 +10,7 @@ disable-model-invocation: "true"
 
 ## Platform Adaptation
 
-These skills share one tree across Claude Code, Codex, and Cursor. Read [`references/provider-dispatch.md`](references/provider-dispatch.md) whenever a configured role launches. It defines the typed Route values and `app/model@effort` wire values, native/external route table, launcher, isolation, receipts, and dropout policy. Children never choose routes. When a skill names a Claude tool or built-in skill (`run`, `verify`, `plugin-dev:skill-development`), read [`references/codex-tools.md`](references/codex-tools.md) on Codex and [`references/cursor-tools.md`](references/cursor-tools.md) on Cursor.
+These skills share one tree across Claude Code, Codex, and Cursor. Read [`references/provider-dispatch.md`](references/provider-dispatch.md) whenever a configured role launches. It defines the typed Route values and `provider:model@effort` wire values, native/external route table, launcher, isolation, receipts, and dropout policy. Children never choose routes. When a skill names a Claude tool or built-in skill (`run`, `verify`, `plugin-dev:skill-development`), read [`references/codex-tools.md`](references/codex-tools.md) on Codex and [`references/cursor-tools.md`](references/cursor-tools.md) on Cursor.
 
 ## Non-negotiables
 

@@ -1,8 +1,11 @@
-import type {
-  AccessMode,
-  Effort,
-  App,
-  RunnerOptions,
+import { cliModelFor, shippedCatalog } from "../routing/catalog.ts";
+import type { ModelSlug } from "../routing/route.ts";
+import {
+  type AccessMode,
+  type Effort,
+  type App,
+  type RunnerOptions,
+  UsageError,
 } from "./types.ts";
 
 export interface CommandSpec {
@@ -27,6 +30,8 @@ export function preflightCommand(app: App): CommandSpec {
       };
     case "grok":
       return { command: "grok", args: ["models"], stdin: "none" };
+    case "cursor":
+      return { command: "cursor-agent", args: ["status"], stdin: "none" };
     default: {
       const neverApp: never = app;
       throw new Error(`unsupported app: ${neverApp}`);
@@ -65,6 +70,23 @@ function permissionMode(mode: AccessMode): string {
 
 function effortOverride(effort: Effort): string {
   return `model_reasoning_effort=${JSON.stringify(effort)}`;
+}
+
+export function cursorModel(model: string, effort: Effort): string {
+  const entry = shippedCatalog().get("cursor")?.models.get(model as ModelSlug);
+  if (entry === undefined) {
+    throw new UsageError(`cursor does not serve model ${model}`);
+  }
+  if (!entry.efforts.includes(effort)) {
+    throw new UsageError(
+      `cursor model ${model} does not accept effort ${effort}; it accepts ${entry.efforts.join(", ")}`
+    );
+  }
+  return cliModelFor(entry, effort);
+}
+
+function cursorAccess(mode: AccessMode): readonly string[] {
+  return mode === "read-only" ? ["--mode", "plan", "--trust"] : ["--force"];
 }
 
 export function invocationCommand(options: RunnerOptions): CommandSpec {
@@ -149,6 +171,19 @@ export function invocationCommand(options: RunnerOptions): CommandSpec {
           "--verbatim",
         ],
         stdin: "none",
+      };
+    case "cursor":
+      return {
+        command: "cursor-agent",
+        args: [
+          "-p",
+          "--output-format",
+          "json",
+          ...cursorAccess(options.mode),
+          "--model",
+          cursorModel(options.model, options.effort),
+        ],
+        stdin: "prompt",
       };
     default: {
       const neverApp: never = options.app;

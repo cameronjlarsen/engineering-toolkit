@@ -1,6 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { launchHome, SOL_CLI_MODEL, soleModel, type AppCatalog } from "./catalog.ts";
+import { SOL_CLI_MODEL, soleModel, type AppCatalog } from "./catalog.ts";
 import {
   type AppId,
   type Effort,
@@ -13,10 +13,7 @@ import {
   type RoleBinding,
   type RoleMap,
   type SingleRoleId,
-  currentHost,
-  explicitEffort,
   modelSlug,
-  namedApp,
   route,
 } from "./route.ts";
 import { PANEL_ROLE_IDS, SINGLE_ROLE_IDS } from "./sheet.ts";
@@ -106,10 +103,10 @@ export type PinMigration = {
 };
 
 const FAMILY_SEED = [
-  { family: "fable", model: "fable", effort: "max" },
-  { family: "sol", model: SOL_CLI_MODEL, effort: "max" },
-  { family: "grok", model: "grok-4.7", effort: "xhigh" },
-  { family: "opus", model: "opus", effort: "xhigh" },
+  { family: "fable", model: "fable", effort: "max", home: "claude-code" },
+  { family: "sol", model: SOL_CLI_MODEL, effort: "max", home: "codex" },
+  { family: "grok", model: "grok-4.7", effort: "xhigh", home: "grok" },
+  { family: "opus", model: "opus", effort: "xhigh", home: "claude-code" },
 ] as const;
 
 type FamilyId = (typeof FAMILY_SEED)[number]["family"];
@@ -164,14 +161,12 @@ function familyBinding(
 ): RoleMap["feature, refactoring"] {
   const row = familyOf(family);
   const model = requiredSlug(row.model);
-  const home = launchHome(model, catalog);
-  if (home === null) throw new Error(`no unique CLI home for ${row.model}`);
   return {
     kind: "route",
     route: route({
       model,
-      app: serveLocally(parent, model, catalog) ? currentHost() : namedApp(home),
-      effort: explicitEffort(row.effort),
+      app: serveLocally(parent, model, catalog) ? parent : row.home,
+      effort: row.effort,
     }),
   };
 }
@@ -282,13 +277,12 @@ function siteKey(site: RouteSite): string {
   return "lane" in site ? `${site.role}#${site.lane}` : site.role;
 }
 
-function resolvedApp(parent: ParentHost, binding: RoleBinding): AppId | null {
+function resolvedApp(binding: RoleBinding): AppId | null {
   if (binding.kind !== "route") return null;
-  return binding.route.app.kind === "current-host" ? parent : binding.route.app.app;
+  return binding.route.app;
 }
 
 export function proposeStalePinMigrations(
-  parent: ParentHost,
   roles: RoleMap,
   catalog: AppCatalog,
   probed?: readonly ProbedModel[]
@@ -297,7 +291,7 @@ export function proposeStalePinMigrations(
 
   const consider = (site: RouteSite, binding: RoleBinding): void => {
     if (binding.kind !== "route") return;
-    const app = resolvedApp(parent, binding);
+    const app = resolvedApp(binding);
     if (app === null) return;
     if (catalog.get(app)?.models.has(binding.route.model) === true) return;
     if (probed !== undefined) return;
@@ -412,11 +406,13 @@ export function nativeHandle(
   };
 }
 
+const STORED_GRAMMAR = /^Descriptor grammar: [23]\r?$/m;
+
 export function unwrapStoredSheet(
   stored: string
 ): Result<string, { readonly tag: "inconsistent-integration" }> {
   if (!stored.startsWith("---")) {
-    if (!stored.includes("Descriptor grammar: 2")) {
+    if (!STORED_GRAMMAR.test(stored)) {
       return { ok: false, error: { tag: "inconsistent-integration" } };
     }
     return { ok: true, value: stored };
@@ -426,7 +422,7 @@ export function unwrapStoredSheet(
   const frontmatter = stored.slice(4, close);
   let body = stored.slice(close + 5);
   if (body.startsWith("\n")) body = body.slice(1);
-  if (/alwaysApply:\s*true/.test(frontmatter) && !body.includes("Descriptor grammar: 2")) {
+  if (/alwaysApply:\s*true/.test(frontmatter) && !STORED_GRAMMAR.test(body)) {
     return { ok: false, error: { tag: "inconsistent-integration" } };
   }
   return { ok: true, value: body };

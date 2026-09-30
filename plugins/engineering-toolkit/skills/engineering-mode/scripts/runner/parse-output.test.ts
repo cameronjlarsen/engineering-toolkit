@@ -24,6 +24,50 @@ describe("parseAppOutput", () => {
     });
   });
 
+  it("extracts Cursor's JSON result without inventing a provider-reported model", () => {
+    const parsed = parseAppOutput(
+      "cursor",
+      JSON.stringify({
+        type: "result",
+        subtype: "success",
+        is_error: false,
+        duration_ms: 12,
+        duration_api_ms: 12,
+        result: "CURSOR_OK",
+        session_id: "cursor-session",
+        request_id: "req-1",
+        usage: { inputTokens: 40, outputTokens: 5, cacheReadTokens: 2, cacheWriteTokens: 1 },
+      }),
+      "",
+      "grok-4.7"
+    );
+    expect(parsed).toEqual({
+      text: "CURSOR_OK",
+      reportedModel: null,
+      sessionId: "cursor-session",
+      usage: {
+        inputTokens: 40,
+        cachedInputTokens: 2,
+        cacheCreationInputTokens: 1,
+        outputTokens: 5,
+        reasoningTokens: undefined,
+        totalTokens: undefined,
+      },
+      costUsd: null,
+    });
+  });
+
+  it("rejects a Cursor error result", () => {
+    expect(() =>
+      parseAppOutput(
+        "cursor",
+        JSON.stringify({ type: "result", subtype: "error", is_error: true, result: "boom" }),
+        "",
+        "grok-4.7"
+      )
+    ).toThrow("cursor reported an error result");
+  });
+
   it("extracts Codex JSONL without inventing a provider-reported model", () => {
     const parsed = parseAppOutput(
       "codex",

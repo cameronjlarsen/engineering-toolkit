@@ -1,6 +1,5 @@
 import type {
   Access,
-  CliLaunchSpec,
   IsolatedWorktree,
   ParentHost,
   RoleMap,
@@ -54,13 +53,6 @@ const cursorParent: ParentHost = "cursor";
 // @ts-expect-error Grok is not a parent host.
 const grokParent: ParentHost = "grok";
 
-const cursorChildLaunch: CliLaunchSpec = {
-  // @ts-expect-error Cursor is not a CLI child.
-  app: "cursor",
-  model: "fable" as Route["model"],
-  effort: "max",
-};
-
 const worktree: IsolatedWorktree = { path: "worktree" };
 void [
   whyRoute,
@@ -71,6 +63,5 @@ void [
   inheritingWorker,
   cursorParent,
   grokParent,
-  cursorChildLaunch,
   worktree,
 ];
