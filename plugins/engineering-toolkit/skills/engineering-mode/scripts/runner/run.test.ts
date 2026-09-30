@@ -1,8 +1,17 @@
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "bun:test";
 import {
   chmodSync,
   cpSync,
   existsSync,
+  linkSync,
   mkdtempSync,
   mkdirSync,
   readFileSync,
@@ -10,7 +19,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, join } from "node:path";
+import { delimiter, dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import { childEnvironment, runLane } from "./run.ts";
 import { main } from "./cli.ts";
@@ -19,11 +28,17 @@ import type { App, RunnerOptions, RunnerReceipt } from "./types.ts";
 let scratch = "";
 let bin = "";
 let previousPath: string | undefined;
+let compiledFixture = "";
 
 const fake = `#!/usr/bin/env bun
-import { appendFileSync, existsSync, unlinkSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { basename } from "node:path";
 const args = process.argv.slice(2);
-const name = process.argv[1].split("/").at(-1);
+if (process.env.FAKE_DESCENDANT_ONLY_MS) {
+  await Bun.sleep(Number(process.env.FAKE_DESCENDANT_ONLY_MS));
+  process.exit(0);
+}
+const name = basename(process.platform === "win32" ? process.execPath : process.argv[1]).replace(/\\.exe$/, "");
 const isPreflight =
   (name === "claude" && args[0] === "auth") ||
   (name === "codex" && args[0] === "login") ||
@@ -56,7 +71,11 @@ if (process.env.FAKE_TIMEOUT === "1" && !args.includes("status") && !args.includ
 }
 if (name === "claude" && args[0] === "auth") {
   if (process.env.FAKE_REMOVE_EXECUTABLE_AFTER_PREFLIGHT === "1") {
-    unlinkSync(process.argv[1]);
+    if (process.platform === "win32") {
+      renameSync(process.execPath, process.execPath + ".removed");
+    } else {
+      unlinkSync(process.argv[1]);
+    }
   }
   console.log(JSON.stringify({loggedIn:true}));
   process.exit(0);
@@ -99,8 +118,11 @@ if (process.env.FAKE_INVALID_MODEL === "1") {
   process.exit(1);
 }
 if (stage === "model" && process.env.FAKE_DESCENDANT_HOLDS_PIPES_MS) {
-  const seconds = Number(process.env.FAKE_DESCENDANT_HOLDS_PIPES_MS) / 1000;
-  const descendant = Bun.spawn(["/bin/sh", "-c", "sleep " + seconds], {
+  const milliseconds = Number(process.env.FAKE_DESCENDANT_HOLDS_PIPES_MS);
+  const descendant = Bun.spawn(process.platform === "win32"
+    ? [process.execPath]
+    : [process.execPath, "-e", "await Bun.sleep(" + milliseconds + ")"], {
+    env: { ...process.env, FAKE_DESCENDANT_ONLY_MS: String(milliseconds) },
     stdin: "ignore",
     stdout: "inherit",
     stderr: "inherit",
@@ -130,6 +152,10 @@ if (process.env.FAKE_MODEL_EXITING_PATH) {
 `;
 
 function makeExecutable(name: string): void {
+  if (process.platform === "win32") {
+    linkSync(join(compiledFixture, "fake.exe"), join(bin, `${name}.exe`));
+    return;
+  }
   const path = join(bin, name);
   writeFileSync(path, fake);
   chmodSync(path, 0o755);
@@ -231,6 +257,30 @@ async function waitForExit(pid: number): Promise<void> {
   throw new Error(`timed out waiting for process ${pid} to exit`);
 }
 
+beforeAll(async () => {
+  if (process.platform !== "win32") return;
+  compiledFixture = mkdtempSync(join(tmpdir(), "pstack-runner-fixture-"));
+  const source = join(compiledFixture, "fake.ts");
+  writeFileSync(source, fake);
+  const build = Bun.spawn([
+    process.execPath,
+    "build",
+    "--compile",
+    source,
+    "--outfile",
+    join(compiledFixture, "fake.exe"),
+  ], {
+    stdout: "ignore",
+    stderr: "pipe",
+  });
+  const stderr = await new Response(build.stderr).text();
+  if (await build.exited !== 0) throw new Error(stderr);
+}, 60_000);
+
+afterAll(() => {
+  if (compiledFixture) rmSync(compiledFixture, { recursive: true, force: true });
+});
+
 beforeEach(() => {
   scratch = mkdtempSync(join(tmpdir(), "pstack-runner-test-"));
   bin = join(scratch, "bin");
@@ -238,7 +288,7 @@ beforeEach(() => {
   writeFileSync(join(scratch, "prompt.md"), "Return the marker.");
   for (const name of ["claude", "codex", "grok"]) makeExecutable(name);
   previousPath = process.env.PATH;
-  process.env.PATH = `${bin}:${dirname(process.execPath)}:${previousPath ?? ""}`;
+  process.env.PATH = [bin, dirname(process.execPath)].join(delimiter);
   delete process.env.FAKE_TIMEOUT;
   delete process.env.FAKE_INVALID_MODEL;
   delete process.env.FAKE_CANCEL;
@@ -408,7 +458,7 @@ describe("runLane", () => {
     expect(recorded.elapsedMs).toBeLessThan(1_200);
   });
 
-  it("cancels during the Grok retry delay without starting another preflight", async () => {
+  it.skipIf(process.platform === "win32")("cancels during the Grok retry delay without starting another preflight", async () => {
     const transientMarker = join(scratch, "grok-cancel-unauth.pid");
     const preflightLog = join(scratch, "grok-cancel-unauth.log");
     const input = options("grok", "grok-preflight-retry-cancelled");
@@ -567,7 +617,7 @@ describe("runLane", () => {
   });
 
   it("spends one explicit deadline across preflight and model execution", async () => {
-    process.env.FAKE_PREFLIGHT_DELAY_MS = "1200";
+    process.env.FAKE_PREFLIGHT_DELAY_MS = "600";
     process.env.FAKE_MODEL_DELAY_MS = "1200";
     const input = { ...options("claude-code"), timeoutMs: 1_500 };
     const result = await runLane(input);
@@ -579,7 +629,7 @@ describe("runLane", () => {
     expect(recorded.elapsedMs).toBeLessThan(2_100);
   });
 
-  it("bounds a descendant-held pipe by the explicit deadline without fabricating a signal", async () => {
+  it.skipIf(process.platform === "win32")("bounds a descendant-held pipe by the explicit deadline without fabricating a signal", async () => {
     const descendantPidPath = join(scratch, "deadline-descendant.pid");
     const input = { ...options("claude-code", "deadline-drain"), timeoutMs: 700 };
     const runner = Bun.spawn([process.execPath, ...runnerArgs(input)], {
@@ -610,7 +660,7 @@ describe("runLane", () => {
     if (processIsAlive(descendantPid)) process.kill(descendantPid, "SIGKILL");
   });
 
-  it("does not claim a signal was sent to an already signal-reaped child", async () => {
+  it.skipIf(process.platform === "win32")("does not claim a signal was sent to an already signal-reaped child", async () => {
     const descendantPidPath = join(scratch, "signalled-descendant.pid");
     const input = { ...options("claude-code", "signalled-drain"), timeoutMs: 700 };
     const runner = Bun.spawn([process.execPath, ...runnerArgs(input)], {
@@ -640,7 +690,7 @@ describe("runLane", () => {
     if (processIsAlive(descendantPid)) process.kill(descendantPid, "SIGKILL");
   });
 
-  it("lets manual cancellation end a post-exit pipe drain without a default timeout", async () => {
+  it.skipIf(process.platform === "win32")("lets manual cancellation end a post-exit pipe drain without a default timeout", async () => {
     const descendantPidPath = join(scratch, "cancel-descendant.pid");
     const modelExiting = join(scratch, "cancel-model.exiting");
     const input = options("claude-code", "cancel-drain");
@@ -673,6 +723,29 @@ describe("runLane", () => {
 
     const descendantPid = Number(readFileSync(descendantPidPath, "utf8"));
     if (processIsAlive(descendantPid)) process.kill(descendantPid, "SIGKILL");
+  });
+
+  it.skipIf(process.platform !== "win32")("completes when Bun reaps inherited-pipe descendants on Windows", async () => {
+    const descendantPidPath = join(scratch, "windows-descendant.pid");
+    const input = options("claude-code", "windows-drain");
+    process.env.FAKE_DESCENDANT_HOLDS_PIPES_MS = "5000";
+    process.env.FAKE_DESCENDANT_PID_PATH = descendantPidPath;
+    const result = await runLane(input);
+    const descendantPid = Number(readFileSync(descendantPidPath, "utf8"));
+    try {
+      expect(result.exitCode).toBe(0);
+      expect(receipt(input.receiptPath)).toMatchObject({
+        status: "complete",
+        exitCode: 0,
+        signal: null,
+        preflight: { status: "passed" },
+      });
+      await waitForExit(descendantPid);
+      expect(processIsAlive(descendantPid)).toBe(false);
+    } finally {
+      if (processIsAlive(descendantPid)) process.kill(descendantPid, "SIGKILL");
+      await waitForExit(descendantPid);
+    }
   });
 
   it("clears a losing long-deadline timer when the shipped wrapper succeeds", async () => {
@@ -717,7 +790,7 @@ describe("runLane", () => {
     expect(stderr).not.toContain("Cannot find module");
   });
 
-  it("cancels a preflight with SIGINT and writes a terminal receipt", async () => {
+  it.skipIf(process.platform === "win32")("cancels a preflight with SIGINT and writes a terminal receipt", async () => {
     const input = options("claude-code", "preflight-cancelled");
     const started = join(scratch, "preflight-child.started");
     const terminated = join(scratch, "preflight-child.terminated");
@@ -752,7 +825,7 @@ describe("runLane", () => {
     });
   });
 
-  it("reaps the child and exits after repeated cancellation with a long deadline", async () => {
+  it.skipIf(process.platform === "win32")("reaps the child and exits after repeated cancellation with a long deadline", async () => {
     const input = { ...options("codex", "repeated-cancel"), timeoutMs: 60_000 };
     const started = join(scratch, "repeated-child.started");
     const terminated = join(scratch, "repeated-child.terminated");
@@ -787,7 +860,7 @@ describe("runLane", () => {
     });
   });
 
-  it("forwards cancellation, preserves its receipt, and permits a new attempt", async () => {
+  it.skipIf(process.platform === "win32")("forwards cancellation, preserves its receipt, and permits a new attempt", async () => {
     const input = options("codex", "cancelled");
     const started = join(scratch, "cancelled-child.started");
     const terminated = join(scratch, "cancelled-child.terminated");
@@ -865,7 +938,7 @@ describe("runLane", () => {
     expect(existsSync(input.receiptPath)).toBe(false);
   });
 
-  it("terminalizes catchable failures after reserving output paths", async () => {
+  it.skipIf(process.platform === "win32")("terminalizes an unreadable prompt after reserving output paths", async () => {
     const unreadable = options("claude-code", "unreadable-prompt");
     chmodSync(unreadable.promptPath, 0o000);
     const unreadableRunner = Bun.spawn([process.execPath, ...runnerArgs(unreadable)], {
@@ -900,7 +973,9 @@ describe("runLane", () => {
     expect(await samePaths.exited).toBe(64);
     await Promise.all([sameStdout, sameStderr]);
     expect(readFileSync(unreadable.receiptPath, "utf8")).toBe(preservedReceipt);
+  });
 
+  it("terminalizes a model spawn failure after reserving output paths and permits a new attempt", async () => {
     const spawnFailure = options("claude-code", "spawn-failure");
     const modelStarted = join(scratch, "spawn-failure-model.started");
     const spawnRunner = Bun.spawn([process.execPath, ...runnerArgs(spawnFailure)], {
