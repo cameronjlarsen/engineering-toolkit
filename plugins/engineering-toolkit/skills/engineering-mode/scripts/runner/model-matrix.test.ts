@@ -36,7 +36,7 @@ const ADDITIONAL_HEADER = [
 ] as const;
 
 const FAMILY_ORDER = ["fable", "sol", "grok", "opus"] as const;
-const PROVIDERS = ["claude", "codex", "grok"] as const;
+const PROVIDERS = ["claude", "codex", "grok", "opencode"] as const;
 const SONNET_CURSOR_SELECTORS: Record<Effort, string> = {
   low: "claude-sonnet-5-5-low",
   medium: "claude-sonnet-5-5-medium",
@@ -45,7 +45,7 @@ const SONNET_CURSOR_SELECTORS: Record<Effort, string> = {
   max: "claude-sonnet-5-5-max",
 };
 const DESCRIPTOR_RE =
-  /(?:claude|codex|cursor|grok):[a-z0-9.-]+@(low|medium|high|xhigh|max)/g;
+  /(?:claude|codex|cursor|grok|opencode):[a-z0-9.-]+@(low|medium|high|xhigh|max)/g;
 const PANEL_ROLES = [
   "arena runners",
   "arena cross-judge pool",
@@ -228,7 +228,9 @@ function parseAdditionalModels(markdown: string): SupportedModel[] {
 }
 
 function namedApp(row: Pick<SupportedModel, "provider">): string {
-  return row.provider === "claude" ? "claude-code" : row.provider;
+  if (row.provider === "claude") return "claude-code";
+  if (row.provider === "opencode") return "opencode";
+  return row.provider;
 }
 
 function firstRunDescriptor(row: MatrixRow): string {
@@ -363,6 +365,22 @@ describe("model matrix", () => {
         selectableEfforts: [...EFFORTS],
         pluginAgentStem: "sonnet",
       },
+      ...[
+        "glm-5.3",
+        "kimi-k2.7-code",
+        "deepseek-v4-pro",
+        "qwen3.8-max",
+        "minimax-m3",
+        "gpt-5.6-luna",
+        "gpt-5.6-sol",
+        "grok-4.6",
+        "opus",
+      ].map((model) => ({
+        model,
+        provider: "opencode",
+        selectableEfforts: [...EFFORTS],
+        pluginAgentStem: null,
+      })),
     ]);
     expect(rows).toHaveLength(4);
     expect(setup).not.toContain("claude-sonnet-5-5@");
@@ -403,7 +421,7 @@ describe("model matrix", () => {
 
   it("parses setup's first-run sheet, prose included, on every parent", () => {
     const sheet = firstRunSheet(setup);
-    for (const parent of ["claude-code", "codex", "cursor"] as const) {
+    for (const parent of ["claude-code", "codex", "cursor", "opencode"] as const) {
       const loaded = loadRoleMap(sheet, parent);
       if (!loaded.ok) throw new Error(`${parent}: ${JSON.stringify(loaded.error)}`);
       expect(loaded.value).toEqual(firstRunRoleMap("claude-code", shippedCatalog()));
@@ -427,13 +445,16 @@ describe("model matrix", () => {
       .map((slug) => String(slug))
       .sort();
     expect(cursorModels).toEqual(
-      supportedModels.filter((row) => row.provider !== "codex").map((row) => row.model).sort()
+      supportedModels
+        .filter((row) => row.provider !== "codex" && row.provider !== "opencode")
+        .map((row) => row.model)
+        .sort()
     );
     for (const row of supportedModels) {
       const home = namedApp(row);
-      const onApp = catalog.get(home as "claude-code" | "codex" | "grok")?.models.get(
-        row.model as ModelSlug
-      );
+      const onApp = catalog.get(
+        home as "claude-code" | "codex" | "grok" | "opencode"
+      )?.models.get(row.model as ModelSlug);
       expect(onApp?.efforts).toEqual(row.selectableEfforts);
       expect(onApp?.nativeStem).toBe(row.pluginAgentStem);
     }
@@ -466,11 +487,17 @@ describe("model matrix", () => {
     expect(setup).toContain("<!-- engineering-toolkit:models:begin -->");
     expect(setup).toContain("<!-- engineering-toolkit:models:end -->");
     expect(setup).toContain(
-      "| Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | native Task host-spawn |"
+      "| Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | native Task host-spawn | Grok CLI |"
     );
     expect(setup).toContain(
-      "| Sonnet 5.5 | Additional selectable-model row + selected effort | native Agent `pstack-sonnet-<effort>` | Claude CLI | native Task `pstack-sonnet-<effort>` plus exact live selector for the resolved effort |"
+      "| Sonnet 5.5 | Additional selectable-model row + selected effort | native Agent `pstack-sonnet-<effort>` | Claude CLI | native Task `pstack-sonnet-<effort>` plus exact live selector for the resolved effort | Claude CLI |"
     );
+    expect(setup).toContain(
+      "| glm, kimi, deepseek, qwen, minimax, luna, sol-oc, grok-oc, opus-oc | opencode additional-model row + selected effort | unrouted | unrouted | unrouted |"
+    );
+    expect(setup).toContain("~/.config/opencode/engineering-toolkit-models.md");
+    expect(setup).toContain("~/.config/opencode/agents/pstack-<model>-<effort>.md");
+    expect(dispatch).toContain("opencode:glm-5.3@max");
   });
 
   it("binds Claude-native dispatch to the catalog mapping", () => {

@@ -1,5 +1,5 @@
-export const PARENT_HOSTS = ["claude-code", "codex", "cursor"] as const;
-export const APP_IDS = ["claude-code", "codex", "cursor", "grok"] as const;
+export const PARENT_HOSTS = ["claude-code", "codex", "cursor", "opencode"] as const;
+export const APP_IDS = ["claude-code", "codex", "cursor", "grok", "opencode"] as const;
 export const CLI_CHILD_APPS = ["claude-code", "codex", "cursor", "grok"] as const;
 export const EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
 export const SONNET_5_5_MODEL = "claude-sonnet-5-5";

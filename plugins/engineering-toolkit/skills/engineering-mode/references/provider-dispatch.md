@@ -9,7 +9,7 @@ provider-qualified descriptors:
 
 A role is `inherit-parent`, `auto`, or a `Route`. A `Route` names a provider,
 a model, and an effort. All three are required. The providers are `claude`,
-`codex`, `cursor`, and `grok`. The model is a family name such as `opus`,
+`codex`, `cursor`, `grok`, and `opencode`. The model is a family name such as `opus`,
 `fable`, `gpt-6-sol`, or `grok-4.7`, not an app-specific slug. `claude:opus`
 and `cursor:opus` name the same model on two apps. The catalog
 (`scripts/routing/catalog.ts`) turns a family into each app's CLI slug and
@@ -36,6 +36,15 @@ Use `claude:claude-sonnet-5-5@<effort>` on Claude Code or Codex, and
 | Model | Provider | Selectable efforts | Plugin-agent stem |
 |---|---|---|---|
 | claude-sonnet-5-5 | claude | low medium high xhigh max | sonnet |
+| glm-5.3 | opencode | low medium high xhigh max | - |
+| kimi-k2.7-code | opencode | low medium high xhigh max | - |
+| deepseek-v4-pro | opencode | low medium high xhigh max | - |
+| qwen3.8-max | opencode | low medium high xhigh max | - |
+| minimax-m3 | opencode | low medium high xhigh max | - |
+| gpt-5.6-luna | opencode | low medium high xhigh max | - |
+| gpt-5.6-sol | opencode | low medium high xhigh max | - |
+| grok-4.6 | opencode | low medium high xhigh max | - |
+| opus | opencode | low medium high xhigh max | - |
 
 `fable` and `opus` are Claude Code's rolling aliases. Claude resolves each
 alias to the latest available family revision. A runner receipt keeps the
@@ -47,6 +56,23 @@ requested alias in `model` and the concrete provider-reported revision in
 runner argv. Select an explicit effort because its destination default is
 unknown. Other numbered Claude IDs, including preview suffixes, remain
 invalid.
+
+`opencode:*` descriptors resolve inside opencode. The Model cell is the
+provider-independent suffix that `opencode models` lists; setup resolves it to
+one concrete `provider/model` id available in the parent's opencode and the
+generated lane file pins that concrete id. When more than one opencode
+provider hosts the same suffix (for example `grok-4.6`), the probe report
+lists every candidate and the operator selects one. opencode-hosted models
+currently expose no reasoning-effort variants: the requested effort is
+preserved in the descriptor, the lane definition, and the receipt, and the lane
+runs at the model's single reasoning depth. Never claim provider-applied
+effort that the model does not expose. An `opencode:*` descriptor is only
+valid on an opencode parent, so setup must not select or write one for any
+other parent. Claude Code and Codex parents use the whole four-row upstream
+matrix. An opencode parent selects its panel: setup asks the operator which
+matrix families take part, then asks exactly one effort question per selected
+family. The sheet must contain at least one descriptor from every selected
+family and none from unselected ones.
 
 The matrix names each family's blank-sheet default. A cli-auth app also accepts
 any slug in the refreshed CLI model list for that session. `codex debug models`
@@ -87,11 +113,17 @@ other route runs through that provider's CLI via `pstack-runner`. Children
 receive an assigned plan. They never choose a route, detect or reroute the
 harness, or spawn another model.
 
-| Parent | `claude:` | `codex:` | `cursor:` | `grok:` |
-|---|---|---|---|---|
-| Claude Code | native | Codex CLI | Cursor CLI | Grok CLI |
-| Codex | Claude Code CLI | native | Cursor CLI | Grok CLI |
-| Cursor | Claude Code CLI | Codex CLI | native | Grok CLI |
+| Parent | `claude:` | `codex:` | `cursor:` | `grok:` | `opencode:` |
+|---|---|---|---|---|---|
+| Claude Code | native | Codex CLI | Cursor CLI | Grok CLI | unrouted |
+| Codex | Claude Code CLI | native | Cursor CLI | Grok CLI | unrouted |
+| Cursor | Claude Code CLI | Codex CLI | native | Grok CLI | unrouted |
+| OpenCode | Claude Code CLI | Codex CLI | Cursor CLI | Grok CLI | native opencode subagent |
+
+`unrouted` means the external runner has no provider adapter for that
+descriptor and the parent has no native primitive for it: an `opencode:*`
+descriptor is only valid on an opencode parent, so setup must not select or
+write one for any other parent.
 
 Internally the `claude` provider is the `claude-code` app id, which is also the
 value of `--parent` and `--app` for Claude Code.
@@ -122,6 +154,15 @@ Native dispatch avoids a second CLI startup and its base context.
   Sonnet revision. An omitted or unmatched selector inherits the parent and
   is a dropout.
   `inherit-parent` uses `engineering-agent`.
+- OpenCode: dispatch the descriptor through the generated opencode lane subagent
+  `pstack-<model>-<effort>` that setup wrote under `~/.config/opencode/agents/`.
+  Its definition pins the concrete `provider/model` id, records the requested
+  effort, and declares edit-denied permissions for a read-only lane. Pass the
+  complete task, grounding paths, access mode, and unique output location in
+  the task prompt, launch the lane as background task work, and retain the task
+  handle until fan-out drains. A writer lane receives only a dedicated worktree
+  or output directory. If the running primary agent restricts task permissions,
+  its allowlist must include the generated lane names.
 
 Do not send a same-host route to the external runner. It is rejected with exit
 64 and no receipt; use the parent's native primitive.
@@ -132,7 +173,7 @@ The launcher lives at `skills/engineering-mode/scripts/runner/pstack-runner` und
 
 ```text
 pstack-runner \
-  --parent <claude-code|codex|cursor> \
+  --parent <claude-code|codex|cursor|opencode> \
   --app <claude-code|codex|cursor|grok> \
   --model <family or real CLI model> \
   --effort <low|medium|high|xhigh|max> \
@@ -167,6 +208,7 @@ The parent invocation must itself be resumable background work:
 - Claude Code: call the launcher through a Bash tool invocation with `run_in_background: true` and retain its task ID. A foreground Bash tool call has an automatic ten-minute ceiling even when the runner's own timeout is longer. Shelling out with `&` and losing the task handle is not equivalent.
 - Codex: run the launcher in a persistent exec session that returns a session ID, then wait or poll that handle. Do not hold one foreground tool call open for the model's full runtime.
 - Cursor: call the launcher through a Shell tool invocation in the background and retain its handle. Do not lose the process by backgrounding it without a task id.
+- OpenCode: call the launcher through a background `bash` tool invocation and retain its task handle, exactly as Claude Code's rule requires. A foreground call carries the same ceiling risk; do not hold one open for the model's full runtime.
 
 Start the background process, continue launching the other lanes, then drain their handles. Native and external lanes belong in the same fan-out phase.
 
@@ -174,7 +216,7 @@ The runner and its preflight have no implicit timeout. Pass `--timeout` only
 when a real user, service, or task deadline supplies one. No weaker-model
 fallback is allowed.
 
-Read-only mode maps to Claude plan mode with project-only settings and an explicit tool list, Codex's read-only sandbox, Grok plan mode plus its `read-only` sandbox and read-oriented tool list, and Cursor `--mode plan --trust`. Cursor print mode refuses an untrusted workspace, so a read-only lane trusts its assigned cwd. Grok's built-in read-only profile deliberately keeps its own state and system temporary directories writable, so point a read-only Grok lane at the actual checkout rather than a worktree under `/tmp`, `/var/tmp`, or the host's temporary directory. `isolated-write` maps to Claude `acceptEdits` with project-only settings, Codex `workspace-write`, Grok `acceptEdits` plus its `workspace` sandbox and write-capable tool list, and Cursor `--force`. The Cursor CLI has no flag that disables its subagents or tool families, so its lane relies on the prompt and the assigned cwd. Give every writer only a dedicated worktree or output directory. Never route a writer into the primary checkout.
+Read-only mode maps to Claude plan mode with project-only settings and an explicit tool list, Codex's read-only sandbox, Grok plan mode plus its `read-only` sandbox and read-oriented tool list, Cursor `--mode plan --trust`, and an opencode native lane whose permissions deny edit. Cursor print mode refuses an untrusted workspace, so a read-only lane trusts its assigned cwd. Grok's built-in read-only profile deliberately keeps its own state and system temporary directories writable, so point a read-only Grok lane at the actual checkout rather than a worktree under `/tmp`, `/var/tmp`, or the host's temporary directory. `isolated-write` maps to Claude `acceptEdits` with project-only settings, Codex `workspace-write`, Grok `acceptEdits` plus its `workspace` sandbox and write-capable tool list, Cursor `--force`, and an opencode native writer lane dispatched into a dedicated worktree. The Cursor CLI has no flag that disables its subagents or tool families, so its lane relies on the prompt and the assigned cwd. Give every writer only a dedicated worktree or output directory. Never route a writer into the primary checkout.
 
 Every concurrent external lane needs distinct prompt, output, and receipt paths. The launcher reserves output and receipt paths exclusively and refuses to overwrite them.
 
@@ -206,6 +248,7 @@ claude:fable@max
 codex:gpt-6-sol@high
 cursor:grok-4.7@high
 grok:grok-4.7@xhigh
+opencode:glm-5.3@max
 inherit-parent
 auto
 ```

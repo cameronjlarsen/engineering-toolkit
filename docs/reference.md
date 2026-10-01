@@ -62,6 +62,24 @@ for s in plugins/engineering-toolkit/skills/*/; do ln -s "$PWD/$s" ~/.agents/ski
 
 The marketplace install is the normal user path. Direct links are only for testing a checkout. Remove the linked skill directories when the test is over.
 
+### OpenCode
+
+There is no marketplace manifest for OpenCode yet. Install the shared skills directly (OpenCode discovers `~/.agents/skills/`):
+
+```shell
+git clone https://github.com/cameronjlarsen/engineering-toolkit.git
+cd engineering-toolkit
+mkdir -p ~/.agents/skills
+for s in plugins/engineering-toolkit/skills/*/; do
+  target=~/.agents/skills/"$(basename "$s")"
+  test -e "$target" || test -L "$target" || ln -s "$PWD/$s" "$target"
+done
+```
+
+Keep all skill directories, including the `principle-*` references. Invoke skills by name (`skill({ name: "engineering-mode" })`). Tool names resolve via `skills/engineering-mode/references/opencode-tools.md`.
+
+OpenCode is a full parent in `provider-dispatch.md`: `opencode:*` descriptors from the additional-models table dispatch natively through generated lane subagents (`~/.config/opencode/agents/pstack-<model>-<effort>.md`, concrete `provider/model` pinned, effort descriptor-only). All other providers run through the external runner via `bash`. Run `/setup-engineering-toolkit` on the OpenCode parent to select the panel, probe it, and write the sheet (`~/.config/opencode/engineering-toolkit-models.md`, wired via the `instructions` entry in `opencode.json`) plus the lane files. There is no `SessionStart` auto-fire on OpenCode; ask for `engineering-mode` by name or add a standing instruction to `AGENTS.md`.
+
 ## Layout
 
 ```text
@@ -73,8 +91,8 @@ The marketplace install is the normal user path. Direct links are only for testi
 │   ├── .claude-plugin/plugin.json    # Claude Code manifest
 │   ├── .codex-plugin/plugin.json     # Codex manifest (skills: ./skills/)
 │   ├── .cursor-plugin/plugin.json    # Cursor manifest (skills and agents)
-│   ├── skills/                       # shared skills for Cursor, Claude Code, and Codex
-│   │   ├── engineering-mode/references/{codex-tools,cursor-tools,provider-dispatch}.md  # tool + provider routing
+│   ├── skills/                       # shared skills for Cursor, Claude Code, Codex, and OpenCode
+│   │   ├── engineering-mode/references/{codex-tools,cursor-tools,opencode-tools,provider-dispatch}.md  # tool + provider routing
 │   │   └── engineering-mode/scripts/      # bun/bash/node tooling: watch-pr, orch, runner, check-plan.mjs, worktree-audit.sh
 │   ├── hooks/                        # SessionStart auto-fire: injects the engineering-mode mandate (Claude Code only)
 │   └── agents/                       # Claude subagents, including native Fable and Opus lanes at each selectable effort

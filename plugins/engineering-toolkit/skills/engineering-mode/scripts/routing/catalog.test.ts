@@ -2,8 +2,35 @@ import { describe, expect, it } from "bun:test";
 import { cliModelFor, launchableApps, shippedCatalog, soleModel, SOL_CLI_MODEL } from "./catalog.ts";
 
 describe("shipped catalog", () => {
-  it("contains the four shipped apps", () => {
-    expect([...shippedCatalog().keys()]).toEqual(["claude-code", "codex", "grok", "cursor"]);
+  it("contains the five shipped apps", () => {
+    expect([...shippedCatalog().keys()]).toEqual([
+      "claude-code",
+      "codex",
+      "grok",
+      "cursor",
+      "opencode",
+    ]);
+  });
+
+  it("serves opencode-hosted models natively with descriptor-only effort", () => {
+    const opencode = shippedCatalog().get("opencode");
+    expect(opencode?.launch).toBe("none");
+    expect([...(opencode?.models.keys() ?? [])].map(String).sort()).toEqual([
+      "deepseek-v4-pro",
+      "glm-5.3",
+      "gpt-5.6-luna",
+      "gpt-5.6-sol",
+      "grok-4.6",
+      "kimi-k2.7-code",
+      "minimax-m3",
+      "opus",
+      "qwen3.8-max",
+    ]);
+    for (const entry of opencode?.models.values() ?? []) {
+      expect(entry.nativeStem).toBeNull();
+      expect([...entry.efforts]).toEqual(["low", "medium", "high", "xhigh", "max"]);
+    }
+    expect(soleModel("opencode", shippedCatalog())).toBeNull();
   });
 
   it("does not serve fable from grok", () => {
@@ -74,8 +101,9 @@ describe("shipped catalog", () => {
     expect(catalog.get("grok")?.models.get("grok-4.7" as never)?.efforts).toContain("max");
   });
 
-  it("exposes every app, Cursor included, as a CLI child", () => {
+  it("exposes every CLI child app, Cursor included, but never opencode", () => {
     expect(launchableApps()).toEqual(["claude-code", "codex", "cursor", "grok"]);
+    expect(shippedCatalog().get("opencode")?.launch).toBe("none");
   });
 
   it("reports the sole model only when an app serves exactly one", () => {

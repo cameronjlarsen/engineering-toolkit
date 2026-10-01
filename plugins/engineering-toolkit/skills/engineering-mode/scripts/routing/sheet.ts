@@ -73,6 +73,7 @@ const PROVIDER_APPS: Record<string, AppId> = {
   codex: "codex",
   cursor: "cursor",
   grok: "grok",
+  opencode: "opencode",
 };
 
 const GRAMMAR_1_PROVIDERS = ["claude", "codex", "grok"] as const;
