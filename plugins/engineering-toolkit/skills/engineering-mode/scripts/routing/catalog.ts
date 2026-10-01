@@ -78,11 +78,33 @@ export function shippedCatalog(): AppCatalog {
       ]),
     ]),
   };
+  // opencode hosts models behind `opencode models`, not a dedicated CLI per
+  // provider. The Model cell is the provider-independent suffix setup resolves
+  // to one concrete `provider/model` id; the generated lane file pins that id.
+  // Effort is descriptor-only: opencode models expose no reasoning variants.
+  // launch is "none" because no external runner adapter targets opencode;
+  // opencode descriptors are native-only on an opencode parent.
+  const opencode: AppRecord = {
+    id: "opencode",
+    launch: "none",
+    models: byFamily([
+      model("glm-5.3", "unknown", flag("glm-5.3"), null),
+      model("kimi-k2.7-code", "unknown", flag("kimi-k2.7-code"), null),
+      model("deepseek-v4-pro", "unknown", flag("deepseek-v4-pro"), null),
+      model("qwen3.8-max", "unknown", flag("qwen3.8-max"), null),
+      model("minimax-m3", "unknown", flag("minimax-m3"), null),
+      model("gpt-5.6-luna", "unknown", flag("gpt-5.6-luna"), null),
+      model("gpt-5.6-sol", "unknown", flag("gpt-5.6-sol"), null),
+      model("grok-4.6", "unknown", flag("grok-4.6"), null),
+      model("opus", "unknown", flag("opus"), null),
+    ]),
+  };
   return new Map<AppId, AppRecord>([
     ["claude-code", claudeCode],
     ["codex", codex],
     ["grok", grok],
     ["cursor", cursor],
+    ["opencode", opencode],
   ]);
 }
 

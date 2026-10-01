@@ -1,6 +1,6 @@
 # Cursor tool mapping for Engineering Toolkit
 
-Shared skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuestion`) in shared prose. On Cursor the files are the same; only those tool names resolve differently. Model execution is not translated here. Read [`provider-dispatch.md`](provider-dispatch.md) for the parent-owned route table and typed Route values written as `provider:model@effort`.
+Shared skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuestion`) in shared prose. On Cursor the files are the same; only those tool names resolve differently. Model execution is not translated here. Read [`provider-dispatch.md`](provider-dispatch.md) for the parent-owned Claude/Codex/Cursor/Grok/opencode route table and typed Route values written as `provider:model@effort`.
 
 ## Tool actions
 

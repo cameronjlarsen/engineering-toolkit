@@ -43,13 +43,22 @@ export type IntegrationPatch =
       readonly begin: string;
       readonly end: string;
       readonly body: string;
+    }
+  | {
+      readonly kind: "opencode-instructions";
+      readonly path: string;
+      readonly entry: string;
     };
 
 export interface ParentProfile {
   readonly parent: ParentHost;
   readonly sheetPath: string;
   readonly identityKeys: readonly string[];
-  readonly mappingDoc: "provider-dispatch.md" | "codex-tools.md" | "cursor-tools.md";
+  readonly mappingDoc:
+    | "provider-dispatch.md"
+    | "codex-tools.md"
+    | "cursor-tools.md"
+    | "opencode-tools.md";
   readonly integration:
     | { readonly kind: "at-include"; readonly path: string; readonly line: string }
     | {
@@ -58,7 +67,8 @@ export interface ParentProfile {
         readonly begin: "<!-- engineering-toolkit:models:begin -->";
         readonly end: "<!-- engineering-toolkit:models:end -->";
       }
-    | { readonly kind: "mdc-sheet" };
+    | { readonly kind: "mdc-sheet" }
+    | { readonly kind: "opencode-instructions"; readonly path: string; readonly entry: string };
 }
 
 export interface RenderedParentFiles {
@@ -84,6 +94,8 @@ const CODEX_IDENTITY = [
 ] as const;
 
 const CURSOR_IDENTITY = ["CURSOR_AGENT"] as const;
+
+const OPENCODE_IDENTITY = ["OPENCODE", "OPENCODE_PID"] as const;
 
 const MDC_FRONTMATTER = `---
 description: Engineering Toolkit model configuration
@@ -178,11 +190,13 @@ export function detectParent(
   if (surface.tools.has("spawn_agent")) toolHit = "codex";
   else if (surface.tools.has("Task")) toolHit = "cursor";
   else if (surface.tools.has("Agent")) toolHit = "claude-code";
+  else if (surface.tools.has("skill")) toolHit = "opencode";
 
   const envHits = new Set<ParentHost>();
   if (surface.env.CLAUDECODE) envHits.add("claude-code");
   if (surface.env.CODEX_THREAD_ID || surface.env.CODEX_CI) envHits.add("codex");
   if (surface.env.CURSOR_AGENT) envHits.add("cursor");
+  if (surface.env.OPENCODE || surface.env.OPENCODE_PID) envHits.add("opencode");
 
   if (toolHit !== null) {
     if (envHits.size > 0 && !envHits.has(toolHit)) {
@@ -235,6 +249,25 @@ export function parentProfile(parent: ParentHost): ParentProfile {
         path: join(home, ".codex", "AGENTS.md"),
         begin: "<!-- engineering-toolkit:models:begin -->",
         end: "<!-- engineering-toolkit:models:end -->",
+      },
+    };
+  }
+  if (parent === "opencode") {
+    const sheetPath = join(
+      home,
+      ".config",
+      "opencode",
+      "engineering-toolkit-models.md"
+    );
+    return {
+      parent,
+      sheetPath,
+      identityKeys: OPENCODE_IDENTITY,
+      mappingDoc: "opencode-tools.md",
+      integration: {
+        kind: "opencode-instructions",
+        path: join(home, ".config", "opencode", "opencode.json"),
+        entry: sheetPath,
       },
     };
   }
@@ -455,6 +488,16 @@ export function renderParentFiles(
       },
     };
   }
+  if (profile.integration.kind === "opencode-instructions") {
+    return {
+      sheet: { path: profile.sheetPath, contents: sheetText },
+      integration: {
+        kind: "opencode-instructions",
+        path: profile.integration.path,
+        entry: profile.integration.entry,
+      },
+    };
+  }
   return {
     sheet: { path: profile.sheetPath, contents: sheetText },
     integration: {
@@ -484,6 +527,9 @@ export function applyIntegrationPatch(
   patch: IntegrationPatch
 ): Result<string, { readonly tag: "inconsistent-integration" }> {
   if (patch.kind === "none") return { ok: true, value: currentBytes ?? "" };
+  if (patch.kind === "opencode-instructions") {
+    return applyOpencodeInstructions(currentBytes, patch.entry);
+  }
   if (patch.kind === "ensure-line") {
     const current = currentBytes ?? "";
     const lines = current.split(/\r?\n/);
@@ -521,5 +567,90 @@ export function parentIdentityKeys(): Record<ParentHost, readonly string[]> {
     "claude-code": CLAUDE_IDENTITY,
     codex: CODEX_IDENTITY,
     cursor: CURSOR_IDENTITY,
+    opencode: OPENCODE_IDENTITY,
   };
+}
+
+/**
+ * Idempotently inserts the sheet's absolute path into the `instructions`
+ * array of an opencode.json document. A missing file renders a fresh
+ * document; existing entries and unrelated fields are preserved. Anything
+ * that is not a JSON object (or whose `instructions` is present but not an
+ * array of strings) is inconsistent state, not something to rewrite blindly.
+ */
+export function applyOpencodeInstructions(
+  currentBytes: string | null,
+  entry: string
+): Result<string, { readonly tag: "inconsistent-integration" }> {
+  const inconsistent = (): Result<
+    string,
+    { readonly tag: "inconsistent-integration" }
+  > => ({ ok: false, error: { tag: "inconsistent-integration" } });
+  if (currentBytes === null || currentBytes.length === 0) {
+    return {
+      ok: true,
+      value: `${JSON.stringify({ instructions: [entry] }, null, 2)}\n`,
+    };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(currentBytes);
+  } catch {
+    return inconsistent();
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return inconsistent();
+  }
+  const record = parsed as Record<string, unknown>;
+  const current = record["instructions"];
+  if (current === undefined) {
+    return {
+      ok: true,
+      value: `${JSON.stringify({ ...record, instructions: [entry] }, null, 2)}\n`,
+    };
+  }
+  if (!Array.isArray(current) || current.some((item) => typeof item !== "string")) {
+    return inconsistent();
+  }
+  if ((current as string[]).includes(entry)) return { ok: true, value: currentBytes };
+  return {
+    ok: true,
+    value: `${JSON.stringify({ ...record, instructions: [...(current as string[]), entry] }, null, 2)}\n`,
+  };
+}
+
+/** Directory under `~/.config/opencode/` holding generated native lanes. */
+export const OPENCODE_LANES_DIR = "agents";
+
+/** Lane file name for an opencode-hosted descriptor, e.g. `pstack-glm-5.3-max.md`. */
+export function opencodeLaneName(model: ModelSlug, effort: Effort): string {
+  return `pstack-${model}-${effort}.md`;
+}
+
+export interface OpencodeLaneSpec {
+  readonly descriptor: string;
+  readonly concreteModel: string;
+  readonly readOnly: boolean;
+}
+
+/**
+ * Renders one generated opencode lane file. The definition pins the concrete
+ * `provider/model` id setup resolved from `opencode models`; the requested
+ * effort is recorded in the descriptor but opencode models expose no
+ * reasoning variants, so it never claims provider-applied depth. The exact
+ * bytes are bound to the lane templates in setup-engineering-toolkit step 8
+ * by parent.test.ts: edit both sides together.
+ */
+export function renderOpencodeLane(spec: OpencodeLaneSpec): string {
+  const permission = spec.readOnly ? "permission:\n  edit: deny\n" : "";
+  const scope = spec.readOnly
+    ? "Perform the assigned task read-only."
+    : "Perform the assigned task inside the assigned worktree or output directory.";
+  return `---
+description: Native opencode lane for engineering-toolkit roles configured as ${spec.descriptor}.
+mode: subagent
+model: ${spec.concreteModel}
+${permission}---
+You are the engineering-toolkit lane for descriptor \`${spec.descriptor}\`. Concrete model \`${spec.concreteModel}\`. Requested effort is descriptor-only; the model runs at its single reasoning depth. ${scope} Never choose another route.
+`;
 }

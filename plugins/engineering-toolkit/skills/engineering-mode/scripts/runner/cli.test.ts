@@ -86,4 +86,29 @@ describe("runner CLI parsing", () => {
     ]);
     expect(child?.app).toBe("cursor");
   });
+
+  it("accepts opencode as a parent but never as a runner app", () => {
+    const base = [
+      "--model",
+      "grok-4.7",
+      "--effort",
+      "high",
+      "--mode",
+      "read-only",
+      "--prompt",
+      join(process.cwd(), "prompt.md"),
+      "--cwd",
+      process.cwd(),
+      "--output",
+      join(process.cwd(), "output.md"),
+      "--receipt",
+      join(process.cwd(), "receipt.json"),
+    ] as const;
+    const parsed = parseArgs(["--parent", "opencode", "--app", "grok", ...base]);
+    expect(parsed?.parent).toBe("opencode");
+    expect(parsed?.app).toBe("grok");
+    expect(() => parseArgs(["--parent", "claude-code", "--app", "opencode", ...base])).toThrow(
+      "app must be one of"
+    );
+  });
 });

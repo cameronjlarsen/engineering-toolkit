@@ -26,11 +26,17 @@ Codex writes `~/.codex/engineering-toolkit-models.md`. Codex has no `@` include,
 
 Cursor writes `~/.cursor/rules/engineering-toolkit-models.mdc`. YAML frontmatter is harness wiring (`alwaysApply: true`). The body after the closing `---` is the same grammar 3 sheet. There is no companion `.md` file and no Task-slug grammar. If that path already holds an upstream Task-slug rule, stop as inconsistent state instead of rewriting it silently.
 
+OpenCode writes `~/.config/opencode/engineering-toolkit-models.md`. OpenCode's `instructions` array references files by absolute path, so the integration is one idempotent entry in `~/.config/opencode/opencode.json` and the sheet itself stays the single source of truth:
+
+```json
+"instructions": ["<absolute path to ~/.config/opencode/engineering-toolkit-models.md>"]
+```
+
 ## Steps
 
 ### 1. Establish the parent
 
-Use the harness and tool surface running this skill: Claude Code, Codex, or Cursor. Environment markers may corroborate that top-level answer, but do not launch a child and ask it to detect where it came from. Record the parent: a route is native only when its provider is the parent, and grammar 2 migration gives an omitted app the parent's provider. Task without `spawn_agent` is Cursor. `Agent` without Task is Claude Code. `spawn_agent` is Codex. Two strong matches is ambiguous. Write nothing until the parent is known.
+Use the harness and tool surface running this skill: Claude Code, Codex, Cursor, or OpenCode. Environment markers may corroborate that top-level answer, but do not launch a child and ask it to detect where it came from. Record the parent: a route is native only when its provider is the parent, and grammar 2 migration gives an omitted app the parent's provider. Task without `spawn_agent` is Cursor. `Agent` without Task is Claude Code. `spawn_agent` is Codex. The lowercase `skill` tool, or `OPENCODE=1` / `OPENCODE_PID` in the tool-shell environment with config at `~/.config/opencode/`, is OpenCode. Two strong matches is ambiguous. Write nothing until the parent is known.
 
 ### 2. Load current state
 
@@ -99,13 +105,16 @@ launch-ready, and unknown. A failed probe writes nothing: report the failing
 route and keep the active sheet plus parent integration bytes unchanged. A
 failed first run creates neither artifact.
 
-| Family | Pair source | Claude parent | Codex parent | Cursor parent | Availability proof |
-|---|---|---|---|---|---|
-| Fable | Fable matrix row + selected effort | native Agent `pstack-fable-<effort>` | Claude CLI | native Task `pstack-fable-<effort>` plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
-| Sol | Sol matrix row + selected effort | `codex exec` | native `spawn_agent` | Codex CLI | `codex debug models` without `--bundled` as the model list, plus `codex login status` plus one-turn probe or native one-turn probe |
-| Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | native Task host-spawn | native one-turn probe or `grok models` plus one-turn probe |
-| Opus | Opus matrix row + selected effort | native Agent `pstack-opus-<effort>` | Claude CLI | native Task `pstack-opus-<effort>` plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
-| Sonnet 5.5 | Additional selectable-model row + selected effort | native Agent `pstack-sonnet-<effort>` | Claude CLI | native Task `pstack-sonnet-<effort>` plus exact live selector for the resolved effort | native one-turn probe or `claude auth status --json` plus one-turn probe |
+| Family | Pair source | Claude parent | Codex parent | Cursor parent | OpenCode parent | Availability proof |
+|---|---|---|---|---|---|---|
+| Fable | Fable matrix row + selected effort | native Agent `pstack-fable-<effort>` | Claude CLI | native Task `pstack-fable-<effort>` plus live family selector | Claude CLI | native one-turn probe or `claude auth status --json` plus one-turn probe |
+| Sol | Sol matrix row + selected effort | `codex exec` | native `spawn_agent` | Codex CLI | Codex CLI | `codex debug models` without `--bundled` as the model list, plus `codex login status` plus one-turn probe or native one-turn probe |
+| Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | native Task host-spawn | Grok CLI | native one-turn probe or `grok models` plus one-turn probe |
+| Opus | Opus matrix row + selected effort | native Agent `pstack-opus-<effort>` | Claude CLI | native Task `pstack-opus-<effort>` plus live family selector | Claude CLI | native one-turn probe or `claude auth status --json` plus one-turn probe |
+| Sonnet 5.5 | Additional selectable-model row + selected effort | native Agent `pstack-sonnet-<effort>` | Claude CLI | native Task `pstack-sonnet-<effort>` plus exact live selector for the resolved effort | Claude CLI | native one-turn probe or `claude auth status --json` plus one-turn probe |
+| glm, kimi, deepseek, qwen, minimax, luna, sol-oc, grok-oc, opus-oc | opencode additional-model row + selected effort | unrouted | unrouted | unrouted | native `task` lane `pstack-<model>-<effort>` | resolve the Model suffix against `opencode models`, select the concrete id with the operator when several providers host it, and run a one-turn probe that returns the unique marker |
+
+On an OpenCode parent, first present the matrix and ask which families form the panel. Propose every opencode row whose Model suffix resolves to an available concrete model, keep the upstream rows selectable through their own CLIs, and require at least one selected family. An `opencode:*` family is unrouted on any other parent, so never select one there. An opencode native probe has no effort flag to pass: the model exposes no reasoning variants, so it verifies that the model runs and returns the marker, and setup records that the requested effort is descriptor-only for that family.
 
 Use a tiny read-only probe that returns a unique marker. A login-status
 command alone proves credentials, not that the selected model and effort run.
@@ -144,7 +153,8 @@ documented role key.
 
 Show app discovery, readiness, rolling-alias migrations, the chosen budget
 label and target effort, the route table for this parent, every rendered
-role and Route wire value, and each line step 2 dropped. Ask for confirmation before writing.
+role and Route wire value, on OpenCode also every lane file that the commit
+will write, and each line step 2 dropped. Ask for confirmation before writing.
 
 Every selected route must have passed step 5. Why and Reflect require the
 parent's live MCP surface. Keep their roles on `inherit-parent` or `auto`;
@@ -186,16 +196,37 @@ architect runners: claude:fable@max, codex:gpt-6-sol@max, grok:grok-4.7@xhigh, c
 interrogate reviewers: claude:fable@max, codex:gpt-6-sol@max, grok:grok-4.7@xhigh, claude:opus@xhigh
 ```
 
+On an OpenCode parent the sheet must contain at least one descriptor from every selected panel family and none from unselected ones. The example above seeds the four upstream families; selected `opencode:*` families are added as role lanes during step 6, each written as `opencode:<suffix>@<requested effort>`.
+
 ### 8. Wire it in
 
 Render the parent integration in memory before either write. On Claude, the integration is the single `@~/.claude/engineering-toolkit-models.md` include in `~/.claude/CLAUDE.md`. On Codex, it is the exact sheet bytes between one `<!-- engineering-toolkit:models:begin -->` and `<!-- engineering-toolkit:models:end -->` pair in `~/.codex/AGENTS.md`. Replace that whole bounded block on a rerun. Insert one block at the end on first run. If either marker is missing, duplicated, or reversed, stop and report inconsistent state instead of guessing a boundary. On Cursor, the `.mdc` is both the sheet and the load hook. Wrap `printRoleMap` in the canonical always-apply frontmatter. Read back the grammar 3 body, not the YAML wrapper.
 
+On OpenCode, the integration is an `instructions` entry in `~/.config/opencode/opencode.json` holding the sheet's absolute path: insert the entry when absent, leave every existing entry and unrelated field untouched, and remove nothing on a rerun. OpenCode also needs one lane file per selected `opencode:*` descriptor: `~/.config/opencode/agents/pstack-<model>-<effort>.md`. Render each lane file byte-for-byte from the template matching its access mode below, substituting only the descriptor and the concrete `provider/model` id. Omit effort variants: the model exposes no reasoning depth flag, so the requested effort is descriptor-only. If the primary agent restricts task permissions, add the lane names to its allowlist in the same config.
+
+```lane
+---
+description: Native opencode lane for engineering-toolkit roles configured as opencode:glm-5.3@max.
+mode: subagent
+model: opencode-go/glm-5.3
+permission:
+  edit: deny
+---
+You are the engineering-toolkit lane for descriptor `opencode:glm-5.3@max`. Concrete model `opencode-go/glm-5.3`. Requested effort is descriptor-only; the model runs at its single reasoning depth. Perform the assigned task read-only. Never choose another route.
+```
+
+```lane
+---
+description: Native opencode lane for engineering-toolkit roles configured as opencode:glm-5.3@max.
+mode: subagent
+model: opencode-go/glm-5.3
+---
+You are the engineering-toolkit lane for descriptor `opencode:glm-5.3@max`. Concrete model `opencode-go/glm-5.3`. Requested effort is descriptor-only; the model runs at its single reasoning depth. Perform the assigned task inside the assigned worktree or output directory. Never choose another route.
+```
+
 After a confirmed write and readback, delete the previous `pstack-models` sheet for this parent. On Claude, replace `@~/.claude/pstack-models.md` with the new include. On Codex, replace a `pstack:models` marker pair with the new markers in the same write. Do not leave both sheets.
 
-Snapshot every target's current bytes. Write the sheet and parent integration
-only after all selected probes pass and the operator confirms. Read both
-targets back and compare them with the in-memory render. If either write or
-readback fails, restore every snapshot and report the failure.
+Snapshot every target's current bytes — the sheet, the parent integration, and on OpenCode also `opencode.json` and every lane file — before writing. Write the sheet, parent integration, and lane files only after all selected probes pass and the operator confirms. Read every target back and compare it with the in-memory render. If any write or readback fails, restore every snapshot and report the failure. An unchanged rerun must produce byte-identical sheet, integration, and lane content after normalization.
 
 Do not copy the model sheet between harnesses without rerunning the parent-specific probes; route availability can differ even on the same host.
 
@@ -204,8 +235,8 @@ Do not copy the model sheet between harnesses without rerunning the parent-speci
 Before declaring setup complete, parse the written sheet body with
 `loadRoleMap(body, parent)` and compare the result with the in-memory role map.
 A parse error or mismatch fails setup; restore the snapshots. `<plugin root>`
-is the installed plugin directory and `<parent>` is `claude-code`, `codex`, or
-`cursor`. The command exits non-zero and prints the typed error on failure:
+is the installed plugin directory and `<parent>` is `claude-code`, `codex`,
+`cursor`, or `opencode`. The command exits non-zero and prints the typed error on failure:
 
 ```shell
 PLUGIN_ROOT=<plugin root> bun -e 'const [sheetPath, parent] = process.argv.slice(-2); const root = process.env.PLUGIN_ROOT; const { unwrapStoredSheet } = await import(`${root}/skills/engineering-mode/scripts/routing/parent.ts`); const { loadRoleMap } = await import(`${root}/skills/engineering-mode/scripts/routing/sheet.ts`); const body = unwrapStoredSheet(await Bun.file(sheetPath).text()); const parsed = body.ok ? loadRoleMap(body.value, parent) : body; console.log(JSON.stringify(parsed.ok ? "ok" : parsed.error)); process.exit(parsed.ok ? 0 : 1);' <sheet path> <parent>

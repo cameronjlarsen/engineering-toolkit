@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { shippedCatalog, SOL_CLI_MODEL } from "./catalog.ts";
@@ -6,13 +7,16 @@ import { planLane, resolveRoute } from "./dispatch.ts";
 import {
   applyAcceptedMigrations,
   applyIntegrationPatch,
+  applyOpencodeInstructions,
   detectParent,
   firstRunRoleMap,
   nativeHandle,
+  opencodeLaneName,
   parentIdentityKeys,
   parentProfile,
   pluginAgentName,
   proposeStalePinMigrations,
+  renderOpencodeLane,
   renderParentFiles,
   unwrapStoredSheet,
   wrapMdc,
@@ -51,6 +55,22 @@ describe("detectParent", () => {
     expect(
       detectParent({ env: { CURSOR_AGENT: "1" }, tools: new Set() })
     ).toEqual({ ok: true, value: "cursor" });
+    expect(
+      detectParent({ env: { OPENCODE: "1" }, tools: new Set() })
+    ).toEqual({ ok: true, value: "opencode" });
+    expect(
+      detectParent({ env: { OPENCODE_PID: "123" }, tools: new Set() })
+    ).toEqual({ ok: true, value: "opencode" });
+  });
+
+  it("detects OpenCode from its lowercase skill tool", () => {
+    expect(detectParent({ env: {}, tools: new Set(["skill"]) })).toEqual({
+      ok: true,
+      value: "opencode",
+    });
+    expect(
+      detectParent({ env: { OPENCODE: "1" }, tools: new Set(["skill"]) })
+    ).toEqual({ ok: true, value: "opencode" });
   });
 
   it("does not guess when tools and env disagree", () => {
@@ -100,10 +120,19 @@ describe("firstRunRoleMap", () => {
 
   it("writes a sheet that loads back on every parent", () => {
     const catalog = shippedCatalog();
-    for (const parent of ["claude-code", "codex", "cursor"] as const satisfies readonly ParentHost[]) {
+    for (const parent of ["claude-code", "codex", "cursor", "opencode"] as const satisfies readonly ParentHost[]) {
       const roles = firstRunRoleMap(parent, catalog);
       expect(loadRoleMap(printRoleMap(roles), parent)).toEqual({ ok: true, value: roles });
     }
+  });
+
+  it("seeds OpenCode with upstream externals until setup selects opencode families", () => {
+    const printed = printRoleMap(firstRunRoleMap("opencode", shippedCatalog()));
+    expect(printed).toContain("bug-fix: codex:gpt-6-sol@max");
+    expect(printed).toContain("judgment and prose: claude:fable@max");
+    expect(printed).toContain(
+      "arena runners: claude:fable@max, codex:gpt-6-sol@max, grok:grok-4.7@xhigh, opencode:opus@xhigh"
+    );
   });
 });
 
@@ -209,6 +238,35 @@ describe("nativeHandle", () => {
       wrapper: "engineering-agent",
     });
   });
+
+  it("plans opencode:glm-5.3 natively on an opencode parent as host-spawn", () => {
+    const planned = planLane({
+      parent: "opencode",
+      binding: {
+        kind: "route",
+        route: route({
+          model: slug("glm-5.3"),
+          app: "opencode",
+          effort: "max",
+        }),
+      },
+      override: undefined,
+      catalog: shippedCatalog(),
+      inventory: [],
+      access,
+      role: "architect runners",
+    });
+    expect(planned.ok).toBe(true);
+    if (!planned.ok || planned.value.kind !== "native" || !("route" in planned.value)) {
+      throw new Error("expected a routed opencode native lane");
+    }
+    expect(planned.value.route.app).toBe("opencode");
+    expect(nativeHandle(planned.value, shippedCatalog())).toEqual({
+      kind: "host-spawn",
+      model: slug("glm-5.3"),
+      effort: "max",
+    });
+  });
 });
 
 describe("parent files", () => {
@@ -281,6 +339,104 @@ Use grok-4.6-fast-xhigh for arena.
 
   it("exports identity keys for every parent including Cursor", () => {
     expect(parentIdentityKeys().cursor).toEqual(["CURSOR_AGENT"]);
+    expect(parentIdentityKeys().opencode).toEqual(["OPENCODE", "OPENCODE_PID"]);
+  });
+
+  it("wires OpenCode through an instructions entry plus generated lanes", () => {
+    const profile = parentProfile("opencode");
+    expect(profile.sheetPath).toBe(
+      join(homedir(), ".config", "opencode", "engineering-toolkit-models.md")
+    );
+    expect(profile.mappingDoc).toBe("opencode-tools.md");
+    expect(profile.integration).toEqual({
+      kind: "opencode-instructions",
+      path: join(homedir(), ".config", "opencode", "opencode.json"),
+      entry: profile.sheetPath,
+    });
+    const sheet = printRoleMap(firstRunRoleMap("opencode", shippedCatalog()));
+    const files = renderParentFiles(profile, sheet);
+    expect(files.sheet).toEqual({ path: profile.sheetPath, contents: sheet });
+    expect(files.integration).toEqual({
+      kind: "opencode-instructions",
+      path: join(homedir(), ".config", "opencode", "opencode.json"),
+      entry: profile.sheetPath,
+    });
+  });
+
+  it("inserts the OpenCode instructions entry idempotently", () => {
+    const entry = "/home/u/.config/opencode/engineering-toolkit-models.md";
+    const fresh = applyOpencodeInstructions(null, entry);
+    expect(fresh).toEqual({
+      ok: true,
+      value: `${JSON.stringify({ instructions: [entry] }, null, 2)}\n`,
+    });
+    const merged = applyOpencodeInstructions(
+      JSON.stringify({ model: "x/y", instructions: ["AGENTS.md"] }, null, 2),
+      entry
+    );
+    expect(merged.ok).toBe(true);
+    if (!merged.ok) return;
+    const parsed = JSON.parse(merged.value) as { instructions: string[]; model: string };
+    expect(parsed.instructions).toEqual(["AGENTS.md", entry]);
+    expect(parsed.model).toBe("x/y");
+    expect(applyOpencodeInstructions(merged.value, entry)).toEqual(merged);
+  });
+
+  it("rejects non-JSON and non-array OpenCode instructions state", () => {
+    const entry = "/sheet.md";
+    expect(applyOpencodeInstructions("not json {", entry)).toEqual({
+      ok: false,
+      error: { tag: "inconsistent-integration" },
+    });
+    expect(
+      applyOpencodeInstructions(JSON.stringify({ instructions: "AGENTS.md" }), entry)
+    ).toEqual({ ok: false, error: { tag: "inconsistent-integration" } });
+    expect(
+      applyOpencodeInstructions(JSON.stringify({ instructions: [42] }), entry)
+    ).toEqual({ ok: false, error: { tag: "inconsistent-integration" } });
+  });
+
+  it("renders pinned opencode lane files with edit-deny read-only lanes", () => {
+    expect(opencodeLaneName(slug("glm-5.3"), "max")).toBe("pstack-glm-5.3-max.md");
+    const readOnly = renderOpencodeLane({
+      descriptor: "opencode:glm-5.3@max",
+      concreteModel: "opencode-go/glm-5.3",
+      readOnly: true,
+    });
+    expect(readOnly).toContain("model: opencode-go/glm-5.3");
+    expect(readOnly).toContain("mode: subagent");
+    expect(readOnly).toContain("opencode:glm-5.3@max");
+    expect(readOnly).toContain("permission:\n  edit: deny");
+    const writer = renderOpencodeLane({
+      descriptor: "opencode:glm-5.3@max",
+      concreteModel: "opencode-go/glm-5.3",
+      readOnly: false,
+    });
+    expect(writer).not.toContain("edit: deny");
+  });
+
+  it("binds the renderer byte-for-byte to the lane templates in setup", () => {
+    const setup = readFileSync(
+      join(import.meta.dir, "../../../../skills/setup-engineering-toolkit/SKILL.md"),
+      "utf8"
+    ).replaceAll("\r\n", "\n");
+    const fences = [...setup.matchAll(/```lane\n([\s\S]*?)```/g)].map((match) => match[1]);
+    expect(fences).toHaveLength(2);
+    const [readOnlyTemplate, writerTemplate] = fences as [string, string];
+    expect(
+      renderOpencodeLane({
+        descriptor: "opencode:glm-5.3@max",
+        concreteModel: "opencode-go/glm-5.3",
+        readOnly: true,
+      })
+    ).toBe(readOnlyTemplate);
+    expect(
+      renderOpencodeLane({
+        descriptor: "opencode:glm-5.3@max",
+        concreteModel: "opencode-go/glm-5.3",
+        readOnly: false,
+      })
+    ).toBe(writerTemplate);
   });
 });
 
@@ -305,6 +461,30 @@ describe("claude:fable from cursor stays external", () => {
     expect(planned.ok).toBe(true);
     if (!planned.ok || planned.value.kind !== "external") return;
     expect(planned.value.launch.app).toBe("claude-code");
+  });
+});
+
+describe("opencode lanes stay native-only", () => {
+  it("rejects an opencode route from any other parent", () => {
+    const planned = planLane({
+      parent: "claude-code",
+      binding: {
+        kind: "route",
+        route: route({
+          model: slug("glm-5.3"),
+          app: "opencode",
+          effort: "max",
+        }),
+      },
+      override: undefined,
+      catalog: shippedCatalog(),
+      inventory: [{ app: "opencode", readiness: { kind: "launch-ready" } }],
+      access,
+      role: "architect runners",
+    });
+    expect(planned.ok).toBe(false);
+    if (planned.ok) return;
+    expect(planned.error).toEqual({ tag: "no-launch-interface", app: "opencode" });
   });
 });
 

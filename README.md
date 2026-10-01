@@ -72,6 +72,22 @@ multi_agent = true
 
 Start a new Codex task after installation so it can discover the new skills and setting.
 
+### OpenCode
+
+There is no marketplace manifest for OpenCode yet. Link the shared skills into `~/.agents/skills/`, which OpenCode discovers:
+
+```shell
+git clone https://github.com/cameronjlarsen/engineering-toolkit.git
+cd engineering-toolkit
+mkdir -p ~/.agents/skills
+for s in plugins/engineering-toolkit/skills/*/; do
+  target=~/.agents/skills/"$(basename "$s")"
+  test -e "$target" || test -L "$target" || ln -s "$PWD/$s" "$target"
+done
+```
+
+Ask for `engineering-mode` by name. Tool names resolve via `skills/engineering-mode/references/opencode-tools.md`. Run `/setup-engineering-toolkit` to select the model panel and write the OpenCode sheet plus native lanes. See the [technical reference](docs/reference.md) for permissions and routing details.
+
 ## Get started
 
 Lauren's original setup has two steps. This fork keeps the same flow.

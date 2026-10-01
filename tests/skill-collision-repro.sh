@@ -143,6 +143,16 @@ grep -Fq '# Cursor tool mapping for Engineering Toolkit' "$cursor_map" || identi
 if grep -Fq '# Cursor tool mapping for pstack' "$cursor_map"; then
   identity_bad="$identity_bad leftover Cursor mapping title for pstack"$'\n'
 fi
+opencode_map="$repo/plugins/engineering-toolkit/skills/engineering-mode/references/opencode-tools.md"
+[ -f "$opencode_map" ] || identity_bad="$identity_bad missing OpenCode mapping references/opencode-tools.md"$'\n'
+grep -Fq '# OpenCode tool mapping for Engineering Toolkit' "$opencode_map" || identity_bad="$identity_bad OpenCode mapping title is not Engineering Toolkit"$'\n'
+grep -Fq 'skill({ name })' "$opencode_map" || identity_bad="$identity_bad OpenCode mapping lost skill({ name }) invocation"$'\n'
+if grep -Fq 'pstack:typescript-best-practices' "$opencode_map"; then
+  identity_bad="$identity_bad leftover pstack:typescript-best-practices in OpenCode mapping"$'\n'
+fi
+if grep -Fq 'eng:' "$opencode_map"; then
+  identity_bad="$identity_bad leftover eng: skill namespace in OpenCode mapping"$'\n'
+fi
 grep -Fq 'Engineering Toolkit helps you write less' "$repo/docs/reference.md" || identity_bad="$identity_bad reference tagline lost Engineering Toolkit"$'\n'
 if grep -Fq 'pstack helps you write less' "$repo/docs/reference.md"; then
   identity_bad="$identity_bad leftover pstack tagline in docs/reference.md"$'\n'
