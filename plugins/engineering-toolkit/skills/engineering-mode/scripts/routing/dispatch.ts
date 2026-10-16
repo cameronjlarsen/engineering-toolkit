@@ -5,7 +5,7 @@ import {
   type LanePlan,
   type McpBoundRoleId,
   type ModelEntry,
-  type ParentHost,
+  type AppParentHost,
   type Readiness,
   type ResolvedRoute,
   type ResolveError,
@@ -40,7 +40,7 @@ export function applyOverride(
   binding: RoleBinding,
   patch: RoutePatch | undefined,
   role: RoleId,
-  parent: ParentHost
+  parent: AppParentHost
 ): Result<RoleBinding, ResolveError> {
   if (patch === undefined) return { ok: true, value: binding };
   if (patch.model === undefined && patch.app === undefined && patch.effort === undefined) {
@@ -126,7 +126,7 @@ function modelOnApp(
 }
 
 export function resolveRoute(
-  parent: ParentHost,
+  parent: AppParentHost,
   configured: Route,
   catalog: AppCatalog,
   inventory: readonly AppInventoryEntry[]
@@ -165,7 +165,7 @@ export function resolveRoute(
 }
 
 export function planLane(input: {
-  readonly parent: ParentHost;
+  readonly parent: AppParentHost;
   readonly binding: RoleBinding;
   readonly override: RoutePatch | undefined;
   readonly catalog: AppCatalog;

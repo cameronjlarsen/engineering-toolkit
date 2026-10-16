@@ -1,10 +1,11 @@
-export const PARENT_HOSTS = ["claude-code", "codex", "cursor"] as const;
+export const PARENT_HOSTS = ["claude-code", "codex", "cursor", "t3"] as const;
 export const APP_IDS = ["claude-code", "codex", "cursor", "grok"] as const;
 export const CLI_CHILD_APPS = ["claude-code", "codex", "cursor", "grok"] as const;
 export const EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
 export const SONNET_5_5_MODEL = "claude-sonnet-5-5";
 
 export type ParentHost = (typeof PARENT_HOSTS)[number];
+export type AppParentHost = Extract<ParentHost, AppId>;
 export type AppId = (typeof APP_IDS)[number];
 export type CliChildApp = (typeof CLI_CHILD_APPS)[number];
 export type Effort = (typeof EFFORTS)[number];
@@ -92,22 +93,22 @@ export interface CliLaunchSpec {
 export type LanePlan =
   | {
       readonly kind: "native";
-      readonly parent: ParentHost;
+      readonly parent: AppParentHost;
       readonly inherit: true;
       readonly access: Access;
       readonly worker: WorkerPolicy;
     }
   | {
       readonly kind: "native";
-      readonly parent: ParentHost;
+      readonly parent: AppParentHost;
       readonly inherit?: false;
-      readonly route: ResolvedRoute & { readonly lane: "native"; readonly app: ParentHost };
+      readonly route: ResolvedRoute & { readonly lane: "native"; readonly app: AppParentHost };
       readonly access: Access;
       readonly worker: WorkerPolicy;
     }
   | {
       readonly kind: "external";
-      readonly parent: ParentHost;
+      readonly parent: AppParentHost;
       readonly route: ResolvedRoute & { readonly lane: "external" };
       readonly launch: CliLaunchSpec;
       readonly access: Access;
@@ -189,7 +190,7 @@ export function modelSlug(raw: string): Result<ModelSlug, ResolveError> {
   return { ok: true, value: raw as ModelSlug };
 }
 
-export function isParentHost(id: AppId): id is ParentHost {
+export function isParentHost(id: AppId): id is AppParentHost {
   return (PARENT_HOSTS as readonly string[]).includes(id);
 }
 

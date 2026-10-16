@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { SOL_CLI_MODEL, soleModel, type AppCatalog } from "./catalog.ts";
 import {
   type AppId,
+  type AppParentHost,
   type Effort,
   type LanePlan,
   type ModelSlug,
@@ -147,7 +148,7 @@ function familyOf(id: FamilyId): (typeof FAMILY_SEED)[number] {
 }
 
 export function serveLocally(
-  parent: ParentHost,
+  parent: AppParentHost,
   model: ModelSlug,
   catalog: AppCatalog
 ): boolean {
@@ -155,7 +156,7 @@ export function serveLocally(
 }
 
 function familyBinding(
-  parent: ParentHost,
+  parent: AppParentHost,
   catalog: AppCatalog,
   family: FamilyId
 ): RoleMap["feature, refactoring"] {
@@ -171,9 +172,19 @@ function familyBinding(
   };
 }
 
+const T3_TOOLS = ["delegate_task", "t3_thread_launch"] as const;
+
+function hasT3Tool(tools: ReadonlySet<string>): boolean {
+  return [...tools].some((tool) =>
+    T3_TOOLS.some((name) => tool === name || tool.endsWith(`__${name}`))
+  );
+}
+
 export function detectParent(
   surface: ParentSurface
 ): Result<ParentHost, ParentDetectError> {
+  if (hasT3Tool(surface.tools)) return { ok: true, value: "t3" };
+
   let toolHit: ParentHost | null = null;
   if (surface.tools.has("spawn_agent")) toolHit = "codex";
   else if (surface.tools.has("Task")) toolHit = "cursor";
@@ -209,6 +220,9 @@ export function detectParent(
 
 export function parentProfile(parent: ParentHost): ParentProfile {
   const home = homedir();
+  if (parent === "t3") {
+    return { ...parentProfile("claude-code"), parent, identityKeys: [] };
+  }
   if (parent === "claude-code") {
     const sheetPath = join(home, ".claude", "engineering-toolkit-models.md");
     return {
@@ -247,7 +261,7 @@ export function parentProfile(parent: ParentHost): ParentProfile {
   };
 }
 
-export function firstRunRoleMap(parent: ParentHost, catalog: AppCatalog): RoleMap {
+export function firstRunRoleMap(parent: AppParentHost, catalog: AppCatalog): RoleMap {
   const panel = [
     familyBinding(parent, catalog, "fable"),
     familyBinding(parent, catalog, "sol"),
@@ -406,7 +420,7 @@ export function nativeHandle(
   };
 }
 
-const STORED_GRAMMAR = /^Descriptor grammar: [23]\r?$/m;
+const STORED_GRAMMAR = /^Descriptor grammar: [234]\r?$/m;
 
 export function unwrapStoredSheet(
   stored: string
@@ -521,5 +535,6 @@ export function parentIdentityKeys(): Record<ParentHost, readonly string[]> {
     "claude-code": CLAUDE_IDENTITY,
     codex: CODEX_IDENTITY,
     cursor: CURSOR_IDENTITY,
+    t3: [],
   };
 }

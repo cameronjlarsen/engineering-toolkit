@@ -4,7 +4,7 @@ import {
   type AppId,
   type Effort,
   type ModelSlug,
-  type ParentHost,
+  type AppParentHost,
   type RoleBinding,
   type RoleId,
   type RoleMap,
@@ -111,7 +111,7 @@ function routeBinding(model: ModelSlug, app: AppId, effort: Effort): ParsedDescr
 function parseV2Descriptor(
   raw: string,
   role: RoleId,
-  parent: ParentHost
+  parent: AppParentHost
 ): Result<ParsedDescriptor, SheetError> {
   if (raw.includes(":") || (raw.includes("@") && raw.split("@").length > 2)) {
     return { ok: false, error: { tag: "invalid-descriptor", role, raw } };
@@ -175,7 +175,7 @@ function parseDescriptor(
   raw: string,
   role: RoleId,
   grammar: Grammar,
-  parent: ParentHost
+  parent: AppParentHost
 ): Result<ParsedDescriptor, SheetError> {
   if (raw === "inherit-parent" || raw === "auto") {
     return { ok: true, value: { kind: raw } };
@@ -199,7 +199,7 @@ function parseRoleLine(
   role: RoleId,
   rawValue: string,
   grammar: Grammar,
-  parent: ParentHost
+  parent: AppParentHost
 ): Result<RoleBinding | readonly RoleBinding[], SheetError> {
   if (PANEL_ROLE_IDS.includes(role as (typeof PANEL_ROLE_IDS)[number])) {
     const lanes = rawValue.split(",").map((lane) => lane.trim());
@@ -219,7 +219,7 @@ function parseRoleLine(
 
 export function loadRoleMap(
   sheetText: string,
-  parent: ParentHost
+  parent: AppParentHost
 ): Result<RoleMap, SheetError> {
   const lines = sheetText.split(/\r?\n/);
   let grammar: Grammar = 1;

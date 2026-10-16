@@ -41,6 +41,12 @@ describe("runner CLI parsing", () => {
     );
   });
 
+  it("does not accept t3 as a runner parent", () => {
+    expect(() => parseArgs(["--parent", "t3", ...argv().slice(2)])).toThrow(
+      "parent must be one of"
+    );
+  });
+
   it("accepts cursor as a parent and as an app", () => {
     const parsed = parseArgs([
       "--parent",

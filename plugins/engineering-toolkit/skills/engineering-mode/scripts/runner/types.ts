@@ -1,18 +1,16 @@
 import {
   CLI_CHILD_APPS,
-  PARENT_HOSTS,
   type AppId as RouteAppId,
   type CliChildApp,
   type Effort as RouteEffort,
-  type ParentHost,
 } from "../routing/route.ts";
 
-export const PARENTS = PARENT_HOSTS;
+export const PARENTS = ["claude-code", "codex", "cursor"] as const;
 export const APPS = CLI_CHILD_APPS;
 export const EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
 export const ACCESS_MODES = ["read-only", "isolated-write"] as const;
 
-export type Parent = ParentHost;
+export type Parent = (typeof PARENTS)[number];
 export type AppId = RouteAppId;
 export type App = CliChildApp;
 export type Effort = RouteEffort;

@@ -21,10 +21,12 @@ import {
   modelSlug,
   route,
   type Access,
+  type AppParentHost,
   type ParentHost,
   type RoleMap,
 } from "./route.ts";
 import { loadRoleMap, printRoleMap } from "./sheet.ts";
+import { loadT3RoleMap, printT3RoleMap } from "./t3-sheet.ts";
 
 const access: Access = { mode: "read-only", worktree: null };
 
@@ -61,6 +63,25 @@ describe("detectParent", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.tag).toBe("ambiguous-parent");
+  });
+
+  it("classifies T3-owned tools as t3 over every other tool and env marker", () => {
+    const others = new Set(["Task", "Agent", "spawn_agent"]);
+    const env = { CLAUDECODE: "1", CURSOR_AGENT: "1", CODEX_THREAD_ID: "1" };
+    for (const t3Tool of ["delegate_task", "t3_thread_launch", "mcp__t3-code__delegate_task"]) {
+      expect(
+        detectParent({ env, tools: new Set([...others, t3Tool]) })
+      ).toEqual({ ok: true, value: "t3" });
+      expect(
+        detectParent({ env: { CLAUDECODE: "1" }, tools: new Set(["Agent", t3Tool]) })
+      ).toEqual({ ok: true, value: "t3" });
+    }
+  });
+
+  it("does not treat other MCP tools or look-alike names as T3", () => {
+    expect(
+      detectParent({ env: {}, tools: new Set(["Task", "other_delegate_task", "mcp__x__t3_thread_list"]) })
+    ).toEqual({ ok: true, value: "cursor" });
   });
 
   it("reports unknown when nothing matches", () => {
@@ -228,6 +249,61 @@ describe("parent files", () => {
     expect(wrapMdc(files.sheet.contents)).toBe(files.sheet.contents);
   });
 
+  it("gives t3 its own profile instead of the Cursor fallback", () => {
+    const profile = parentProfile("t3");
+    expect(profile.parent).toBe("t3");
+    expect(profile.sheetPath).not.toBe(parentProfile("cursor").sheetPath);
+    expect(profile.identityKeys).toEqual([]);
+    expect(parentIdentityKeys().t3).toEqual([]);
+    const files = renderParentFiles(profile, "Descriptor grammar: 4\n");
+    expect(files.sheet.path).toBe(profile.sheetPath);
+    expect(files.integration.kind).toBe("ensure-line");
+  });
+
+  it("accepts stored grammar 2, 3, and 4 sheets and rejects other versions", () => {
+    for (const version of ["2", "3", "4"]) {
+      const stored = `# models\n\nDescriptor grammar: ${version}\nbug-fix: x\n`;
+      expect(unwrapStoredSheet(stored)).toEqual({ ok: true, value: stored });
+      expect(unwrapStoredSheet(wrapMdc(stored))).toEqual({ ok: true, value: stored });
+    }
+    expect(unwrapStoredSheet("Descriptor grammar: 5\n")).toEqual({
+      ok: false,
+      error: { tag: "inconsistent-integration" },
+    });
+  });
+
+  it("round-trips a grammar 4 sheet through the t3 integration", () => {
+    const inherit = (role: string) => `${role}: inherit-parent`;
+    const loaded = loadT3RoleMap(
+      [
+        "Descriptor grammar: 4",
+        "feature, refactoring: codex/gpt-6.1-sol reasoningEffort=high",
+        inherit("bug-fix"),
+        inherit("perf-issue"),
+        inherit("hillclimb"),
+        inherit("judgment and prose"),
+        inherit("hardest tasks"),
+        inherit("how explorer"),
+        inherit("how explainer"),
+        inherit("why investigators, synthesizer"),
+        inherit("reflect tooling, judgment, divergent, synthesizer"),
+        inherit("arena runners"),
+        inherit("arena cross-judge pool"),
+        inherit("swarm workers"),
+        inherit("architect runners"),
+        inherit("interrogate reviewers"),
+      ].join("\n")
+    );
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok) return;
+    const sheet = printT3RoleMap(loaded.value);
+    const files = renderParentFiles(parentProfile("t3"), sheet);
+    const stored = unwrapStoredSheet(files.sheet.contents);
+    expect(stored).toEqual({ ok: true, value: sheet });
+    if (!stored.ok) return;
+    expect(loadT3RoleMap(stored.value)).toEqual({ ok: true, value: loaded.value });
+  });
+
   it("stops when a Cursor mdc is an upstream Task-slug rule", () => {
     const stored = `---
 description: pstack models
@@ -311,7 +387,7 @@ describe("claude:fable from cursor stays external", () => {
 describe("stale pin migrations", () => {
   const catalog = shippedCatalog();
 
-  function mustLoad(text: string, parent: ParentHost = "claude-code"): RoleMap {
+  function mustLoad(text: string, parent: AppParentHost = "claude-code"): RoleMap {
     const loaded = loadRoleMap(text, parent);
     expect(loaded.ok).toBe(true);
     if (!loaded.ok) throw new Error(loaded.error.tag);
