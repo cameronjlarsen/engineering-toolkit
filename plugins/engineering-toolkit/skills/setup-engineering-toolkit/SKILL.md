@@ -33,7 +33,9 @@ Cursor writes `~/.cursor/rules/engineering-toolkit-models.mdc`. YAML frontmatter
 The T3 parent resolves models once, from the live T3 catalog. The sheet is
 grammar 4. Each target is the raw T3 target and nothing else. Do not hardcode
 provider instance ids, model ids, or option ids. Do not use `provider:model@effort`
-Routes, and do not add a second configuration file.
+routes, and do not add a second configuration file. Name every T3 tool from
+[`t3-tools.md`](../engineering-mode/references/t3-tools.md). The probe in step 6
+uses `delegate_task`. Do not probe with `Agent` or `Task`.
 
 1. **Read the catalog.** An MCP result exists only in your context, so it
    cannot be piped to a command. Call the `orchestrator_capabilities` MCP tool

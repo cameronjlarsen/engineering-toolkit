@@ -10,7 +10,7 @@ disable-model-invocation: "true"
 
 ## Platform Adaptation
 
-These skills share one tree across Claude Code, Codex, and Cursor. Read [`references/provider-dispatch.md`](references/provider-dispatch.md) whenever a configured role launches. It defines the typed Route values and `provider:model@effort` wire values, native/external route table, launcher, isolation, receipts, and dropout policy. Children never choose routes. When a skill names a Claude tool or built-in skill (`run`, `verify`, `plugin-dev:skill-development`), read [`references/codex-tools.md`](references/codex-tools.md) on Codex and [`references/cursor-tools.md`](references/cursor-tools.md) on Cursor.
+These skills share one tree across Claude Code, Codex, Cursor, and T3. Read [`references/provider-dispatch.md`](references/provider-dispatch.md) whenever a configured role launches on Claude Code, Codex, or Cursor. It defines the typed Route values and `provider:model@effort` wire values, native/external route table, launcher, isolation, receipts, and dropout policy. Children never choose routes. When a skill names a Claude tool or built-in skill (`run`, `verify`, `plugin-dev:skill-development`, `Agent`, `Task`, `loop`), read [`references/codex-tools.md`](references/codex-tools.md) on Codex, [`references/cursor-tools.md`](references/cursor-tools.md) on Cursor, and [`references/t3-tools.md`](references/t3-tools.md) on T3. T3 is the parent when `delegate_task` or `t3_thread_launch` is present. That wins over `Agent`, `Task`, `spawn_agent`, and `CLAUDECODE`. On T3, the Babysit playbook's GitHub `watch-pr` wait is `watch_pull_request`, then the end of the turn.
 
 ## Non-negotiables
 

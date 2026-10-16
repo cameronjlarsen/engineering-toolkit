@@ -7,9 +7,9 @@ description: Watch an open PR — fix failing CI, handle the straightforward rev
 
 Claude Code analog of Cursor's built-in `/babysit`. The implementation is a loop over `gh` CLI plus the Claude Code `loop` skill for pacing.
 
-**Platform note.** On Codex or another non-Claude runtime, the Claude tool names and Claude built-in skills named below (`loop`, `AskUserQuestion`) are Claude defaults. Resolve them via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
+**Platform note.** On Codex or another non-Claude runtime, the Claude tool names and Claude built-in skills named below (`loop`, `AskUserQuestion`) are Claude defaults. Resolve them via [`codex-tools.md`](../engineering-mode/references/codex-tools.md). On T3, resolve them via [`t3-tools.md`](../engineering-mode/references/t3-tools.md). T3 is the parent when `delegate_task` or `t3_thread_launch` is present.
 
-Inside engineering-mode, the **Babysit** playbook ([`../engineering-mode/playbooks/babysit.md`](../engineering-mode/playbooks/babysit.md)) supersedes this skill: it owns mode declaration, the merge frontier, stack safety, and the `watch-pr` watcher. This skill stays the standalone `/babysit` entry point for a single PR outside a engineering-mode run.
+Inside engineering-mode, the **Babysit** playbook ([`../engineering-mode/playbooks/babysit.md`](../engineering-mode/playbooks/babysit.md)) supersedes this skill: it owns mode declaration, the merge frontier, and stack safety. On T3, its GitHub wait is not `watch-pr`. Resolve that wait through [`t3-tools.md`](../engineering-mode/references/t3-tools.md): triage the comments already on the PR, call `watch_pull_request`, and end the turn. Origin and Azure DevOps stay on the playbook. This skill stays the standalone `/babysit` entry point for a single PR outside an engineering-mode run.
 
 ## When to use
 
@@ -31,14 +31,16 @@ Inside engineering-mode, the **Babysit** playbook ([`../engineering-mode/playboo
    - Review comments from human reviewers (`gh pr view --json comments,reviews`): act only on feedback you actually agree with. When a comment has a single mechanical answer — a rename, a guard clause, a formatting nit — make the edit and quote the comment in the commit message. When it hinges on a judgement call, or you can't tell what's being asked, don't guess: leave it and reply with what you would have done.
    - Review-bot comments (Bugbot and similar automation): classify as fix, dismiss, or ask before acting, per [`../engineering-mode/references/bugbot-triage.md`](../engineering-mode/references/bugbot-triage.md). Follow the rubric's Ask by default categories, including security, data, and high-severity findings.
 
-3. **Loop.** Use the Claude Code `loop` skill to pace re-checks. Pick the interval from what you're watching:
-   - Active CI run: poll `gh pr checks --watch` (it blocks until checks finish, so no separate loop interval needed).
-   - Awaiting reviewer: 20–30 min heartbeat.
-   - Idle but want to catch new comments: hourly.
+3. **Loop.** On T3, triage the comments already on the PR, call `watch_pull_request` with the PR URL, and end the turn. Do not run `gh pr checks --watch` and do not invoke `loop`. A later wake is new status, not a merge decision. Origin and Azure DevOps stay on the Babysit playbook. This skill does not replace that path.
+
+   On Claude Code, use the `loop` skill to pace re-checks. Pick the interval from what you are watching.
+   - Active CI run. Poll `gh pr checks --watch`. It blocks until checks finish, so no separate loop interval is needed.
+   - Awaiting reviewer. 20 to 30 minute heartbeat.
+   - Idle, but you want to catch new comments. Hourly.
 
 4. **When to stop.**
-   - Build is green, every comment resolved, branch merges cleanly → call it ready.
-   - You've run three rounds of fix → push → recheck and it still isn't fully green → stop, summarise what's still broken, and hand control back.
+   - Build is green, every comment resolved, branch merges cleanly → call it ready. On T3, call `unwatch_pull_request` before you hand it back.
+   - You've run three rounds of fix → push → recheck and it still isn't fully green → stop, summarise what's still broken, and hand control back. On T3, call `unwatch_pull_request` first.
    - The next fix would force a design choice → pause and put it to the user with `AskUserQuestion`.
 
 5. **Report.** Summarize fixes applied, comments addressed, comments deferred (with reason), current PR status. Cite each commit by SHA.
