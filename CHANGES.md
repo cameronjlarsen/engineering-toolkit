@@ -2,6 +2,18 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## Fork-authored: T3 host mapping
+
+T3 is the parent harness. Cursor, Claude Code, and Codex stay kid providers. Harness translation for T3 lives in `plugins/engineering-toolkit/skills/engineering-mode/references/t3-tools.md`. `parentProfile("t3").mappingDoc` points at that file. Shared skill bodies keep their Claude tool names. `engineering-mode`'s platform sentence names `t3-tools.md` the same way it already names `codex-tools.md` and `cursor-tools.md`. `AGENTS.md`, `UPSTREAM.md`, and `docs/reference.md` name that same mapping. The session-start hook tells a T3 thread to read `t3-tools.md` before it spawns, schedules, or watches a pull request. The setup skill names T3 tools from that file, and its probe uses `delegate_task`.
+
+Seven reader skills (`architect`, `arena`, `how`, `interrogate`, `reflect`, `swarm`, `why`) each gained one sentence. A grammar 4 role line holds raw T3 targets or `inherit-parent`, and a present line is not replaced by the grammar 3 default.
+
+`babysit/SKILL.md`, on T3, triages comments already on the PR, calls `watch_pull_request`, and ends the turn. Inside engineering-mode the Babysit playbook still owns mode, frontier, and stack safety, and its GitHub `watch-pr` wait resolves the same way. Origin and Azure DevOps stay on that playbook.
+
+`worktree-audit.sh` marks a worktree `hold-slice` when its path contains a `{repo}-wt` directory. The cleanup playbook does not remove those paths. On Windows, `git worktree remove` can follow a junction and delete the files it points at.
+
+p3-stack (`uzairansaruzi/p3-stack` @ `09909eb`) was a shape reference for the name table. No wording from it was copied.
+
 ## Cursor 0.15.5 content sync keeps 1.4.4 manifests
 
 This checkout applies Cursor pstack 0.15.5 at `12d587dfb20741cafc376c42c696c5f6e2a64487` without bumping this fork off 1.4.4. The commits are `70b2dc8`, `b42effe`, `b0b9c7a`, and `12d587d`.

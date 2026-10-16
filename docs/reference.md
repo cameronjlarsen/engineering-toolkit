@@ -2,13 +2,13 @@
 
 This page contains the full skill, dependency, runtime, and porting reference. For the plain-English introduction and quick start, see the [main README](../README.md).
 
-This repository is a fork of [Open Pstack](https://github.com/ericlitman/open-pstack). Open Pstack adapted [Poteto](https://x.com/poteto)'s [pstack](https://github.com/cursor/plugins/tree/main/pstack) for Claude Code and Codex. This fork uses that port as a base. One skill tree can parent on Cursor, Claude Code, and Codex, and later other coding agents. Grok remains a model-provider lane. Version 1.4.1 is the Open Pstack sync this checkout started from. It tracks Cursor pstack v0.15.1 at `f8abeddd1862dc73704e3d719dd73df0d51b8c71`. See [UPSTREAM.md](../UPSTREAM.md) for the tracked sources.
+This repository is a fork of [Open Pstack](https://github.com/ericlitman/open-pstack). Open Pstack adapted [Poteto](https://x.com/poteto)'s [pstack](https://github.com/cursor/plugins/tree/main/pstack) for Claude Code and Codex. This fork uses that port as a base. One skill tree serves T3 as the parent harness. Cursor, Claude Code, and Codex are kid providers. Grok remains a model-provider lane. Version 1.4.1 is the Open Pstack sync this checkout started from. It tracks Cursor pstack v0.15.1 at `f8abeddd1862dc73704e3d719dd73df0d51b8c71`. See [UPSTREAM.md](../UPSTREAM.md) for the tracked sources.
 
 Original by Lauren Tan. This distribution builds on Michael Denyer's [pstack-claude](https://github.com/michael-denyer/pstack-claude) port and retains its history and MIT attribution. It imports seven MIT-licensed skills from [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit): `deslop`, `thermo-nuclear-code-quality-review`, `make-pr-easy-to-review`, `fix-ci`, `fix-merge-conflicts`, `get-pr-comments`, `what-did-i-get-done`. It also imports one MIT-licensed skill from [Gentle AI](https://github.com/Gentleman-Programming/gentle-ai): `work-unit-commits`.
 
 > if you want to go fast, go deep first. Engineering Toolkit helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence.
 
-This is not a verbatim copy of Cursor pstack. Open Pstack edited skill bodies so Cursor-specific primitives resolve in Claude Code and Codex. See [Differences from upstream](#differences-from-upstream). This fork keeps that shared tree and adds Cursor as a parent and a provider with grammar 3 model sheets. The exhaustive per-skill audit lives in [CHANGES.md](../CHANGES.md). License attribution lives in [NOTICE.md](../NOTICE.md). The Cursor pstack README is preserved verbatim at [README-UPSTREAM.md](../README-UPSTREAM.md).
+This is not a verbatim copy of Cursor pstack. Open Pstack edited skill bodies so Cursor-specific primitives resolve in Claude Code and Codex. See [Differences from upstream](#differences-from-upstream). This fork keeps that shared tree. T3 is the parent harness. The T3 sheet is grammar 4. Cursor, Claude Code, and Codex are kid providers. The exhaustive per-skill audit lives in [CHANGES.md](../CHANGES.md). License attribution lives in [NOTICE.md](../NOTICE.md). The Cursor pstack README is preserved verbatim at [README-UPSTREAM.md](../README-UPSTREAM.md).
 
 ## Install
 
@@ -73,8 +73,8 @@ The marketplace install is the normal user path. Direct links are only for testi
 │   ├── .claude-plugin/plugin.json    # Claude Code manifest
 │   ├── .codex-plugin/plugin.json     # Codex manifest (skills: ./skills/)
 │   ├── .cursor-plugin/plugin.json    # Cursor manifest (skills and agents)
-│   ├── skills/                       # shared skills for Cursor, Claude Code, and Codex
-│   │   ├── engineering-mode/references/{codex-tools,cursor-tools,provider-dispatch}.md  # tool + provider routing
+│   ├── skills/                       # shared skills for Cursor, Claude Code, Codex, and T3
+│   │   ├── engineering-mode/references/{codex-tools,cursor-tools,provider-dispatch,t3-tools}.md  # tool + provider routing
 │   │   └── engineering-mode/scripts/      # bun/bash/node tooling: watch-pr, orch, runner, check-plan.mjs, worktree-audit.sh
 │   ├── hooks/                        # SessionStart auto-fire: injects the engineering-mode mandate (Claude Code only)
 │   └── agents/                       # Claude subagents, including native Fable and Opus lanes at each selectable effort
@@ -91,6 +91,10 @@ The marketplace install is the normal user path. Direct links are only for testi
 ```
 
 Plugin-internal `skills/<name>/` path references in the docs below are relative to `plugins/engineering-toolkit/`.
+
+## Running on T3
+
+T3 is the parent harness. Cursor, Claude Code, and Codex are kid providers. Shared skills keep Claude tool names. On T3 those names resolve through [`t3-tools.md`](../plugins/engineering-toolkit/skills/engineering-mode/references/t3-tools.md). Model routes for the kid providers stay in [`provider-dispatch.md`](../plugins/engineering-toolkit/skills/engineering-mode/references/provider-dispatch.md). A T3 sheet is grammar 4 and uses the Claude Code sheet path.
 
 ## Running on Codex
 
