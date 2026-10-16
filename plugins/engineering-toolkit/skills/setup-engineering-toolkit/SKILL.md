@@ -35,50 +35,93 @@ grammar 4. Each target is the raw T3 target and nothing else. Do not hardcode
 provider instance ids, model ids, or option ids. Do not use `provider:model@effort`
 Routes, and do not add a second configuration file.
 
-1. **Read the catalog.** Call the `orchestrator_capabilities` MCP tool (in
-   Claude Code, `mcp__t3-code__orchestrator_capabilities`). Pass its output
-   unchanged to `parseT3Catalog`. An `invalid-t3-catalog` error stops setup
-   and writes nothing. Only a launchable provider with driver `claudeAgent` or
-   `codex` can hold a target.
+1. **Read the catalog.** An MCP result exists only in your context, so it
+   cannot be piped to a command. Call the `orchestrator_capabilities` MCP tool
+   (in Claude Code, `mcp__t3-code__orchestrator_capabilities`). Then Write the
+   result to a temp file named `capabilities.json` and check it with:
+
+   ```shell
+   bun <plugin root>/skills/engineering-mode/scripts/routing/t3-capabilities.ts <temp dir>/capabilities.json
+   ```
+
+   The file must keep the top-level `inheritedProviderInstanceId` and
+   `inheritedModel`, and for every provider its `providerInstanceId`,
+   `driverKind`, `canRunChildTask`, and `constraints`. Write the full `models`
+   and `options` only for providers whose `driverKind` is `claudeAgent` or
+   `codex`, copied exactly. Other providers cannot hold a target, so they may
+   carry `models: []`. Never invent, shorten, or drop a model or option for a
+   `claudeAgent` or `codex` provider. The script prints one line per provider
+   with its status and `models=<count>`. Compare each count with the live
+   result and fix the file when one differs. An `invalid-t3-catalog` error stops
+   setup and writes nothing. Only a launchable provider with driver
+   `claudeAgent` or `codex` can hold a target.
 2. **Load current state.** Read a `# budget:` line when the sheet has one. A
    grammar 4 sheet loads with `loadT3RoleMap`. A grammar 1, 2, or 3 sheet at
-   this path names apps, not T3 provider instances. Show it and replace it after
-   confirmation; do not migrate it. A duplicate or missing role row is
-   inconsistent state; report it and stop.
+   this path names apps, not T3 provider instances. Read it with
+   `loadRoleMap(text, "claude-code")` to seed the roles; do not write it back.
+   Map each route to a T3 target. App `claude-code` uses the launchable
+   `claudeAgent` instance, `codex` uses the launchable `codex` instance, and a
+   second instance of a driver is a question for the operator. App `cursor` or
+   `grok` cannot hold a target, so that role is a dropout. The route's
+   `@effort` becomes the model's effort option. Resolve a rolling alias to the
+   repo's own catalog slug: `opus` is `claude-opus-5-5`, `fable` is
+   `claude-fable-5-1`, and `sonnet` is `claude-sonnet-5-5` (the shipped Cursor
+   in-slug entries and `SONNET_5_5_MODEL`). Use any other slug as written. If
+   the resolved id is not in the live catalog for that provider, the role is a
+   dropout reported to the operator. Never pick another model. Keep the old
+   sheet's prose for step 7. A duplicate or missing role row is inconsistent
+   state; report it and stop.
 3. **Budget.** Ask the step 4(a) question with the same four labels. The target
    effort applies to each target's effort option (`reasoningEffort` or `effort`,
-   whichever the catalog lists for that model). If the catalog does not list the
-   target value, use the highest listed value at or below it. If no listed value
-   fits, the role needs an operator choice. Leave every other option unset.
-   `inherit-parent` does not change.
-4. **Choose targets.** Propose a target per role from the catalog, using the
-   model families in step 7 as the guide. Never select a Fable model. Why and
-   Reflect stay `inherit-parent`, because external override is a typed reject.
-   Panel roles list one target per entry, and the list length is the fan-out
-   count. If the catalog has no match for a family, say so and ask. Never fill
-   the gap with a different model.
-5. **Validate.** Run `checkT3RoleMap(map, catalog)`. Every issue is a dropout,
-   such as an unavailable provider, an unknown model, or an invalid option
-   value. Report each dropout with its role and entry. The operator changes
-   that role or accepts the dropout. Never replace an entry with another model
-   for them. Show every `panel-single-family` issue as reduced provider
-   diversity.
+   whichever the catalog lists for that model). An effort the operator pinned
+   on a route in the existing sheet wins over the budget label. Keep it as it
+   is. If the catalog does not list the target value, use the highest listed
+   value at or below it. If no listed value fits, the role needs an operator
+   choice. Leave every other option unset. `inherit-parent` does not change.
+4. **Choose targets.** Start from the seeded roles in step 2. Propose a target
+   for each remaining role from the catalog, using the model families in step 7
+   as the guide. Never select a Fable model. Why and Reflect stay
+   `inherit-parent`, because external override is a typed reject. Panel roles
+   list one target per entry, and the list length is the fan-out count. If the
+   catalog has no match for a family, say so and ask. Never fill the gap with a
+   different model. `swarm workers` is a panel role in grammar 4 even when the
+   old sheet gave it one route.
+5. **Validate.** Write the candidate sheet to a temp file and run the step 1
+   command with that file as a second argument. It prints each
+   `checkT3RoleMap` issue and an `issues:` count. Every issue is a dropout,
+   such as an unavailable provider, a disallowed driver, an unknown model, or an
+   invalid option value. Report each dropout with its role and entry. The
+   operator changes that role or accepts the dropout. Never replace an entry
+   with another model for them. Show every `panel-single-family` issue to the
+   operator. A one-entry panel such as `swarm workers` triggers it. The operator
+   adds a second family or accepts the warning. In a non-interactive run, keep
+   the entry and report the accepted warning.
 6. **Probe.** For each distinct target the sheet uses, run one read-only
-   `delegate_task` with `mode: "wait"`, that target, and a prompt that returns a
-   unique marker and names its model. A reply that names another model fails
-   the probe. A failed probe writes nothing. There is no implicit timeout and
-   no weaker-model fallback.
+   `delegate_task` with `mode: "wait"`, that target, and a prompt for one tiny
+   turn that returns a unique marker and names its model. A reply that names
+   another model fails the probe. A failed probe writes nothing. There is no
+   implicit timeout and no weaker-model fallback.
 7. **Confirm and write.** Show the dropouts, the chosen budget label, and every
-   role's target. After confirmation, write `printT3RoleMap(map)` with one
-   `# budget: <label> (<effort>)` line inserted directly after the
-   `Descriptor grammar: 4` line. The header stays the first line. Wire it with
-   the T3 paths from the top of this skill (`parentProfile("t3")`), snapshotting
-   and restoring as step 8 describes. Read the sheet back with `loadT3RoleMap`
-   and compare it with the map.
+   role's target. After confirmation, write `printT3RoleMap(map)`. It prints
+   only the header and the role rows, so add the comment lines yourself after
+   printing. Insert them directly after the `Descriptor grammar: 4` line, in
+   this order, and keep the header as the first line:
+   - `# budget: <label> (<effort>)`. When the operator pinned a route's effort
+     in step 3, add a `# <role>: effort pinned by the operator` comment line
+     for each, so the budget line stays truthful.
+   - The old sheet's prose, except its title line, as `#` comment lines. Prefix
+     a prose line with `# ` when it does not already start with `#`.
+
+   `loadT3RoleMap` skips every line that is not a role row, so these lines are
+   safe. Wire the sheet with the T3 paths from the top of this skill
+   (`parentProfile("t3")`), snapshotting and restoring as step 8 describes. Read
+   the sheet back with `loadT3RoleMap` and compare it with the map.
 
 ```markdown
 Descriptor grammar: 4
 # budget: medium (high)
+# judgment and prose: effort pinned by the operator
+# Operator note carried over from the old sheet.
 feature, refactoring: codex/gpt-6.1-sol reasoningEffort=high
 judgment and prose: claudeAgent/claude-opus-5-5 effort=medium
 why investigators, synthesizer: inherit-parent
