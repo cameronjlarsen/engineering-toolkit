@@ -27,7 +27,7 @@ export const SINGLE_ROLE_IDS = [
   "reflect tooling, judgment, divergent, synthesizer",
 ] as const;
 
-const MCP_BOUND_ROLE_IDS = new Set<RoleId>([
+export const MCP_BOUND_ROLE_IDS = new Set<RoleId>([
   "why investigators, synthesizer",
   "reflect tooling, judgment, divergent, synthesizer",
 ]);

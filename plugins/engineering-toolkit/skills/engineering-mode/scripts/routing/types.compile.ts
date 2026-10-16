@@ -6,6 +6,13 @@ import type {
   Route,
   WorkerPolicy,
 } from "./route.ts";
+import type { ProviderInstanceId, T3ModelId } from "./t3-catalog.ts";
+
+// @ts-expect-error Provider instance IDs must be parsed at the boundary.
+const rawProviderInstance: ProviderInstanceId = "codex";
+
+// @ts-expect-error T3 model IDs must be parsed at the boundary.
+const rawT3Model: T3ModelId = "gpt-6.1-sol";
 
 declare const route: Route;
 
@@ -55,6 +62,8 @@ const grokParent: ParentHost = "grok";
 
 const worktree: IsolatedWorktree = { path: "worktree" };
 void [
+  rawProviderInstance,
+  rawT3Model,
   whyRoute,
   reflectRoute,
   isolatedWithoutWorktree,
