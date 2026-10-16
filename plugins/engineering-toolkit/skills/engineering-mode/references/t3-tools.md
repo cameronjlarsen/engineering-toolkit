@@ -8,6 +8,8 @@ A grammar 4 role line is a raw T3 target, or `inherit-parent`. The token before 
 
 Only a launchable `claudeAgent` or `codex` provider can hold a target. A missing or disabled provider is a dropout. Do not pick another model, and do not delegate to `cursor` or `grok`.
 
+When this thread runs on `cursor`, `inherit-parent` is not a usable child target: Cursor children fail to start or time out. `orchestrator_capabilities` shows this as an `inheritedProviderInstanceId` that is not a launchable `claudeAgent` or `codex` provider. For every child, use the `judgment and prose` line from the sheet as `target`. If the sheet is missing, or that line is `inherit-parent`, stop and tell the operator to run `setup-engineering-toolkit`. Do not choose a model yourself. Tell the operator once that children run on that target, not on this thread's provider.
+
 ## Tool actions
 
 | Shared skill / Claude action | T3 equivalent |
