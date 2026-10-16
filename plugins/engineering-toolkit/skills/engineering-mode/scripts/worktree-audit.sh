@@ -5,7 +5,27 @@
 # deletes anything; deletion stays a human-gated step in the playbook.
 #
 # Usage: worktree-audit.sh [repo-path]   (defaults to the current repo)
+#        worktree-audit.sh --classify <path>...
 set -u
+
+# A path component ending in -wt is a slice tree: `{repo}-wt` or `{repo}-wt/<slice>`.
+is_slice_tree() {
+	local wt_norm
+	wt_norm=$(printf '%s' "$1" | tr '\\' '/')
+	case "$wt_norm" in
+		*-wt|*-wt/*) return 0 ;;
+		*) return 1 ;;
+	esac
+}
+
+if [ "${1:-}" = "--classify" ]; then
+	shift
+	for path in "$@"; do
+		if is_slice_tree "$path"; then printf 'hold-slice\t%s\n' "$path"
+		else printf 'other\t%s\n' "$path"; fi
+	done
+	exit 0
+fi
 
 repo="${1:-$(git rev-parse --show-toplevel 2>/dev/null)}"
 [ -z "$repo" ] && { echo "not in a git repo; pass a repo path" >&2; exit 1; }
@@ -85,6 +105,10 @@ git worktree list --porcelain | awk '/^worktree /{print $2}' | while read -r wt;
 			else bucket=review; fi ;;
 		esac ;;
 	esac
+
+	# On Windows, git worktree remove can follow a junction inside a slice
+	# tree and delete the files it points at.
+	if is_slice_tree "$wt"; then bucket=hold-slice; fi
 
 	printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
 		"$size" "$age" "$merged" "$dirty" "$remote" "$pr" "$last" "$bucket" "$wt"
