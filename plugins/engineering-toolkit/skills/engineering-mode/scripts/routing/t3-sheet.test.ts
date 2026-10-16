@@ -86,6 +86,14 @@ describe("loadT3RoleMap and printT3RoleMap", () => {
     expect(target.options.size).toBe(0);
   });
 
+  it("tolerates budget and operator comment lines after the header", () => {
+    const text = sheet({ "bug-fix": "codex/gpt-6.1-sol" }).replace(
+      "Descriptor grammar: 4",
+      "Descriptor grammar: 4\n# budget: medium (high)\n# Note: keep opus at medium\n# bug-fix: claudeAgent/claude-opus-5-5"
+    );
+    expect(loadT3RoleMap(text)).toEqual(loadT3RoleMap(sheet({ "bug-fix": "codex/gpt-6.1-sol" })));
+  });
+
   it("ignores non-role lines and matches comma-containing role IDs exactly", () => {
     const text = sheet({ "feature, refactoring": "codex/gpt-6.1-sol" }).replace(
       "Descriptor grammar: 4",
@@ -186,6 +194,19 @@ describe("checkT3RoleMap", () => {
   it("rejects the launchable Cursor provider", () => {
     const map = mustLoad({ "bug-fix": "cursor/grok-4.7 reasoning_effort=high" });
     expect(checkT3RoleMap(map, catalog)).toEqual([
+      { tag: "provider-not-allowed", role: "bug-fix", entry: bugFixTarget(map), driverKind: "cursor" },
+    ]);
+  });
+
+  it("reports only the disallowed driver when its models are elided", () => {
+    const elided = catalogFrom({
+      ...fixture,
+      providers: fixture.providers.map((provider) => ({
+        ...provider, models: provider.driverKind === "cursor" ? [] : provider.models,
+      })),
+    });
+    const map = mustLoad({ "bug-fix": "cursor/grok-4.7 reasoning_effort=high" });
+    expect(checkT3RoleMap(map, elided)).toEqual([
       { tag: "provider-not-allowed", role: "bug-fix", entry: bugFixTarget(map), driverKind: "cursor" },
     ]);
   });

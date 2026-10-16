@@ -145,6 +145,7 @@ function checkEntry(role: RoleId, entry: T3Target, catalog: T3Catalog): readonly
   }
   if (!(DELEGATION_DRIVERS as readonly string[]).includes(provider.driverKind)) {
     issues.push({ tag: "provider-not-allowed", role, entry, driverKind: provider.driverKind });
+    return issues;
   }
   const model = provider.models.get(entry.model);
   if (model === undefined) {
