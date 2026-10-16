@@ -50,7 +50,11 @@ export interface ParentProfile {
   readonly parent: ParentHost;
   readonly sheetPath: string;
   readonly identityKeys: readonly string[];
-  readonly mappingDoc: "provider-dispatch.md" | "codex-tools.md" | "cursor-tools.md";
+  readonly mappingDoc:
+    | "provider-dispatch.md"
+    | "codex-tools.md"
+    | "cursor-tools.md"
+    | "t3-tools.md";
   readonly integration:
     | { readonly kind: "at-include"; readonly path: string; readonly line: string }
     | {
@@ -221,7 +225,12 @@ export function detectParent(
 export function parentProfile(parent: ParentHost): ParentProfile {
   const home = homedir();
   if (parent === "t3") {
-    return { ...parentProfile("claude-code"), parent, identityKeys: [] };
+    return {
+      ...parentProfile("claude-code"),
+      parent,
+      identityKeys: [],
+      mappingDoc: "t3-tools.md",
+    };
   }
   if (parent === "claude-code") {
     const sheetPath = join(home, ".claude", "engineering-toolkit-models.md");

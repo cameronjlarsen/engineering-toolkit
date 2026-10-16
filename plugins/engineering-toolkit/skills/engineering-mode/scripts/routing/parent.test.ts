@@ -252,6 +252,7 @@ describe("parent files", () => {
   it("gives t3 its own profile instead of the Cursor fallback", () => {
     const profile = parentProfile("t3");
     expect(profile.parent).toBe("t3");
+    expect(profile.mappingDoc).toBe("t3-tools.md");
     expect(profile.sheetPath).not.toBe(parentProfile("cursor").sheetPath);
     expect(profile.identityKeys).toEqual([]);
     expect(parentIdentityKeys().t3).toEqual([]);

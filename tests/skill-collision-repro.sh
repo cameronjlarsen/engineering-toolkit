@@ -140,6 +140,9 @@ if grep -Fq 'eng:' "$codex_map"; then
   identity_bad="$identity_bad leftover eng: skill namespace in Codex mapping"$'\n'
 fi
 grep -Fq '# Cursor tool mapping for Engineering Toolkit' "$cursor_map" || identity_bad="$identity_bad Cursor mapping title is not Engineering Toolkit"$'\n'
+t3_map="$repo/plugins/engineering-toolkit/skills/engineering-mode/references/t3-tools.md"
+grep -Fq '# T3 tool mapping for Engineering Toolkit' "$t3_map" || identity_bad="$identity_bad T3 mapping title is not Engineering Toolkit"$'\n'
+grep -Fq 'delegate_task' "$t3_map" || identity_bad="$identity_bad T3 mapping lost delegate_task"$'\n'
 if grep -Fq '# Cursor tool mapping for pstack' "$cursor_map"; then
   identity_bad="$identity_bad leftover Cursor mapping title for pstack"$'\n'
 fi
