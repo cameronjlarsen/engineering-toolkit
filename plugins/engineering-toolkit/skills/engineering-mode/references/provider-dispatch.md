@@ -18,14 +18,14 @@ provider. Every role is written inline; there are no named or shared routes.
 
 ## Model matrix
 
-| Family | Upstream pstack choice | Provider | Model | Default effort | Selectable efforts | Plugin-agent stem |
-|---|---|---|---|---|---|---|
-| fable | fable | claude | fable | max | low medium high xhigh max | fable |
-| sol | gpt-5.6-sol-max | codex | gpt-6-sol | max | low medium high xhigh max | - |
-| grok | grok-4.7-xhigh-fast | grok | grok-4.7 | xhigh | low medium high xhigh max | - |
-| opus | opus | claude | opus | xhigh | low medium high xhigh max | opus |
+| Family | Upstream pstack choice | Provider | Model | Default effort | Selectable efforts |
+|---|---|---|---|---|---|
+| fable | fable | claude | fable | max | low medium high xhigh max |
+| sol | gpt-5.6-sol-max | codex | gpt-6-sol | max | low medium high xhigh max |
+| grok | grok-4.7-xhigh-fast | grok | grok-4.7 | xhigh | low medium high xhigh max |
+| opus | opus | claude | opus | xhigh | low medium high xhigh max |
 
-The allowed effort universe is exactly `low`, `medium`, `high`, `xhigh`, `max`. First-run requested efforts are the Default effort cell of each row. A plugin-agent stem of `-` means the family has no plugin-agent. Otherwise the shipped agent name is `pstack-<stem>-<effort>`.
+The allowed effort universe is exactly `low`, `medium`, `high`, `xhigh`, `max`. First-run requested efforts are the Default effort cell of each row.
 
 ## Additional selectable models
 
@@ -33,9 +33,9 @@ These models do not add a family or seed a first-run role.
 Use `claude:claude-sonnet-5-5@<effort>` on Claude Code or Codex, and
 `cursor:claude-sonnet-5-5@<effort>` on Cursor.
 
-| Model | Provider | Selectable efforts | Plugin-agent stem |
-|---|---|---|---|
-| claude-sonnet-5-5 | claude | low medium high xhigh max | sonnet |
+| Model | Provider | Selectable efforts |
+|---|---|---|
+| claude-sonnet-5-5 | claude | low medium high xhigh max |
 
 `fable` and `opus` are Claude Code's rolling aliases. Claude resolves each
 alias to the latest available family revision. A runner receipt keeps the
@@ -105,18 +105,17 @@ to `inherit-parent`.
 
 Native dispatch avoids a second CLI startup and its base context.
 
-- Claude Code: match the route's `(provider, model)` to one model-matrix row, then
-  dispatch it through `pstack-<stem>-<effort>` using that row's plugin-agent
-  stem and resolved effort. Pass the complete task, grounding paths,
-  access mode, and unique output location in the `Agent` prompt.
+- Claude Code: call `Agent` with the route's model and resolved effort. Pass
+  the complete task, grounding paths, access mode, and unique output location
+  in the `Agent` prompt.
 - Codex: call `spawn_agent` with the route's model and `reasoning_effort`,
   the complete task, grounding paths, access mode, and unique output location.
   Use an isolated worktree for a writer.
-- Cursor: match the route's `(provider, model)` to one model-matrix row. A row with
-  a plugin-agent stem dispatches through `pstack-<stem>-<effort>`. Set `Task` `model` to a live Cursor selector from this session's Task model list that matches that row's family and effort. Do not pass `opus` or `fable`. Do not omit `model`. An omitted selector inherits the parent. A row with stem `-`
-  dispatches through host-spawn: `Task` with `model` set to a live Cursor
-  selector for that model and effort. Pass the complete task, grounding paths,
-  access mode, and unique output location in the `Task` prompt.
+- Cursor: call `Task` with `model` set to a live Cursor selector from this
+  session's Task model list that matches the route's family and effort. Do not
+  pass `opus` or `fable`. Do not omit `model`. An omitted selector inherits the
+  parent. Pass the complete task, grounding paths, access mode, and unique
+  output location in the `Task` prompt.
   Sonnet 5.5 must use the exact `claude-sonnet-5-5-<effort>` selector for the
   route effort. Do not pass `sonnet`, guess a selector, or use another
   Sonnet revision. An omitted or unmatched selector inherits the parent and

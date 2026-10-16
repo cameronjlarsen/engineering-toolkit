@@ -155,7 +155,7 @@ All three apps read the same skills from `plugins/engineering-toolkit`. Only the
 | | Claude Code | Codex | Cursor |
 | --- | --- | --- | --- |
 | Start engineering-mode | Claude loads a small startup instruction that can route non-trivial work into it. You can also run `/et:engineering-mode` yourself. | Ask for `et:engineering-mode` by name. Codex does not load the Claude startup instruction. | Run `/engineering-mode`. |
-| Runs inside the app | Claude models stay inside Claude Code. | The Sol model stays inside Codex. | Plugin-agent Fable and Opus stay inside Cursor. |
+| Runs inside the app | Claude models stay inside Claude Code. | The Sol model stays inside Codex. | Fable and Opus stay inside Cursor. |
 | Other models | Codex and Grok run through their signed-in command-line tools. | Claude and Grok run through their signed-in command-line tools. | Claude, Codex, and Grok run through their signed-in command-line tools. |
 | Skills and workflows | Shared. | Shared. | Shared. |
 

@@ -121,7 +121,6 @@ function modelOnApp(
     vendor: vendorOnApp(appRecord),
     efforts: probed.selectableEfforts,
     cli: { effort: "flag", model: probed.slug },
-    nativeStem: null,
   };
 }
 

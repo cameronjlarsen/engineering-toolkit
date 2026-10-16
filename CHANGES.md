@@ -2,6 +2,10 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## Fork-authored: native plugin agents removed
+
+The 18 `pstack-{fable,opus,sonnet}-{low,medium,high,xhigh,max}` agent files are gone, along with `pluginAgentName`, `nativeHandle`, the catalog `nativeStem` field, and the `Plugin-agent stem` column in `provider-dispatch.md`. Native lanes now use host-spawn only: Claude `Agent`, Codex `spawn_agent` with model and `reasoning_effort`, and Cursor `Task` with a live selector. `engineering-agent` and `comment-sicko` stay. External dispatch through the runner is unchanged. Older entries below still name the removed agents as history.
+
 ## Fork-authored: T3 host mapping
 
 T3 is the parent harness. Cursor, Claude Code, and Codex stay kid providers. Harness translation for T3 lives in `plugins/engineering-toolkit/skills/engineering-mode/references/t3-tools.md`. `parentProfile("t3").mappingDoc` points at that file. Shared skill bodies keep their Claude tool names. `engineering-mode`'s platform sentence names `t3-tools.md` the same way it already names `codex-tools.md` and `cursor-tools.md`. `AGENTS.md`, `UPSTREAM.md`, and `docs/reference.md` name that same mapping. The session-start hook tells a T3 thread to read `t3-tools.md` before it spawns, schedules, or watches a pull request. The setup skill names T3 tools from that file, and its probe uses `delegate_task`.

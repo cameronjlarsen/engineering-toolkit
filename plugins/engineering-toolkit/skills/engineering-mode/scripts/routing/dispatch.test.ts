@@ -84,7 +84,7 @@ describe("dispatch", () => {
     expect(result.value.launch.model).toBe(model("claude-sonnet-5-5"));
   });
 
-  it("plans Sonnet 5.5 natively on both plugin-agent parents", () => {
+  it("plans Sonnet 5.5 natively on both Claude Code and Cursor parents", () => {
     for (const parent of ["claude-code", "cursor"] as const) {
       const result = planLane({
         parent,

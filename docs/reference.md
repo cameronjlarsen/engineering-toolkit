@@ -178,8 +178,6 @@ The table uses the short upstream names. Claude Code exposes each native skill w
 
 `comment-sicko` is the read-only comment reviewer the `no-comments` skill spawns. Upstream names it `Comment Sicko`; the port renames it to `comment-sicko` so the name is a valid `subagent_type`. Invoke it through `/no-comments`, not directly.
 
-Fable and Opus each ship at `low`, `medium`, `high`, `xhigh`, and `max`. Names are `pstack-<stem>-<effort>`. `pstack-fable-max` and `pstack-opus-xhigh` remain. Each file selects the rolling family alias and requested effort, runs in the background, and denies nested Agent/Task dispatch. Engineering Toolkit dispatches them from typed Route values and `provider:model@effort` wire values; they are not user-facing workflows.
-
 ## Differences from upstream
 
 The port is editorial, not mechanical. Anywhere upstream pstack assumed Cursor-specific primitives, this port substitutes the Claude Code equivalent so refs actually resolve. Two prior ports ([v1truv1us/ai-eng-system](https://github.com/v1truv1us/ai-eng-system), [Evan-Kim2028/agent-fleet](https://github.com/Evan-Kim2028/agent-fleet)) stop at namespacing — they vendor pstack under `pstack/` and leave the Cursor refs intact. This port does the content surgery.
@@ -218,7 +216,7 @@ The port is editorial, not mechanical. Anywhere upstream pstack assumed Cursor-s
 
 ### Cross-vendor dispatch
 
-The earlier Open Pstack port collapsed panels to Claude-only models. The bundled runner restores cross-provider judgment without adding a daemon or model-router service. A Cursor parent runs Fable and Opus as native plugin-agent Tasks with a live family selector on `Task.model`, Grok as native host-spawn, and shells out to Claude and Codex. Named `grok/...` still uses Grok CLI. Claude Code shells out to Codex and Grok. Codex shells out to Claude and Grok. The top-level parent chooses every route and each external process receives a complete task directly, so there is no supervising model invocation and no child-side harness detection.
+The earlier Open Pstack port collapsed panels to Claude-only models. The bundled runner restores cross-provider judgment without adding a daemon or model-router service. A Cursor parent runs Fable, Opus, and Grok as native Tasks with a live selector on `Task.model`, and shells out to Claude and Codex. Named `grok/...` still uses Grok CLI. Claude Code shells out to Codex and Grok. Codex shells out to Claude and Grok. The top-level parent chooses every route and each external process receives a complete task directly, so there is no supervising model invocation and no child-side harness detection.
 
 ### What's deliberately kept
 
@@ -233,7 +231,7 @@ The earlier Open Pstack port collapsed panels to Claude-only models. The bundled
 - **`make-bot-ui`** (upstream `799151d`, relocated by `6fecddb`) uses Cursor routines, webhook events, hosted bot state, and Cursor UI primitives that have no shared Claude Code and Codex mapping. A provider-specific rewrite would be a separate feature, not an upstream sync.
 - **Fable solo code defaults** (upstream `23a56e2`) move `bug-fix`, `perf-issue`, and `hillclimb` from GPT-5.6 Sol to Fable. Open Pstack keeps these frequent delegated code roles on the Sol matrix row because Fable costs much more per task.
 - **Sticky mode** (upstream `#144`) — Cursor-only `mode`/`icon`/`color`/`reminder` frontmatter with no Claude Code equivalent. The port's 0.9.5 SessionStart hook is the analog and already carries the non-trivial / trivial / opt-out logic.
-- **`is_background: true` on `engineering-agent`** (upstream `99559f2`) — Cursor names this key differently. Claude-native frontier definitions use `background: true`; ad-hoc `engineering-agent` calls remain background dispatches at the call site.
+- **`is_background: true` on `engineering-agent`** (upstream `99559f2`) — Cursor names this key differently. Ad-hoc `engineering-agent` calls remain background dispatches at the call site.
 - **`cursor-team-kit` beyond the seven imported skills** — the rest either duplicate Claude Code built-ins (`verify-this` → the `verify` skill and built-in verification discipline; `check-compiler-errors` → LSP diagnostics; `control-cli`/`control-ui` → `run`/`verify`, already the substitution targets) or overlap skills this port ships (`loop-on-ci`, `review-and-ship`, `weekly-review` vs `babysit`, `fix-ci`, `make-pr-easy-to-review`, `what-did-i-get-done`). `pr-review-canvas` is Cursor-UI-specific.
 
 ### Forking note

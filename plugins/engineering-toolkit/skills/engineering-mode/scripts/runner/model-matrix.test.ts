@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { shippedCatalog } from "../routing/catalog.ts";
 import { firstRunRoleMap } from "../routing/parent.ts";
@@ -12,12 +12,7 @@ const DISPATCH_PATH = join(
   PLUGIN_ROOT,
   "skills/engineering-mode/references/provider-dispatch.md"
 );
-const CURSOR_TOOLS_PATH = join(
-  PLUGIN_ROOT,
-  "skills/engineering-mode/references/cursor-tools.md"
-);
 const SETUP_PATH = join(PLUGIN_ROOT, "skills/setup-engineering-toolkit/SKILL.md");
-const AGENTS_DIR = join(PLUGIN_ROOT, "agents");
 
 const MATRIX_HEADER = [
   "Family",
@@ -26,24 +21,15 @@ const MATRIX_HEADER = [
   "Model",
   "Default effort",
   "Selectable efforts",
-  "Plugin-agent stem",
 ] as const;
 const ADDITIONAL_HEADER = [
   "Model",
   "Provider",
   "Selectable efforts",
-  "Plugin-agent stem",
 ] as const;
 
 const FAMILY_ORDER = ["fable", "sol", "grok", "opus"] as const;
 const PROVIDERS = ["claude", "codex", "grok"] as const;
-const SONNET_CURSOR_SELECTORS: Record<Effort, string> = {
-  low: "claude-sonnet-5-5-low",
-  medium: "claude-sonnet-5-5-medium",
-  high: "claude-sonnet-5-5-high",
-  xhigh: "claude-sonnet-5-5-xhigh",
-  max: "claude-sonnet-5-5-max",
-};
 const DESCRIPTOR_RE =
   /(?:claude|codex|cursor|grok):[a-z0-9.-]+@(low|medium|high|xhigh|max)/g;
 const PANEL_ROLES = [
@@ -82,7 +68,6 @@ interface SupportedModel {
   provider: string;
   model: string;
   selectableEfforts: Effort[];
-  pluginAgentStem: string | null;
 }
 
 interface MatrixRow extends SupportedModel {
@@ -154,19 +139,11 @@ function parseModelMatrix(markdown: string): MatrixRow[] {
       model,
       defaultEffortRaw,
       selectableRaw,
-      stemRaw,
     ] = cells;
     if (!(PROVIDERS as readonly string[]).includes(provider)) {
       throw new Error(`invalid provider: ${provider}`);
     }
     const selectableEfforts = selectableRaw.split(/\s+/).map(asEffort);
-    const pluginAgentStem = stemRaw === "-" ? null : stemRaw;
-    if (pluginAgentStem !== null && !/^[a-z0-9-]+$/.test(pluginAgentStem)) {
-      throw new Error(`invalid plugin-agent stem: ${stemRaw}`);
-    }
-    if ((provider === "claude") !== (pluginAgentStem !== null)) {
-      throw new Error(`${family} stem must be present iff provider is claude`);
-    }
     const defaultEffort = asEffort(defaultEffortRaw);
     if (!selectableEfforts.includes(defaultEffort)) {
       throw new Error(`${family} default effort is not selectable`);
@@ -178,7 +155,6 @@ function parseModelMatrix(markdown: string): MatrixRow[] {
       model,
       defaultEffort,
       selectableEfforts,
-      pluginAgentStem,
     };
   });
 }
@@ -211,19 +187,12 @@ function parseAdditionalModels(markdown: string): SupportedModel[] {
     if (cells.length !== ADDITIONAL_HEADER.length) {
       throw new Error(`additional-model row has ${cells.length} cells: ${line}`);
     }
-    const [model, provider, selectableRaw, stemRaw] = cells;
+    const [model, provider, selectableRaw] = cells;
     if (!(PROVIDERS as readonly string[]).includes(provider)) {
       throw new Error(`invalid provider: ${provider}`);
     }
     const selectableEfforts = selectableRaw.split(/\s+/).map(asEffort);
-    const pluginAgentStem = stemRaw === "-" ? null : stemRaw;
-    if (pluginAgentStem !== null && !/^[a-z0-9-]+$/.test(pluginAgentStem)) {
-      throw new Error(`invalid plugin-agent stem: ${stemRaw}`);
-    }
-    if ((provider === "claude") !== (pluginAgentStem !== null)) {
-      throw new Error(`${model} stem must be present iff provider is claude`);
-    }
-    return { model, provider, selectableEfforts, pluginAgentStem };
+    return { model, provider, selectableEfforts };
   });
 }
 
@@ -237,28 +206,6 @@ function firstRunDescriptor(row: MatrixRow): string {
 
 function defaultDescriptors(rows: MatrixRow[]): string[] {
   return rows.map(firstRunDescriptor);
-}
-
-function parseFrontmatter(text: string): {
-  fields: Record<string, string>;
-  body: string;
-} {
-  if (!text.startsWith("---\n")) {
-    throw new Error("missing frontmatter");
-  }
-  const end = text.indexOf("\n---\n", 4);
-  if (end < 0) {
-    throw new Error("unterminated frontmatter");
-  }
-  const fields: Record<string, string> = {};
-  for (const line of text.slice(4, end).split("\n")) {
-    const idx = line.indexOf(": ");
-    if (idx < 0) {
-      throw new Error(`bad frontmatter line: ${line}`);
-    }
-    fields[line.slice(0, idx)] = line.slice(idx + 2);
-  }
-  return { fields, body: text.slice(end + 5) };
 }
 
 function firstRunSheet(setup: string): string {
@@ -308,60 +255,12 @@ describe("model matrix", () => {
     ]);
   });
 
-  it("ships exactly the declared Claude-native frontier agents", () => {
-    const expected = new Set<string>();
-    const familyBodies = new Map<string, string>();
-    for (const row of supportedModels) {
-      const stem = row.pluginAgentStem;
-      if (stem === null) {
-        continue;
-      }
-      for (const effort of row.selectableEfforts) {
-        const name = `pstack-${stem}-${effort}`;
-        expected.add(`${name}.md`);
-        const text = readFileSync(join(AGENTS_DIR, `${name}.md`), "utf8").replaceAll(
-          "\r\n",
-          "\n"
-        );
-        const { fields, body } = parseFrontmatter(text);
-        expect(fields).toEqual({
-          name,
-          description: `Native plugin-agent lane for pstack roles configured as ${row.model}@${effort}.`,
-          model: row.model,
-          effort,
-          background: "true",
-          disallowedTools: "Agent, Task",
-        });
-        const prior = familyBodies.get(stem);
-        if (prior === undefined) {
-          familyBodies.set(stem, body);
-        } else {
-          expect(body).toBe(prior);
-        }
-      }
-    }
-    const declaredCount = supportedModels.reduce(
-      (count, row) =>
-        count +
-        (row.pluginAgentStem === null
-          ? 0
-          : row.selectableEfforts.length),
-      0
-    );
-    expect(expected.size).toBe(declaredCount);
-    const shipped = readdirSync(AGENTS_DIR)
-      .filter((name) => name.startsWith("pstack-") && name.endsWith(".md"))
-      .sort();
-    expect(shipped).toEqual([...expected].sort());
-  });
-
   it("keeps Sonnet 5.5 explicitly selectable outside the default matrix", () => {
     expect(additionalModels).toEqual([
       {
         model: "claude-sonnet-5-5",
         provider: "claude",
         selectableEfforts: [...EFFORTS],
-        pluginAgentStem: "sonnet",
       },
     ]);
     expect(rows).toHaveLength(4);
@@ -435,7 +334,6 @@ describe("model matrix", () => {
         row.model as ModelSlug
       );
       expect(onApp?.efforts).toEqual(row.selectableEfforts);
-      expect(onApp?.nativeStem).toBe(row.pluginAgentStem);
     }
     const printed = printRoleMap(firstRunRoleMap("claude-code", catalog));
     expect(printed).toContain("bug-fix: codex:gpt-6-sol@max");
@@ -465,70 +363,6 @@ describe("model matrix", () => {
     expect(setup).toContain("A changed");
     expect(setup).toContain("<!-- engineering-toolkit:models:begin -->");
     expect(setup).toContain("<!-- engineering-toolkit:models:end -->");
-    expect(setup).toContain(
-      "| Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | native Task host-spawn |"
-    );
-    expect(setup).toContain(
-      "| Sonnet 5.5 | Additional selectable-model row + selected effort | native Agent `pstack-sonnet-<effort>` | Claude CLI | native Task `pstack-sonnet-<effort>` plus exact live selector for the resolved effort |"
-    );
-  });
-
-  it("binds Claude-native dispatch to the catalog mapping", () => {
-    const dispatch = readFileSync(DISPATCH_PATH, "utf8").replaceAll("\r\n", "\n");
-    const nativeStart = dispatch.indexOf("## Native lanes");
-    const externalStart = dispatch.indexOf("## External lanes");
-    expect(nativeStart).toBeGreaterThan(-1);
-    expect(externalStart).toBeGreaterThan(nativeStart);
-    const nativeLanes = dispatch.slice(nativeStart, externalStart);
-    expect(nativeLanes).toContain(
-      "match the route's `(provider, model)` to one model-matrix row"
-    );
-    expect(nativeLanes).toContain("`pstack-<stem>-<effort>`");
-    expect(nativeLanes).toContain("host-spawn");
-    expect(nativeLanes).toContain("Set `Task`");
-    expect(nativeLanes).toContain("live Cursor selector");
-    expect(nativeLanes).toContain("Do not pass `opus` or `fable`");
-    expect(nativeLanes).not.toContain(
-      "Do not pass a Cursor host model slug onto a plugin-agent Task"
-    );
-  });
-
-  it("requires Cursor plugin-agent Tasks to pass a live family selector", () => {
-    const cursorTools = readFileSync(CURSOR_TOOLS_PATH, "utf8").replaceAll("\r\n", "\n");
-    const nativeStart = cursorTools.indexOf("## Native lanes");
-    const externalStart = cursorTools.indexOf("## External lanes");
-    expect(nativeStart).toBeGreaterThan(-1);
-    expect(externalStart).toBeGreaterThan(nativeStart);
-    const nativeLanes = cursorTools.slice(nativeStart, externalStart);
-    const pluginAgent = nativeLanes
-      .split(/\r?\n/)
-      .find((line) => line.includes("plugin-agent:"));
-    expect(pluginAgent).toBeDefined();
-    expect(pluginAgent).toContain("live Cursor selector");
-    expect(pluginAgent).toContain("this session's Task model list");
-    expect(pluginAgent).toContain("Do not pass `opus` or `fable`");
-    expect(pluginAgent).toContain("Sonnet 5.5 selectors are");
-    for (const effort of EFFORTS) {
-      const selector = SONNET_CURSOR_SELECTORS[effort];
-      expect(selector).toBe(`claude-sonnet-5-5-${effort}`);
-      expect(pluginAgent).toContain(selector);
-    }
-    expect(pluginAgent).toContain("Do not omit `model`");
-    expect(pluginAgent).toContain("inherits the parent");
-    expect(pluginAgent).not.toContain(
-      "Do not set `Task` `model` to a Cursor host slug"
-    );
-    const cursorNative = readFileSync(DISPATCH_PATH, "utf8").replaceAll("\r\n", "\n");
-    const normalizedCursorNative = cursorNative.replace(/\s+/g, " ");
-    expect(normalizedCursorNative).toContain(
-      "Sonnet 5.5 must use the exact `claude-sonnet-5-5-<effort>` selector for the route effort"
-    );
-    expect(normalizedCursorNative).toContain("live Cursor selector");
-    expect(setup).toContain(
-      "A Cursor plugin-agent probe must also prove the child is the requested family"
-    );
-    expect(setup).toContain("A reply that names the parent model");
-    expect(setup).toContain("Only the exact Cursor selector for the resolved Sonnet effort qualifies");
   });
 
   it("normalizes old rolling-family pins before any runtime route", () => {

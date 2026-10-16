@@ -258,15 +258,15 @@ failed first run creates neither artifact.
 
 | Family | Pair source | Claude parent | Codex parent | Cursor parent | Availability proof |
 |---|---|---|---|---|---|
-| Fable | Fable matrix row + selected effort | native Agent `pstack-fable-<effort>` | Claude CLI | native Task `pstack-fable-<effort>` plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
+| Fable | Fable matrix row + selected effort | native Agent host-spawn | Claude CLI | native Task host-spawn plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
 | Sol | Sol matrix row + selected effort | `codex exec` | native `spawn_agent` | Codex CLI | `codex debug models` without `--bundled` as the model list, plus `codex login status` plus one-turn probe or native one-turn probe |
 | Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | native Task host-spawn | native one-turn probe or `grok models` plus one-turn probe |
-| Opus | Opus matrix row + selected effort | native Agent `pstack-opus-<effort>` | Claude CLI | native Task `pstack-opus-<effort>` plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
-| Sonnet 5.5 | Additional selectable-model row + selected effort | native Agent `pstack-sonnet-<effort>` | Claude CLI | native Task `pstack-sonnet-<effort>` plus exact live selector for the resolved effort | native one-turn probe or `claude auth status --json` plus one-turn probe |
+| Opus | Opus matrix row + selected effort | native Agent host-spawn | Claude CLI | native Task host-spawn plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
+| Sonnet 5.5 | Additional selectable-model row + selected effort | native Agent host-spawn | Claude CLI | native Task host-spawn plus exact live selector for the resolved effort | native one-turn probe or `claude auth status --json` plus one-turn probe |
 
 Use a tiny read-only probe that returns a unique marker. A login-status
 command alone proves credentials, not that the selected model and effort run.
-A Cursor plugin-agent probe must also prove the child is the requested family.
+A Cursor host-spawn probe must also prove the child is the requested family.
 Ask the child which model it is. A reply that names the parent model, or that
 matches `inherit`, fails the probe. Passing only the unique marker is not
 enough. If this session's Task model list has no selector for that family and

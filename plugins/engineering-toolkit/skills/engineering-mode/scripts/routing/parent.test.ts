@@ -8,10 +8,8 @@ import {
   applyIntegrationPatch,
   detectParent,
   firstRunRoleMap,
-  nativeHandle,
   parentIdentityKeys,
   parentProfile,
-  pluginAgentName,
   proposeStalePinMigrations,
   renderParentFiles,
   unwrapStoredSheet,
@@ -125,110 +123,6 @@ describe("firstRunRoleMap", () => {
       const roles = firstRunRoleMap(parent, catalog);
       expect(loadRoleMap(printRoleMap(roles), parent)).toEqual({ ok: true, value: roles });
     }
-  });
-});
-
-describe("nativeHandle", () => {
-  it("names the plugin-agent wire without host primitives", () => {
-    const planned = planLane({
-      parent: "cursor",
-      binding: {
-        kind: "route",
-        route: route({
-          model: slug("fable"),
-          app: "cursor",
-          effort: "max",
-        }),
-      },
-      override: undefined,
-      catalog: shippedCatalog(),
-      inventory: [],
-      access,
-      role: "architect runners",
-    });
-    expect(planned.ok).toBe(true);
-    if (!planned.ok || planned.value.kind !== "native") return;
-    expect(nativeHandle(planned.value, shippedCatalog())).toEqual({
-      kind: "plugin-agent",
-      name: pluginAgentName("fable", "max"),
-    });
-  });
-
-  it("names the Sonnet 5.5 plugin agent on Claude Code and Cursor", () => {
-    for (const parent of ["claude-code", "cursor"] as const) {
-      const planned = planLane({
-        parent,
-        binding: {
-          kind: "route",
-          route: route({
-          model: slug("claude-sonnet-5-5"),
-            app: parent,
-            effort: "medium",
-          }),
-        },
-        override: undefined,
-        catalog: shippedCatalog(),
-        inventory: parent === "claude-code"
-          ? [{ app: "claude-code", readiness: { kind: "launch-ready" } }]
-          : [],
-        access,
-        role: "feature, refactoring",
-      });
-      expect(planned.ok).toBe(true);
-      if (!planned.ok) throw new Error(`route failed for ${parent}`);
-      expect(planned.value.kind).toBe("native");
-      if (planned.value.kind !== "native") {
-        throw new Error(`expected a native Sonnet route for ${parent}`);
-      }
-      expect(nativeHandle(planned.value, shippedCatalog())).toEqual({
-        kind: "plugin-agent",
-        name: pluginAgentName("sonnet", "medium"),
-      });
-    }
-  });
-
-  it("maps cursor:grok-4.7 on a cursor parent to host-spawn", () => {
-    const planned = planLane({
-      parent: "cursor",
-      binding: {
-        kind: "route",
-        route: route({
-          model: slug("grok-4.7"),
-          app: "cursor",
-          effort: "xhigh",
-        }),
-      },
-      override: undefined,
-      catalog: shippedCatalog(),
-      inventory: [],
-      access,
-      role: "feature, refactoring",
-    });
-    expect(planned.ok).toBe(true);
-    if (!planned.ok || planned.value.kind !== "native") return;
-    expect(nativeHandle(planned.value, shippedCatalog())).toEqual({
-      kind: "host-spawn",
-      model: slug("grok-4.7"),
-      effort: "xhigh",
-    });
-  });
-
-  it("maps inherit-parent to the engineering-agent wrapper", () => {
-    const planned = planLane({
-      parent: "cursor",
-      binding: { kind: "inherit-parent" },
-      override: undefined,
-      catalog: shippedCatalog(),
-      inventory: [],
-      access,
-      role: "why investigators, synthesizer",
-    });
-    expect(planned.ok).toBe(true);
-    if (!planned.ok || planned.value.kind !== "native") return;
-    expect(nativeHandle(planned.value, shippedCatalog())).toEqual({
-      kind: "inherit",
-      wrapper: "engineering-agent",
-    });
   });
 });
 

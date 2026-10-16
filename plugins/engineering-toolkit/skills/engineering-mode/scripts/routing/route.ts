@@ -142,7 +142,6 @@ export interface ModelEntry {
   readonly vendor: VendorId;
   readonly efforts: readonly Effort[];
   readonly cli: CliModel;
-  readonly nativeStem: string | null;
 }
 
 export interface AppRecord {

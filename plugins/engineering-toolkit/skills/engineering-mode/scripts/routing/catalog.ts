@@ -19,10 +19,9 @@ function model(
   family: string,
   vendor: ModelEntry["vendor"],
   cli: CliModel,
-  nativeStem: string | null,
   efforts: readonly Effort[] = EFFORTS
 ): ModelEntry {
-  return { family: family as ModelSlug, vendor, efforts, cli, nativeStem };
+  return { family: family as ModelSlug, vendor, efforts, cli };
 }
 
 function flag(slug: string): CliModel {
@@ -38,39 +37,34 @@ function byFamily(entries: readonly ModelEntry[]): ReadonlyMap<ModelSlug, ModelE
 }
 
 export function shippedCatalog(): AppCatalog {
-  const sonnet = model(SONNET_5_5_MODEL, "anthropic", flag(SONNET_5_5_MODEL), "sonnet");
+  const sonnet = model(SONNET_5_5_MODEL, "anthropic", flag(SONNET_5_5_MODEL));
   const claudeCode: AppRecord = {
     id: "claude-code",
     launch: "cli-auth",
     models: byFamily([
-      model("fable", "anthropic", flag("fable"), "fable"),
-      model("opus", "anthropic", flag("opus"), "opus"),
+      model("fable", "anthropic", flag("fable")),
+      model("opus", "anthropic", flag("opus")),
       sonnet,
     ]),
   };
   const codex: AppRecord = {
     id: "codex",
     launch: "cli-auth",
-    models: byFamily([model(SOL_CLI_MODEL, "openai", flag(SOL_CLI_MODEL), null)]),
+    models: byFamily([model(SOL_CLI_MODEL, "openai", flag(SOL_CLI_MODEL))]),
   };
   const grok: AppRecord = {
     id: "grok",
     launch: "cli-auth",
-    models: byFamily([model("grok-4.7", "xai", flag("grok-4.7"), null)]),
+    models: byFamily([model("grok-4.7", "xai", flag("grok-4.7"))]),
   };
   const cursor: AppRecord = {
     id: "cursor",
     launch: "cli-auth",
     models: byFamily([
-      model("fable", "anthropic", inSlug("claude-fable-5-1-{effort}"), "fable"),
-      model("opus", "anthropic", inSlug("claude-opus-5-5-{effort}"), "opus"),
-      model(
-        SONNET_5_5_MODEL,
-        "anthropic",
-        inSlug("claude-sonnet-5-5-{effort}"),
-        "sonnet"
-      ),
-      model("grok-4.7", "xai", inSlug("grok-4.7-{effort}"), null, [
+      model("fable", "anthropic", inSlug("claude-fable-5-1-{effort}")),
+      model("opus", "anthropic", inSlug("claude-opus-5-5-{effort}")),
+      model(SONNET_5_5_MODEL, "anthropic", inSlug("claude-sonnet-5-5-{effort}")),
+      model("grok-4.7", "xai", inSlug("grok-4.7-{effort}"), [
         "low",
         "medium",
         "high",

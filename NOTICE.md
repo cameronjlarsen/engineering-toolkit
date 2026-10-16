@@ -41,7 +41,6 @@ Summary of structural changes:
 - `plugins/engineering-toolkit/skills/engineering-mode/scripts/` is vendored from upstream (`watch-pr`, `orch`, `bootstrap.ts`, `worktree-audit.sh`, `package.json`, `bun.lock`) with these port edits: `worktree-audit.sh` reads `~/.claude/projects/` instead of Cursor's transcript directory, warns when `jq` or `rg` is missing (their absence silently blanks the columns the prune decision reads), and marks a worktree `hold-slice` when its path contains a `{repo}-wt` directory so cleanup does not remove slice trees, the private workspace package is named `@open-pstack/engineering-mode-tools`, `bootstrap.ts` rejects Node before it reads Bun-only APIs, and `package.json` includes the port-authored tests in `bun run test`. `check-plan.mjs` is the Cursor 0.14.3 checker adapted for the shared Claude Code and Codex skeleton. `bootstrap.test.ts` and `check-plan.test.ts` are authored for this port.
 - `plugins/engineering-toolkit/agents/comment-sicko.md` is upstream's `Comment Sicko` agent, renamed to `comment-sicko` so the name works as a Claude Code `subagent_type`. The body is verbatim.
 - `plugins/engineering-toolkit/agents/engineering-agent.md` is upstream's `poteto-agent`, renamed to `engineering-agent` so it pairs with `/engineering-mode`. The body still reads `engineering-mode` SKILL.md in full.
-- Claude-native Fable and Opus lanes are port-authored agent definitions. They select the rolling family alias plus requested effort for every selectable Claude-native pair in the provider-dispatch model matrix.
 - A Codex build shares the same `skills/` tree. It adds `plugins/engineering-toolkit/.codex-plugin/plugin.json`, a root `.agents/plugins/marketplace.json`, and `plugins/engineering-toolkit/skills/engineering-mode/references/codex-tools.md` (the Claude-to-Codex tool, model, and built-in map), plus a one-line Platform note in the skills that name a Claude primitive. The skill content itself is unchanged. See [CHANGES.md](CHANGES.md#codex-port).
 
 ## Modifications
@@ -63,7 +62,6 @@ Files authored for this port (not derived from upstream):
 - `plugins/engineering-toolkit/skills/engineering-mode/scripts/bootstrap.test.ts`
 - `plugins/engineering-toolkit/skills/engineering-mode/scripts/check-plan.test.ts`
 - `plugins/engineering-toolkit/skills/babysit/SKILL.md` (independently authored; workflow informed by Cursor's public `/babysit` behavior)
-- `plugins/engineering-toolkit/agents/pstack-fable-*.md` and `plugins/engineering-toolkit/agents/pstack-opus-*.md` (Claude-native frontier lanes at each selectable effort)
 - `plugins/engineering-toolkit/hooks/hooks.json`, `plugins/engineering-toolkit/hooks/session-start`, and `plugins/engineering-toolkit/hooks/session-start-context.md` (the auto-fire hook and its mandate)
 - `NOTICE.md` (this file)
 - `README.md`
