@@ -70,6 +70,8 @@ Prefer that attach. `worktreePath` must already be a git worktree of this projec
 
 `t3_thread_send` steers a thread that already exists. `t3_thread_wait` waits for its run. Arm the wait and end the turn. A timeout does not cancel the work. Do not poll in a loop.
 
+A thread from `t3_thread_launch`, such as a slice writer, is not a `delegate_task` child. Its completion does not wake this thread by itself, so arm `t3_thread_wait` for it. If the wait returns `timedOut: true`, read the thread with `t3_thread_read` and decide from what it shows. Re-arm the wait once if the thread is still working. If it is stuck, tell the operator. Do not loop, and do not replace the writer with another model.
+
 ## Pull requests
 
 Call `link_pull_request` with the PR URL when this thread opens or picks up a PR.
@@ -81,6 +83,8 @@ Origin and Azure DevOps stay on the Babysit playbook's forge path. `watch_pull_r
 ## Cadence
 
 A skill that says `loop` or `/loop` means `schedule_task` on T3. Pass `schedule` as an object, for example `{ "type": "interval", "everyMs": 1200000 }` for a 20 minute heartbeat. The prompt stands alone. Do not invoke the Claude `loop` skill.
+
+A scheduled task keeps firing and waking its thread until it is deleted. Report the `scheduledTaskId` that `schedule_task` returns. When the work it watches is done, find the task with `list_scheduled_tasks` and remove it with `delete_scheduled_task`. Do this before you hand the work back.
 
 ## Instructions file
 
