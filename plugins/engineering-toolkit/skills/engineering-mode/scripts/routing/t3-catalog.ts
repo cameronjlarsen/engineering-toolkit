@@ -55,7 +55,7 @@ function parseOptions(input: unknown): Result<ReadonlyMap<string, T3Option>, typ
         values.push(value.id);
       }
       options.set(option.id, { kind: "select", values });
-    } else {
+    } else if (option.type === "select") {
       return { ok: false, error: INVALID };
     }
   }

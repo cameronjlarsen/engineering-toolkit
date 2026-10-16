@@ -44,7 +44,7 @@ describe("parseT3Catalog", () => {
     expect(parseT3Catalog(JSON.stringify(fixture))).toEqual(result);
   });
 
-  it("ignores unknown fields at every level", () => {
+  it("ignores unknown fields and option types at every level", () => {
     const input = minimal();
     const expanded = {
       ...input, extra: null,
@@ -53,6 +53,7 @@ describe("parseT3Catalog", () => {
         models: [{ id: "gpt-6.1-sol", extra: [], options: [
           { id: "effort", type: "select", extra: false, options: [{ id: "custom", isDefault: true, extra: {} }] },
           { id: "fast", type: "boolean", extra: "ignored" },
+          { id: "temperature", type: "number" },
         ] }],
       })),
     };
@@ -101,7 +102,7 @@ describe("parseT3Catalog", () => {
       { ...model, options: undefined }, { ...model, options: {} },
     ].map((bad) => ({ ...valid, providers: [{ ...provider, models: [bad] }] })),
     { ...valid, providers: [{ ...provider, models: [model, model] }] },
-    ...[null, [], {}, { id: "", type: "boolean" }, { id: "x", type: "number" },
+    ...[null, [], {}, { id: "", type: "boolean" },
       { id: "x", type: "select", options: null },
       ...[null, [], {}, { id: "" }, { id: 1 }, { id: "high", isDefault: "true" }]
         .map((bad) => ({ id: "x", type: "select", options: [bad] })),
