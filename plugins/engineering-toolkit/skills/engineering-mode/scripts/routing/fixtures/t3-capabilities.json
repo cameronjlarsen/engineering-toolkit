@@ -1,0 +1,314 @@
+{
+  "inheritedProviderInstanceId": "codex",
+  "inheritedModel": "gpt-6.1-sol",
+  "providers": [
+    {
+      "providerInstanceId": "codex",
+      "driverKind": "codex",
+      "canRunChildTask": true,
+      "constraints": [],
+      "models": [
+        {
+          "id": "gpt-6.1-sol",
+          "options": [
+            {
+              "id": "reasoningEffort",
+              "type": "select",
+              "options": [
+                {
+                  "id": "low"
+                },
+                {
+                  "id": "medium",
+                  "isDefault": true
+                },
+                {
+                  "id": "high"
+                },
+                {
+                  "id": "xhigh"
+                },
+                {
+                  "id": "max"
+                },
+                {
+                  "id": "ultra"
+                }
+              ]
+            },
+            {
+              "id": "serviceTier",
+              "type": "select",
+              "options": [
+                {
+                  "id": "default",
+                  "isDefault": true
+                },
+                {
+                  "id": "priority"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "gpt-6-astra",
+          "options": [
+            {
+              "id": "reasoningEffort",
+              "type": "select",
+              "options": [
+                {
+                  "id": "low"
+                },
+                {
+                  "id": "medium",
+                  "isDefault": true
+                },
+                {
+                  "id": "high"
+                },
+                {
+                  "id": "xhigh"
+                },
+                {
+                  "id": "max"
+                },
+                {
+                  "id": "ultra"
+                }
+              ]
+            },
+            {
+              "id": "serviceTier",
+              "type": "select",
+              "options": [
+                {
+                  "id": "default",
+                  "isDefault": true
+                },
+                {
+                  "id": "priority"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "providerInstanceId": "claudeAgent",
+      "driverKind": "claudeAgent",
+      "canRunChildTask": true,
+      "constraints": [],
+      "models": [
+        {
+          "id": "claude-opus-5-5",
+          "options": [
+            {
+              "id": "effort",
+              "type": "select",
+              "options": [
+                {
+                  "id": "low"
+                },
+                {
+                  "id": "medium",
+                  "isDefault": true
+                },
+                {
+                  "id": "high"
+                },
+                {
+                  "id": "xhigh"
+                },
+                {
+                  "id": "max"
+                },
+                {
+                  "id": "ultracode"
+                },
+                {
+                  "id": "ultrathink"
+                }
+              ]
+            },
+            {
+              "id": "fastMode",
+              "type": "boolean"
+            }
+          ]
+        },
+        {
+          "id": "claude-sonnet-5-5",
+          "options": [
+            {
+              "id": "effort",
+              "type": "select",
+              "options": [
+                {
+                  "id": "low"
+                },
+                {
+                  "id": "medium"
+                },
+                {
+                  "id": "high",
+                  "isDefault": true
+                },
+                {
+                  "id": "xhigh"
+                },
+                {
+                  "id": "max"
+                },
+                {
+                  "id": "ultrathink"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "claude-haiku-5-5",
+          "options": [
+            {
+              "id": "effort",
+              "type": "select",
+              "options": [
+                {
+                  "id": "low"
+                },
+                {
+                  "id": "medium",
+                  "isDefault": true
+                },
+                {
+                  "id": "high"
+                },
+                {
+                  "id": "xhigh"
+                },
+                {
+                  "id": "max"
+                },
+                {
+                  "id": "ultrathink"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "providerInstanceId": "cursor",
+      "driverKind": "cursor",
+      "canRunChildTask": true,
+      "constraints": [],
+      "models": [
+        {
+          "id": "grok-4.7",
+          "options": [
+            {
+              "id": "contextWindow",
+              "type": "select",
+              "options": [
+                {
+                  "id": "256k"
+                },
+                {
+                  "id": "500k",
+                  "isDefault": true
+                }
+              ]
+            },
+            {
+              "id": "fastMode",
+              "type": "boolean"
+            },
+            {
+              "id": "reasoning_effort",
+              "type": "select",
+              "options": [
+                {
+                  "id": "low"
+                },
+                {
+                  "id": "medium"
+                },
+                {
+                  "id": "high",
+                  "isDefault": true
+                },
+                {
+                  "id": "xhigh"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "claude-opus-5-5",
+          "options": [
+            {
+              "id": "effort",
+              "type": "select",
+              "options": [
+                {
+                  "id": "low"
+                },
+                {
+                  "id": "medium",
+                  "isDefault": true
+                },
+                {
+                  "id": "high"
+                },
+                {
+                  "id": "xhigh"
+                },
+                {
+                  "id": "max"
+                }
+              ]
+            },
+            {
+              "id": "contextWindow",
+              "type": "select",
+              "options": [
+                {
+                  "id": "300k"
+                },
+                {
+                  "id": "1m",
+                  "isDefault": true
+                }
+              ]
+            },
+            {
+              "id": "fastMode",
+              "type": "boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "providerInstanceId": "grok",
+      "driverKind": "grok",
+      "canRunChildTask": false,
+      "constraints": [
+        "Provider instance is disabled.",
+        "Provider executable is not installed.",
+        "Grok is disabled in T3 Code settings."
+      ],
+      "models": [
+        {
+          "id": "grok-build",
+          "options": []
+        }
+      ]
+    }
+  ]
+}
