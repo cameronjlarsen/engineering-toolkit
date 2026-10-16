@@ -277,6 +277,7 @@ describe("parent files", () => {
     const loaded = loadT3RoleMap(
       [
         "Descriptor grammar: 4",
+        "# budget: medium (high)",
         "feature, refactoring: codex/gpt-6.1-sol reasoningEffort=high",
         inherit("bug-fix"),
         inherit("perf-issue"),

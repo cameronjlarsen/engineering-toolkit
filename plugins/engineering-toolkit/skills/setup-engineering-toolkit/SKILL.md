@@ -5,7 +5,7 @@ description: Configure Engineering Toolkit's typed model routes per role and a r
 
 # Setup Engineering Toolkit
 
-Configure one model sheet for the current parent harness. Read [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md) before probing or writing anything. Its model matrix, grammar 3 wire format, and Route contract are authoritative. Discover apps, but discovery does not enable them. Do not add a second configuration file, a setup binary, or a weaker-model fallback.
+Configure one model sheet for the current parent harness. Read [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md) before probing or writing anything. Its model matrix, grammar 3 wire format, and Route contract are authoritative for Claude Code, Codex, and Cursor parents. A T3 parent uses grammar 4 instead, as the T3 parent section below describes. Discover apps, but discovery does not enable them. Do not add a second configuration file, a setup binary, or a weaker-model fallback.
 
 There is no setup binary. This agent procedure discovers, probes, and writes
 the parent sheet after confirmation.
@@ -24,13 +24,75 @@ Codex writes `~/.codex/engineering-toolkit-models.md`. Codex has no `@` include,
 <!-- engineering-toolkit:models:end -->
 ```
 
+T3 writes the Claude Code sheet path, `~/.claude/engineering-toolkit-models.md`, and loads it from `~/.claude/CLAUDE.md` with the same `@` include. T3 has no sheet path of its own.
+
 Cursor writes `~/.cursor/rules/engineering-toolkit-models.mdc`. YAML frontmatter is harness wiring (`alwaysApply: true`). The body after the closing `---` is the same grammar 3 sheet. There is no companion `.md` file and no Task-slug grammar. If that path already holds an upstream Task-slug rule, stop as inconsistent state instead of rewriting it silently.
+
+## T3 parent
+
+The T3 parent resolves models once, from the live T3 catalog. The sheet is
+grammar 4. Each target is the raw T3 target and nothing else. Do not hardcode
+provider instance ids, model ids, or option ids. Do not use `provider:model@effort`
+Routes, and do not add a second configuration file.
+
+1. **Read the catalog.** Call the `orchestrator_capabilities` MCP tool (in
+   Claude Code, `mcp__t3-code__orchestrator_capabilities`). Pass its output
+   unchanged to `parseT3Catalog`. An `invalid-t3-catalog` error stops setup
+   and writes nothing. Only a launchable provider with driver `claudeAgent` or
+   `codex` can hold a target.
+2. **Load current state.** Read a `# budget:` line when the sheet has one. A
+   grammar 4 sheet loads with `loadT3RoleMap`. A grammar 1, 2, or 3 sheet at
+   this path names apps, not T3 provider instances. Show it and replace it after
+   confirmation; do not migrate it. A duplicate or missing role row is
+   inconsistent state; report it and stop.
+3. **Budget.** Ask the step 4(a) question with the same four labels. The target
+   effort applies to each target's effort option (`reasoningEffort` or `effort`,
+   whichever the catalog lists for that model). If the catalog does not list the
+   target value, use the highest listed value at or below it. If no listed value
+   fits, the role needs an operator choice. Leave every other option unset.
+   `inherit-parent` does not change.
+4. **Choose targets.** Propose a target per role from the catalog, using the
+   model families in step 7 as the guide. Never select a Fable model. Why and
+   Reflect stay `inherit-parent`, because external override is a typed reject.
+   Panel roles list one target per entry, and the list length is the fan-out
+   count. If the catalog has no match for a family, say so and ask. Never fill
+   the gap with a different model.
+5. **Validate.** Run `checkT3RoleMap(map, catalog)`. Every issue is a dropout,
+   such as an unavailable provider, an unknown model, or an invalid option
+   value. Report each dropout with its role and entry. The operator changes
+   that role or accepts the dropout. Never replace an entry with another model
+   for them. Show every `panel-single-family` issue as reduced provider
+   diversity.
+6. **Probe.** For each distinct target the sheet uses, run one read-only
+   `delegate_task` with `mode: "wait"`, that target, and a prompt that returns a
+   unique marker and names its model. A reply that names another model fails
+   the probe. A failed probe writes nothing. There is no implicit timeout and
+   no weaker-model fallback.
+7. **Confirm and write.** Show the dropouts, the chosen budget label, and every
+   role's target. After confirmation, write `printT3RoleMap(map)` with one
+   `# budget: <label> (<effort>)` line inserted directly after the
+   `Descriptor grammar: 4` line. The header stays the first line. Wire it with
+   the T3 paths from the top of this skill (`parentProfile("t3")`), snapshotting
+   and restoring as step 8 describes. Read the sheet back with `loadT3RoleMap`
+   and compare it with the map.
+
+```markdown
+Descriptor grammar: 4
+# budget: medium (high)
+feature, refactoring: codex/gpt-6.1-sol reasoningEffort=high
+judgment and prose: claudeAgent/claude-opus-5-5 effort=medium
+why investigators, synthesizer: inherit-parent
+swarm workers: claudeAgent/claude-opus-5-5 effort=medium, codex/gpt-6.1-sol reasoningEffort=high
+```
+
+That example shows the wire shape only. A real sheet carries every documented
+role row, and its values come from the live catalog.
 
 ## Steps
 
 ### 1. Establish the parent
 
-Use the harness and tool surface running this skill: Claude Code, Codex, or Cursor. Environment markers may corroborate that top-level answer, but do not launch a child and ask it to detect where it came from. Record the parent: a route is native only when its provider is the parent, and grammar 2 migration gives an omitted app the parent's provider. Task without `spawn_agent` is Cursor. `Agent` without Task is Claude Code. `spawn_agent` is Codex. Two strong matches is ambiguous. Write nothing until the parent is known.
+Use the harness and tool surface running this skill: T3, Claude Code, Codex, or Cursor. Environment markers may corroborate that top-level answer, but do not launch a child and ask it to detect where it came from. If a T3-owned tool (`delegate_task` or `t3_thread_launch`) is present, the parent is T3. This wins over every other tool and env marker. A T3-launched Claude or Codex thread still carries `Agent`, `Task`, or `CLAUDECODE`, and none of them make it Claude Code, Cursor, or ambiguous. For a T3 parent, follow the T3 parent section instead of steps 2 through 8, then run step 9. Otherwise record the parent: a route is native only when its provider is the parent, and grammar 2 migration gives an omitted app the parent's provider. Task without `spawn_agent` is Cursor. `Agent` without Task is Claude Code. `spawn_agent` is Codex. Two strong matches is ambiguous. Write nothing until the parent is known.
 
 ### 2. Load current state
 
@@ -203,15 +265,20 @@ Do not copy the model sheet between harnesses without rerunning the parent-speci
 
 Before declaring setup complete, parse the written sheet body with
 `loadRoleMap(body, parent)` and compare the result with the in-memory role map.
-A parse error or mismatch fails setup; restore the snapshots. `<plugin root>`
-is the installed plugin directory and `<parent>` is `claude-code`, `codex`, or
-`cursor`. The command exits non-zero and prints the typed error on failure:
+For a T3 parent, parse a grammar 4 body with `loadT3RoleMap` and compare it with
+the map instead. A parse error or mismatch fails setup; restore the snapshots.
+`<plugin root>` is the installed plugin directory and `<parent>` is `t3`,
+`claude-code`, `codex`, or `cursor`. The command picks the loader from the
+sheet's grammar. It exits non-zero and prints the typed error on failure:
 
 ```shell
-PLUGIN_ROOT=<plugin root> bun -e 'const [sheetPath, parent] = process.argv.slice(-2); const root = process.env.PLUGIN_ROOT; const { unwrapStoredSheet } = await import(`${root}/skills/engineering-mode/scripts/routing/parent.ts`); const { loadRoleMap } = await import(`${root}/skills/engineering-mode/scripts/routing/sheet.ts`); const body = unwrapStoredSheet(await Bun.file(sheetPath).text()); const parsed = body.ok ? loadRoleMap(body.value, parent) : body; console.log(JSON.stringify(parsed.ok ? "ok" : parsed.error)); process.exit(parsed.ok ? 0 : 1);' <sheet path> <parent>
+PLUGIN_ROOT=<plugin root> bun -e 'const [sheetPath, parent] = process.argv.slice(-2); const root = process.env.PLUGIN_ROOT; const { unwrapStoredSheet } = await import(`${root}/skills/engineering-mode/scripts/routing/parent.ts`); const { loadRoleMap } = await import(`${root}/skills/engineering-mode/scripts/routing/sheet.ts`); const { loadT3RoleMap } = await import(`${root}/skills/engineering-mode/scripts/routing/t3-sheet.ts`); const body = unwrapStoredSheet(await Bun.file(sheetPath).text()); const parsed = !body.ok ? body : /^Descriptor grammar: 4\r?$/m.test(body.value) ? loadT3RoleMap(body.value) : loadRoleMap(body.value, parent); console.log(JSON.stringify(parsed.ok ? "ok" : parsed.error)); process.exit(parsed.ok ? 0 : 1);' <sheet path> <parent>
 ```
 
-Then run one
+Then, for a T3 parent, run
+one small read-only panel with `delegate_task` using the sheet's targets, an
+independent cross-judge, and distinct output paths; verify each child's reply.
+For other parents, run one
 small read-only mixed panel from this parent using selected routes, distinct output/receipt paths, and an
 independent cross-judge. Launch native agents and external processes in the
 background with retained handles, then drain them. Verify transcripts and
