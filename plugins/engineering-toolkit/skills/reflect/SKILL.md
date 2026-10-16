@@ -31,7 +31,7 @@ For each candidate, read the first JSONL line and check that `message.content[0]
 
 Start all three read-only lanes in one fan-out phase through provider dispatch. Reviewers need MCP access for context lookups (tickets, chat threads, observability traces referenced in the transcript), so keep them native to the parent. The prompt forbids file writes; the parent applies edits.
 
-Each reviewer and the synthesizer name a role line in the current harness's `engineering-toolkit-models` sheet and a default. Use that line's value, or the default if the sheet or the line is missing. Leave the Route unset when the value is `auto` or `inherit-parent`.
+Each reviewer and the synthesizer name a role line in the current harness's `engineering-toolkit-models` sheet and a default. Use that line's value, or the default if the sheet or the line is missing. Leave the Route unset when the value is `auto` or `inherit-parent`. On a grammar 4 sheet (`Descriptor grammar: 4`), a role line holds raw T3 targets (`providerInstanceId/model option=value`, such as `codex/gpt-6.1-sol reasoningEffort=high`) or `inherit-parent`, not Routes. Use each target as written. The line is present, so do not fall back to the default.
 
 | Lens | Role line | Default | Prompt template |
 |---|---|---|---|

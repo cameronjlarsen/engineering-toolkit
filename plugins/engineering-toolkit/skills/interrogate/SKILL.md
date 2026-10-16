@@ -34,7 +34,7 @@ Write one clear paragraph. If you're unsure about the intent, ask the user befor
 
 ## Step 3, Spawn Reviewers
 
-Start all reviewers in one fan-out phase. Use the `interrogate reviewers` line in the current harness's `engineering-toolkit-models` sheet, one reviewer per entry, extending or shrinking the Reviewer A/B/C/D labels below to the configured entry count. If the sheet or that line is missing, use the table defaults. Native reviewers use the parent subagent primitive. External reviewers use the launcher directly and must return a complete, model-verified receipt.
+Start all reviewers in one fan-out phase. Use the `interrogate reviewers` line in the current harness's `engineering-toolkit-models` sheet, one reviewer per entry, extending or shrinking the Reviewer A/B/C/D labels below to the configured entry count. If the sheet or that line is missing, use the table defaults. A grammar 4 line holds raw T3 targets (such as `codex/gpt-6.1-sol reasoningEffort=high`) or `inherit-parent`. Use each target as written; the line is present, so do not fall back to the default. Native reviewers use the parent subagent primitive. External reviewers use the launcher directly and must return a complete, model-verified receipt.
 
 | Subagent | Default model |
 |----------|---------------|
