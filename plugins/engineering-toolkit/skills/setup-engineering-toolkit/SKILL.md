@@ -37,24 +37,55 @@ Routes, and do not add a second configuration file.
 
 1. **Read the catalog.** An MCP result exists only in your context, so it
    cannot be piped to a command. Call the `orchestrator_capabilities` MCP tool
-   (in Claude Code, `mcp__t3-code__orchestrator_capabilities`). Then Write the
-   result to a temp file named `capabilities.json` and check it with:
+   (in Claude Code, `mcp__t3-code__orchestrator_capabilities`). Then Write a
+   minimal copy of the result to a temp file named `capabilities.json` and check
+   it with:
 
    ```shell
    bun <plugin root>/skills/engineering-mode/scripts/routing/t3-capabilities.ts <temp dir>/capabilities.json
    ```
 
-   The file must keep the top-level `inheritedProviderInstanceId` and
-   `inheritedModel`, and for every provider its `providerInstanceId`,
-   `driverKind`, `canRunChildTask`, and `constraints`. Write the full `models`
-   and `options` only for providers whose `driverKind` is `claudeAgent` or
-   `codex`, copied exactly. Other providers cannot hold a target, so they may
-   carry `models: []`. Never invent, shorten, or drop a model or option for a
-   `claudeAgent` or `codex` provider. The script prints one line per provider
-   with its status and `models=<count>`. Compare each count with the live
-   result and fix the file when one differs. An `invalid-t3-catalog` error stops
-   setup and writes nothing. Only a launchable provider with driver
-   `claudeAgent` or `codex` can hold a target.
+   The minimal shape is:
+
+   ```json
+   {
+     "inheritedProviderInstanceId": "...",
+     "inheritedModel": "...",
+     "providers": [
+       {
+         "providerInstanceId": "...",
+         "driverKind": "...",
+         "canRunChildTask": true,
+         "constraints": [],
+         "models": [
+           {
+             "id": "...",
+             "options": [
+               { "id": "...", "type": "select", "options": [{ "id": "..." }] },
+               { "id": "...", "type": "boolean" }
+             ]
+           }
+         ]
+       }
+     ]
+   }
+   ```
+
+   Omit every other field, such as labels, descriptions, `isDefault`,
+   `currentValue`, `promptInjectedValues`, `displayName`, `runtimeModes`, and
+   `features`. A `select` option keeps only its values as `{ "id": "..." }`.
+   List every provider. Write `models` in full only for providers whose
+   `driverKind` is `claudeAgent` or `codex`. Other providers cannot hold a
+   target, so write `models: []` for them. Never invent, shorten, or drop a
+   model or option for a `claudeAgent` or `codex` provider.
+
+   The script prints one line per provider with its status and
+   `models=<count>`. Compare the count with the live result for `claudeAgent`
+   and `codex` providers only, and fix the file when one differs. An elided
+   provider always prints `models=0` and is `not-allowed` or a dropout. Do not
+   compare those. An `invalid-t3-catalog` error stops setup and writes nothing.
+   Only a launchable provider with driver `claudeAgent` or `codex` can hold a
+   target.
 2. **Load current state.** Read a `# budget:` line when the sheet has one. A
    grammar 4 sheet loads with `loadT3RoleMap`. A grammar 1, 2, or 3 sheet at
    this path names apps, not T3 provider instances. Read it with
@@ -71,13 +102,20 @@ Routes, and do not add a second configuration file.
    dropout reported to the operator. Never pick another model. Keep the old
    sheet's prose for step 7. A duplicate or missing role row is inconsistent
    state; report it and stop.
-3. **Budget.** Ask the step 4(a) question with the same four labels. The target
-   effort applies to each target's effort option (`reasoningEffort` or `effort`,
-   whichever the catalog lists for that model). An effort the operator pinned
-   on a route in the existing sheet wins over the budget label. Keep it as it
-   is. If the catalog does not list the target value, use the highest listed
-   value at or below it. If no listed value fits, the role needs an operator
-   choice. Leave every other option unset. `inherit-parent` does not change.
+3. **Budget.** Ask the operator for a budget, naming the sheet's current one
+   when it recorded one (AskUserQuestion in Claude Code). Offer these four
+   labels, each with its target effort: `unlimited, keep max` (`max`), `large,
+   xhigh reasoning` (`xhigh`), `medium, high reasoning` (`high`), and `small,
+   medium reasoning` (`medium`). In a non-interactive run, keep the recorded
+   budget. The target effort applies to each target's effort option
+   (`reasoningEffort` or `effort`, whichever the catalog lists for that model).
+   If the catalog does not list the target value, use the highest listed value
+   at or below it. If no listed value fits, the role needs an operator choice.
+   A route's effort is operator-pinned when the old sheet's effort for that
+   role differs from the effort the `# budget:` label gives that target, or
+   when an operator-override note in the old sheet covers it. A pinned effort
+   wins over the budget label: keep it as it is. Leave every other option
+   unset. `inherit-parent` does not change.
 4. **Choose targets.** Start from the seeded roles in step 2. Propose a target
    for each remaining role from the catalog, using the model families in step 7
    as the guide. Never select a Fable model. Why and Reflect stay
@@ -106,22 +144,34 @@ Routes, and do not add a second configuration file.
    only the header and the role rows, so add the comment lines yourself after
    printing. Insert them directly after the `Descriptor grammar: 4` line, in
    this order, and keep the header as the first line:
-   - `# budget: <label> (<effort>)`. When the operator pinned a route's effort
-     in step 3, add a `# <role>: effort pinned by the operator` comment line
-     for each, so the budget line stays truthful.
-   - The old sheet's prose, except its title line, as `#` comment lines. Prefix
-     a prose line with `# ` when it does not already start with `#`.
+   - `# budget: <label> (<effort>)`. Keep it truthful about pinned efforts. If
+     the old sheet's note states one blanket override (for example "every Opus
+     route runs @medium"), write one comment line for it. Use a per-role
+     `# <role>: effort pinned by the operator` line only for an individually
+     pinned route.
+   - Old prose that records an operator decision, as `#` comment lines. Carry
+     over verbatim only sentences that record an effort override, an excluded
+     model or provider such as Fable, or a provider that is not installed.
+     Prefix a line with `# ` when it does not already start with `#`. Drop
+     sentences that describe the old format or its mechanics: route choices or
+     "App is omitted", lane counts, "re-run this skill" instructions, and any
+     title or blank line. Never carry lane counts, because the grammar 4 sheet
+     states them itself.
 
    `loadT3RoleMap` skips every line that is not a role row, so these lines are
    safe. Wire the sheet with the T3 paths from the top of this skill
-   (`parentProfile("t3")`), snapshotting and restoring as step 8 describes. Read
-   the sheet back with `loadT3RoleMap` and compare it with the map.
+   (`parentProfile("t3")`), snapshotting and restoring as step 8 describes.
+   Count the lines in `~/.claude/CLAUDE.md` that equal exactly
+   `@~/.claude/engineering-toolkit-models.md`. With one, leave the file
+   untouched. With none, add the line at the end. With more than one, report it
+   to the operator and do not edit the file. Read the sheet back with
+   `loadT3RoleMap` and compare it with the map.
 
 ```markdown
 Descriptor grammar: 4
 # budget: medium (high)
-# judgment and prose: effort pinned by the operator
-# Operator note carried over from the old sheet.
+# Every Opus route runs at medium by operator override.
+# Fable is excluded from every role (operator decision).
 feature, refactoring: codex/gpt-6.1-sol reasoningEffort=high
 judgment and prose: claudeAgent/claude-opus-5-5 effort=medium
 why investigators, synthesizer: inherit-parent
@@ -308,14 +358,17 @@ Do not copy the model sheet between harnesses without rerunning the parent-speci
 
 Before declaring setup complete, parse the written sheet body with
 `loadRoleMap(body, parent)` and compare the result with the in-memory role map.
-For a T3 parent, parse a grammar 4 body with `loadT3RoleMap` and compare it with
-the map instead. A parse error or mismatch fails setup; restore the snapshots.
+For a T3 parent, the command below round-trips a grammar 4 body instead: it
+loads the written text with `loadT3RoleMap`, prints it with `printT3RoleMap`,
+loads that again, and requires the printed text to equal the written role rows.
+Comment lines and CRLF are ignored. A parse error or mismatch fails setup;
+restore the snapshots.
 `<plugin root>` is the installed plugin directory and `<parent>` is `t3`,
 `claude-code`, `codex`, or `cursor`. The command picks the loader from the
 sheet's grammar. It exits non-zero and prints the typed error on failure:
 
 ```shell
-PLUGIN_ROOT=<plugin root> bun -e 'const [sheetPath, parent] = process.argv.slice(-2); const root = process.env.PLUGIN_ROOT; const { unwrapStoredSheet } = await import(`${root}/skills/engineering-mode/scripts/routing/parent.ts`); const { loadRoleMap } = await import(`${root}/skills/engineering-mode/scripts/routing/sheet.ts`); const { loadT3RoleMap } = await import(`${root}/skills/engineering-mode/scripts/routing/t3-sheet.ts`); const body = unwrapStoredSheet(await Bun.file(sheetPath).text()); const parsed = !body.ok ? body : /^Descriptor grammar: 4\r?$/m.test(body.value) ? loadT3RoleMap(body.value) : loadRoleMap(body.value, parent); console.log(JSON.stringify(parsed.ok ? "ok" : parsed.error)); process.exit(parsed.ok ? 0 : 1);' <sheet path> <parent>
+PLUGIN_ROOT=<plugin root> bun -e 'const [sheetPath, parent] = process.argv.slice(-2); const root = process.env.PLUGIN_ROOT; const { unwrapStoredSheet } = await import(`${root}/skills/engineering-mode/scripts/routing/parent.ts`); const { loadRoleMap } = await import(`${root}/skills/engineering-mode/scripts/routing/sheet.ts`); const { loadT3RoleMap, printT3RoleMap } = await import(`${root}/skills/engineering-mode/scripts/routing/t3-sheet.ts`); const body = unwrapStoredSheet(await Bun.file(sheetPath).text()); let parsed; if (!body.ok) parsed = body; else if (/^Descriptor grammar: 4\r?$/m.test(body.value)) { const first = loadT3RoleMap(body.value); const text = first.ok ? printT3RoleMap(first.value) : ""; const again = first.ok ? loadT3RoleMap(text) : first; const rows = body.value.split(/\r?\n/).filter((line) => line.trim() !== "" && !line.trimStart().startsWith("#")).join("\n") + "\n"; parsed = !again.ok ? again : printT3RoleMap(again.value) !== text || rows !== text ? { ok: false, error: { tag: "round-trip-mismatch" } } : again; } else parsed = loadRoleMap(body.value, parent); console.log(JSON.stringify(parsed.ok ? "ok" : parsed.error)); process.exit(parsed.ok ? 0 : 1);' <sheet path> <parent>
 ```
 
 Then, for a T3 parent, run
