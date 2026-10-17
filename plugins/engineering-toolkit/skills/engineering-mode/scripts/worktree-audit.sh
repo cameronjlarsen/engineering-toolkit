@@ -10,7 +10,27 @@
 #   Without it the base is origin/HEAD, then origin/main, then origin/master.
 #   origin/HEAD is the remote's default branch, not necessarily the branch PRs
 #   merge into; pass -b when they differ.
+#        worktree-audit.sh --classify <path>...
 set -u
+
+# A path component ending in -wt is a slice tree: `{repo}-wt` or `{repo}-wt/<slice>`.
+is_slice_tree() {
+	local wt_norm
+	wt_norm=$(printf '%s' "$1" | tr '\\' '/')
+	case "$wt_norm" in
+		*-wt|*-wt/*) return 0 ;;
+		*) return 1 ;;
+	esac
+}
+
+if [ "${1:-}" = "--classify" ]; then
+	shift
+	for path in "$@"; do
+		if is_slice_tree "$path"; then printf 'hold-slice\t%s\n' "$path"
+		else printf 'other\t%s\n' "$path"; fi
+	done
+	exit 0
+fi
 
 base=""
 while [ $# -gt 0 ]; do
@@ -45,10 +65,19 @@ origin/*) git fetch origin "+refs/heads/${base#origin/}:refs/remotes/$base" --qu
 esac
 git rev-parse --verify --quiet "$base^{commit}" >/dev/null 2>&1 || { echo "error: base ref not found: $base" >&2; exit 1; }
 
-# PR state by branch, fetched once. Empty if gh is unavailable.
+# PR state by branch, fetched once as [{number, state, head}] with a lowercase
+# state. Origin when its CLI can read this repo's PRs, otherwise gh. Empty when
+# neither can.
 prs=$(mktemp)
-gh pr list --author "@me" --state all --limit 1000 \
-	--json number,state,headRefName 2>/dev/null > "$prs" || echo "[]" > "$prs"
+if command -v origin >/dev/null 2>&1 \
+	&& raw=$(origin pr list --author "@me" --state all --limit 1000 \
+		--json number,status,headRef 2>/dev/null); then
+	printf '%s' "$raw" | jq '[.[] | {number, state: .status, head: .headRef}]' > "$prs" 2>/dev/null
+elif raw=$(gh pr list --author "@me" --state all --limit 1000 \
+	--json number,state,headRefName 2>/dev/null); then
+	printf '%s' "$raw" | jq '[.[] | {number, state: (.state | ascii_downcase), head: .headRefName}]' > "$prs" 2>/dev/null
+fi
+[ -s "$prs" ] || echo "[]" > "$prs"
 
 # jq reads that JSON and rg finds the transcripts. Without either, the PR and
 # LAST_CHAT columns blank out and no row can reach verify-recent-chat, so an
@@ -93,7 +122,7 @@ git worktree list --porcelain | awk '/^worktree /{print $2}' | while read -r wt;
 	else remote=no-remote; fi
 
 	pr=$([ -n "$branch" ] && jq -r --arg b "$branch" \
-		'.[] | select(.headRefName==$b) | "#\(.number)/\(.state)"' "$prs" 2>/dev/null | head -1)
+		'.[] | select(.head==$b) | "#\(.number)/\(.state)"' "$prs" 2>/dev/null | head -1)
 	[ -z "$pr" ] && pr="-"
 
 	# Most recent chat whose transcript operated in this worktree. Match path
@@ -108,12 +137,16 @@ git worktree list --porcelain | awk '/^worktree /{print $2}' | while read -r wt;
 	recent=$([ "$last_ts" -gt 0 ] 2>/dev/null && [ $(( (now - last_ts) / 86400 )) -le 4 ] && echo yes || echo no)
 
 	case "$dirty" in wip:*) bucket=hold-wip ;; *)
-		case "$pr" in *OPEN*) bucket=hold-open-pr ;; *)
+		case "$pr" in */open|*/draft) bucket=hold-open-pr ;; *)
 			if [ "$recent" = yes ]; then bucket=verify-recent-chat
 			elif [ "$merged" = YES ] || [ "$pr" != "-" ]; then bucket=safe
 			else bucket=review; fi ;;
 		esac ;;
 	esac
+
+	# On Windows, git worktree remove can follow a junction inside a slice
+	# tree and delete the files it points at.
+	if is_slice_tree "$wt"; then bucket=hold-slice; fi
 
 	printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
 		"$size" "$age" "$merged" "$dirty" "$remote" "$pr" "$last" "$bucket" "$wt"
