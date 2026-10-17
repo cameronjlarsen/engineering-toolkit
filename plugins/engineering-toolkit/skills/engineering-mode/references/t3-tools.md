@@ -21,19 +21,10 @@ On T3, `delegate_task` replaces the native and external lanes in [`provider-disp
 1. Call `orchestrator_capabilities` once per parent run, before any spawn. It lists the provider instances this machine can run, each with `canRunChildTask`, its models, and each model's options. Instances differ per machine and can be disabled.
 2. `inherit-parent` and `auto` omit `target`, so the child runs on the parent's model.
 3. Resolve a Route `provider:model@effort` in this order. The first failure is a named dropout, and no step searches for an alternative.
-   - **Instance.** Use the instance whose `driverKind` matches the provider in the table below and that has `canRunChildTask`. With none, the dropout is `instance-missing`, or `instance-cannot-run` with the first entry of its `constraints`. With two or more, the dropout is `ambiguous-instance`. Do not choose by order.
+   - **Instance.** The Route's provider names an instance: it equals the instance's `driverKind` or `providerInstanceId`, with `claude` naming `claudeAgent`. The instance must have `canRunChildTask`. With none, the dropout is `instance-missing`, or `instance-cannot-run` with the first entry of its `constraints`. With two or more, the dropout is `ambiguous-instance`. Do not choose by order. The toolkit keeps no list of providers. Whatever `orchestrator_capabilities` reports is the list.
    - **Model.** The Route's model must equal a model `id` in that instance exactly. Do not strip a prefix, match a bare name, or prefer one backend over another: `glm-5.3` does not match `opencode-go/glm-5.3`. A miss is `model-not-served`; list any ids that end in the requested name. The only exception is the Claude aliases `opus` and `fable`, which resolve to the model with the highest numeric revision among `claude-<alias>-N` and `claude-<alias>-N-M`, compared as (N, M) with M = 0 when absent. Never use list order. With no match the dropout is `alias-unresolved`.
-   - **Effort.** The model must have the select option named in the table, and that option must list the Route's effort verbatim. A miss is `effort-option-missing` or `effort-not-offered`. Never map `max` to `xhigh` or pick a nearby value.
+   - **Effort.** The effort option is the model's one select option whose values include the Route's effort, usually `effort`, `reasoningEffort` or `variant`. No such option is `effort-option-missing`. More than one is `ambiguous-effort-option`. A model with no options cannot carry an effort. The value must be listed verbatim, or the dropout is `effort-not-offered`. Never map `max` to `xhigh` or pick a nearby value.
 4. Pass `target: { providerInstanceId, model, options: { <effort option id>: <effort> } }`. Always pass the effort. Set no other option.
-
-| Route provider | `driverKind` | Effort option id |
-|----------------|--------------|------------------|
-| `claude` | `claudeAgent` | `effort` |
-| `codex` | `codex` | `reasoningEffort` |
-| `opencode` | `opencode` | `variant` |
-| `cursor`, `grok` | `cursor`, `grok` | not observed yet, so `effort-option-missing` |
-
-The `codex` option id is unverified until a Codex instance is enabled. The `opencode` provider exists once the grammar accepts it (pull request 20). Models whose options are empty cannot carry an effort, so they cannot serve a Route.
 
 A Route names its harness. Never move a lane to another provider's instance, even when that instance serves the same model. Moving a lane is an edit to the sheet that the user accepts in setup.
 
