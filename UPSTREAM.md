@@ -16,7 +16,7 @@ Do not open issues on Open Pstack for work that belongs in this fork. Keep one s
 | Commit | `99743e9c151c8537cbbf1f98bb38f34ef3368453` |
 | Cursor pstack version | `0.15.25` |
 | Open Pstack version at fork | `1.4.1` |
-| Engineering Toolkit version | `1.4.4` |
+| Engineering Toolkit version | `1.4.5` |
 
 The table above is the current Cursor pstack sync point. At the fresh fetch for this sync, `cursor/main` was `ac4e25a` (#690), not the earlier research snapshot `2284d64`. Since `99743e9`, the only commit touching `pstack/` is `182f2ce` (#637), which adds a generated Claude Code tree and is excluded. This checkout started from Open Pstack 1.4.1, which imported Cursor pstack 0.15.1. `README-UPSTREAM.md` preserves the current Cursor pstack README verbatim. `CHANGES.md` and `NOTICE.md` describe the adaptations and provenance.
 

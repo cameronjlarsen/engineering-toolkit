@@ -2,9 +2,9 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
-## Cursor 0.15.6–0.15.25 sync keeps 1.4.4 manifests
+## Cursor 0.15.6–0.15.25 sync publishes plugin version 1.4.5
 
-This sync advances the Cursor pstack point from 0.15.5 (`12d587d`) to 0.15.25 (`99743e9`). Open Pstack's v1.15.0 sync commits `29f224e`, `63eedbf`, `d462f0a`, and `d8eeb4d` were the adapted-diff reference. Engineering Toolkit stays at 1.4.4.
+This sync advances the Cursor pstack point from 0.15.5 (`12d587d`) to 0.15.25 (`99743e9`). Open Pstack's v1.15.0 sync commits `29f224e`, `63eedbf`, `d462f0a`, and `d8eeb4d` were the adapted-diff reference. Engineering Toolkit publishes 1.4.5 across its five versioned manifests.
 
 **Ported.** Added `benchmark-checklist`, `correct`, `in-your-own-words`, `ketchup`, `poteto-help`, `sharpen`, and `principle-explain-the-number`. Restated the existing principle leaves and kept explicit `principle-*` index names. Principle frontmatter remains `user-invocable: false`; no skill gained `disable-model-invocation: true`. Updated engineering-mode for per-spawn effort and fresh children, converted `engineering-agent` to a delegate, and made both autopilot playbooks use `/ketchup` replies.
 
