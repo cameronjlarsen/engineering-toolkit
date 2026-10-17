@@ -2,6 +2,20 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## Cursor 0.15.6–0.15.25 sync publishes plugin version 1.4.5
+
+This sync advances the Cursor pstack point from 0.15.5 (`12d587d`) to 0.15.25 (`99743e9`). Open Pstack's v1.15.0 sync commits `29f224e`, `63eedbf`, `d462f0a`, and `d8eeb4d` were the adapted-diff reference. Engineering Toolkit publishes 1.4.5 across its five versioned manifests.
+
+**Ported.** Added `benchmark-checklist`, `correct`, `in-your-own-words`, `ketchup`, `engineering-help`, `sharpen`, and `principle-explain-the-number`. Restated the existing principle leaves and kept explicit `principle-*` index names. Principle frontmatter remains `user-invocable: false`; no skill gained `disable-model-invocation: true`. Updated engineering-mode for per-spawn effort and fresh children, converted `engineering-agent` to a delegate, and made both autopilot playbooks use `/ketchup` replies.
+
+Ported the requested workflow updates: PR body headings in Opening a PR, the stack wording in Shipping, Graphite removal from Orchestrate and `orch --forge gh|origin`, watch-pr review-thread pagination and owner-gate handling, worktree-audit `--base` and `hold-slice`, package rename to `@engineering-toolkit/engineering-mode-tools`, and create-verification-skill readiness based on a usable workflow. Updated the SessionStart hook from Open Pstack v1.8.0 and replaced `README-UPSTREAM.md` with the verbatim Cursor 0.15.25 README.
+
+**Renamed.** Upstream's `poteto-help` ships as `engineering-help`, matching the `poteto-mode` and `poteto-agent` renames. `README-UPSTREAM.md` stays verbatim and still says `/poteto-help`.
+
+**Not applied.** Cursor #511/`df58112` model and budget changes; the `setup-pstack` budget default; `~/.cursor/plugins/` search in `poteto-agent`; Built-in PR tool paragraph; Cursor manifests, `docs/guide`, and Agent Plugins v1 root manifest; and any return of the native `pstack-*` agents. All earlier exclusions remain.
+
+**Skipped.** Open Pstack's model registry and generated catalog, extra providers (DeepSeek Harness, Antigravity, OpenCode, Amp, Cursor CLI, Devin), release tooling, and comment sweep.
+
 ## Cursor 0.15.5 content sync keeps 1.4.4 manifests
 
 This checkout applies Cursor pstack 0.15.5 at `12d587dfb20741cafc376c42c696c5f6e2a64487` without bumping this fork off 1.4.4. The commits are `70b2dc8`, `b42effe`, `b0b9c7a`, and `12d587d`.

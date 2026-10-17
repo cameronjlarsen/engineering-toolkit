@@ -27,6 +27,10 @@ Remaining triggers:
 - Nontrivial multi-step → write the throughput checkpoint (Feature step 3).
 - Any prose surface → the **unslop** skill. Your reply is a prose surface. Write it per **Writing the reply**. Agent-facing prose also follows the **plugin-dev:skill-development** skill (Claude Code's authoring guidance for SKILL.md files).
 - Docs, RFCs, readmes, PR descriptions, or commit messages → the **technical-writing** skill (`/technical-writing`).
+- Running a benchmark, measuring perf, or reporting a measured speedup or regression → the [**benchmark-checklist** skill](../benchmark-checklist/SKILL.md) before reporting or acting on the number.
+- Asked to restate the user's goal and underlying problem → the [**in-your-own-words** skill](../in-your-own-words/SKILL.md). Asked to sharpen a task before starting → the [**sharpen** skill](../sharpen/SKILL.md).
+- Asked to catch up on this chat, or writing an autopilot update or handoff → the [**ketchup** skill](../ketchup/SKILL.md).
+- Asked to stop recurring agent mistakes in this repo → the [**correct** skill](../correct/SKILL.md). Asked for help with Engineering Toolkit setup or choosing a skill → the [**engineering-help** skill](../engineering-help/SKILL.md).
 - Before commit → the **deslop** skill (`/deslop`).
 - Shaping commits, splitting a PR, or building a stacked commit story → the **work-unit-commits** skill.
 - Before review → the **no-comments** skill (`/no-comments`).
@@ -69,6 +73,7 @@ Read the leaf skill in full for any principle you apply. Each entry names when i
 - **Fix Root Causes** (**principle-fix-root-causes**). Debugging. Trace each symptom to its root cause, reproduce first, ask why until you reach it.
 - **Sequence Work into Verifiable Units** (**principle-sequence-verifiable-units**). Multi-step work (sweeps, migrations, runs of similar edits) and how you stack commits and PRs. Break work into small units that each end in a check, verify each before the next, and order delivery so the sequence proves itself.
 - **Test Behavior, Not Implementation** (**principle-test-behavior-not-implementation**). Writing, changing, or keeping a test. Assert observable behavior or a contract and check that a relevant defect fails. Preserve useful negative-path and relational contract tests.
+- **Explain the Number** ([**principle-explain-the-number**](../principle-explain-the-number/SKILL.md)). Before trusting, reporting, or acting on a measured speedup, regression, throughput, latency, or eval result. Find what limits it and rule out other explanations for the number.
 
 **Delegation**
 
@@ -91,9 +96,9 @@ Read the leaf skill in full for any principle you apply. Each entry names when i
 
 ## Subagents
 
-For `inherit-parent`, `auto`, or an unconfigured native ad-hoc helper, prefer `engineering-agent`. `/engineering-mode` and `engineering-agent` route through the same wrapper. A typed Route role instead follows provider dispatch: Claude's shipped frontier agent definitions select the model alias and requested effort, Codex passes both to `spawn_agent`, and external providers run through the deterministic launcher. Routed workflow skills set the task and access mode. Do not override their choices.
+For `inherit-parent`, `auto`, or an unconfigured native ad-hoc helper, prefer `engineering-agent`. `/engineering-mode` owns the playbook and every spawn; `engineering-agent` is a delegate. A typed Route role follows provider dispatch. Keep the configured provider and model, choose a catalog-supported effort for each spawn, and honor an operator-specified effort. Routed workflow skills set the task and access mode. Do not override their choices.
 
-**Defaults for every delegation.** Start independent lanes together, use file pointers rather than inlined dumps, preserve only the tools or MCPs the task needs, and assign every writer a worktree or unique output directory. `/setup-engineering-toolkit` configures the descriptor per role. Upstream defaults use Grok 4.7 xhigh for feature/refactoring, exploration, and swarm work; GPT-6 Sol max for bug fixes, performance work, hillclimbing, and tooling review; Fable max for judgment, prose, explanation, synthesis, and hardest tasks; and the four-provider frontier panel for model-diverse judgment. The panel defaults are enumerated in `arena`, `architect`, and `interrogate`. Each code playbook's configured model comes from its line (`feature, refactoring`, `bug-fix`, `perf-issue`, or `hillclimb`), and the hardest changes read `hardest tasks`. Prose and judgment read `judgment and prose`. `inherit-parent` and `auto` use the parent model natively and reduce provider diversity when used in a panel.
+Start independent lanes together, use file pointers rather than inlined dumps, preserve only the tools or MCPs the task needs, and give each writer a worktree or unique output directory. Use a fresh child for each new task, fix, retry, follow-up, or second opinion. Reuse a live child only to continue its current assignment when it holds valuable state. `/setup-engineering-toolkit` configures the descriptor per role; per-spawn effort choices do not rewrite it.
 
 You own every subagent's work. Review the diff and write your own summary, don't pass through what it said. Interrupt-chained resumes silently drop directives, so fire a fresh subagent with consolidated scope rather than trusting a "done" summary. A second opinion is the same prompt against a different model. Agreement is high-signal.
 
@@ -109,7 +114,7 @@ Write the reply clean as you draft it. A cleanup pass after drafting does not re
 - **Never fabricate a link, citation, or transcript reference.** Link only artifacts you produced or read this session.
 - **Every claim carries its evidence or its label in the same sentence.** Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
 
-Every playbook ends with a reply written this way, PR link as `https://github.com/<owner>/<repo>/pull/<number>`. The per-playbook lines below name only the content unique to that playbook.
+Every playbook ends with a reply written this way, PR link as `https://github.com/<owner>/<repo>/pull/<number>`. Autopilot updates and handoffs use the [**ketchup** skill](../ketchup/SKILL.md) for the reply. Keep technical verdicts, head SHAs, and decision trails in linked artifacts so the user can inspect them without expanding the catch-up. The per-playbook lines below name only the content unique to that playbook.
 
 ## Comments
 

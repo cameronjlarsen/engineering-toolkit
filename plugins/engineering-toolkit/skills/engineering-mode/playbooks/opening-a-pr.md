@@ -33,13 +33,14 @@ Applies when `forge` is `github` or `origin`.
 
 **Descriptions.** The PR body is a briefing, not the lab notebook. A reviewer who has the diff should learn why the change exists, what is out of scope, and how you proved the change works. The squash commit body is the PR body.
 
-Use these sections in order. Drop a section when it has nothing to say.
+Use these sections in order. Drop a section when it has nothing to say, except `## Scope`, which is always present.
 
-- `## Why`. State the intent and approach in one or two short paragraphs. Do not list SHAs or rebase genealogy. Do not add a "based on main" preamble.
-- `## Scope`. Use bullets to list real symbols and paths. Name both sides of a rename or retarget. State what is in and out only when the boundary matters. Do not write a file-by-file essay.
+- `## Why`. State the problem and approach in one to three short sentences. Do not list SHAs or rebase genealogy. Do not add a "based on main" preamble.
+- `## What changed`. Use one to three short bullets. Name a real symbol or path only when it carries the change. Name both sides of a rename or retarget.
+- `## Scope`. Use one to three short items to say what the PR covers and what it deliberately leaves out, such as a follow-up or known gap. Do not list symbols or paths or write a file-by-file essay.
 - `## Tradeoffs`. Name only rejected alternatives that a reviewer would otherwise ask about. Skip this section when there was no real choice.
-- `## Blast Radius`. In one to three sentences, name who or what the change touches and why the change is safe or risky. State the continuing cost if main stays red without the fix.
-- `## Verification`. Name each real run path and its outcome. For a performance change, report one primary number with its unit in `before → after` form. Link the arena or swarm directory for the remaining evidence. Do not include sample-size methodology, swarm recitals, or metric tables.
+- `## Blast Radius`. In one to two sentences, name who or what the change touches and why it is safe or risky. State the continuing cost if main stays red without the fix.
+- `## Verification`. Use one to three bullets, each a real run path and its outcome. For a performance change, report one primary number with its unit in `before → after` form and link the arena or swarm directory for the rest. Do not include sample-size methodology, swarm recitals, or metric tables.
 
 After these sections, attach videos or screenshots when they prove a claim. Do not paste full SHAs, swarm or arena lane recitals, lever-correction essays, file-by-file checklists, or "CLEAN" verdicts. Put these details in a linked artifact. Do not use `## Summary` or `## Test plan` boilerplate. A commit body does not restate its subject.
 

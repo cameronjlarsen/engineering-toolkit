@@ -13,12 +13,12 @@ Do not open issues on Open Pstack for work that belongs in this fork. Keep one s
 | --- | --- |
 | Repository | `https://github.com/cursor/plugins.git` |
 | Path | `pstack/` |
-| Commit | `12d587dfb20741cafc376c42c696c5f6e2a64487` |
-| Cursor pstack version | `0.15.5` |
+| Commit | `99743e9c151c8537cbbf1f98bb38f34ef3368453` |
+| Cursor pstack version | `0.15.25` |
 | Open Pstack version at fork | `1.4.1` |
-| Engineering Toolkit version | `1.4.4` |
+| Engineering Toolkit version | `1.4.5` |
 
-The table above is the current Cursor sync point. This checkout started from Open Pstack 1.4.1, which imported that 0.15.1 sync. `README-UPSTREAM.md` preserves the Cursor pstack README verbatim. `CHANGES.md` and `NOTICE.md` describe the Open Pstack adaptations and provenance.
+The table above is the current Cursor pstack sync point. At the fresh fetch for this sync, `cursor/main` was `ac4e25a` (#690), not the earlier research snapshot `2284d64`. Since `99743e9`, the only commit touching `pstack/` is `182f2ce` (#637), which adds a generated Claude Code tree and is excluded. This checkout started from Open Pstack 1.4.1, which imported Cursor pstack 0.15.1. `README-UPSTREAM.md` preserves the current Cursor pstack README verbatim. `CHANGES.md` and `NOTICE.md` describe the adaptations and provenance.
 
 ## Open Pstack remote
 
@@ -30,16 +30,27 @@ git remote add upstream https://github.com/ericlitman/open-pstack.git
 
 Fetch Open Pstack `main` and inspect commits after the recorded Open Pstack version before you merge them here.
 
+This sync reviewed Open Pstack through `9368993` (v1.15.0), using its adapted sync commits `29f224e`, `63eedbf`, `d462f0a`, and `d8eeb4d` as references. The fork point remains v1.4.1.
+
 ## Cursor pstack exclusions
 
-- Commits `799151d` and `6fecddb` add and relocate `make-bot-ui`. It depends on Cursor routines, webhook events, and UI primitives that are not part of the shared skill tree.
+- Commits `799151d` and `6fecddb` add and relocate `make-bot-ui`. It depends on Cursor routines, webhook events, and UI primitives that are not part of the shared skill tree. Do not add `make-bot-ui` or a link to it from `engineering-help`.
 - Four `disable-model-invocation: true` lines from `73f8be4` are not applied to `how`, `why`, `unslop`, or `typescript-best-practices`. engineering-mode invokes those skills by name, and the flag blocks that route on Claude Code.
+- Do not add `disable-model-invocation: true` to newly imported skills. The principle leaves remain `user-invocable: false`, so engineering-mode can still invoke them by name.
+- Keep explicit `principle-*` names in the engineering-mode index.
 - The `23a56e2` default-model hunks for `bug-fix`, `perf-issue`, and `hillclimb` are not applied. Those frequent code-writing roles stay on the Sol matrix row for cost.
 - The `889ec4b` default-model hunks for `bug-fix`, `perf-issue`, and `hillclimb` are not applied. Those roles stay on the Sol matrix row for cost, same reason as `23a56e2`.
 - The `70b2dc8` default-model hunks that move `bug-fix`, `perf-issue`, and `hillclimb` off Sol are not applied. Those roles stay on `codex:gpt-6-sol`.
 - The `70b2dc8` hunks that shrink arena, architect, and interrogate from four runners to three are not applied. Those panels stay four runners.
+- Cursor `df58112` / #511 is not applied: keep the Sol defaults, four-runner panels, and current model budgets. Do not take `setup-pstack`'s default budget change; this fork keeps operator overrides and Opus routes at `@medium`.
+- Do not take the `b93e811` `~/.cursor/plugins/` search in `poteto-agent`, the Built-in PR tool paragraph, Cursor manifests, `docs/guide`, or the Agent Plugins v1 root manifest.
+- Keep this fork's removal of native `pstack-*` plugin agents.
 - The Claude manifest does not take the logo field from `efa2a53` because Claude Code has no schema for it. The shared asset is exposed through the Codex manifest instead.
 - Do not replace `plugins/engineering-toolkit/assets/logo.png` with Cursor pstack or Open Pstack bytes. This fork owns that catalog mark. Keep the file under 512 KiB.
+
+## Open Pstack comparison
+
+The Windows SessionStart fix from v1.8.0 is imported. The model registry and generated catalog, extra providers (DeepSeek Harness, Antigravity, OpenCode, Amp, Cursor CLI, Devin), release tooling, and comment sweep are not imported.
 
 ## Check Cursor pstack for changes
 
@@ -53,8 +64,8 @@ Fetch and inspect only commits that touched pstack after the recorded sync point
 
 ```shell
 git fetch cursor main
-git log --oneline 12d587dfb20741cafc376c42c696c5f6e2a64487..cursor/main -- pstack
-git diff --stat 12d587dfb20741cafc376c42c696c5f6e2a64487..cursor/main -- pstack
+git log --oneline 99743e9c151c8537cbbf1f98bb38f34ef3368453..cursor/main -- pstack
+git diff --stat 99743e9c151c8537cbbf1f98bb38f34ef3368453..cursor/main -- pstack
 ```
 
 No output means the tracked pstack tree has not changed. This comparison does not need a polling service or generated mirror branch.
