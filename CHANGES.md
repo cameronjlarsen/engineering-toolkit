@@ -2,13 +2,15 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
-## Cursor reference-file catch-up keeps 1.4.5 manifests
+## Cursor reference-file catch-up publishes plugin version 1.4.6
 
 The 0.15.25 sync left thirteen reference files on text that Cursor's #495, #538, and #571 had since changed, and `typescript-best-practices/references/patterns.md` behind #700. This checkout takes all fourteen from Cursor pstack `0317eb8` byte for byte, apart from the documented renames. Open Pstack v1.15.0 carries the same text for the thirteen.
 
 Taken. The eight `why` reference files and three `interrogate` reference files, `how/references/explorer-prompt.md`, `architect/references/design-red-flags.md` with the four sections from #495, and `typescript-best-practices/references/patterns.md` with the #700 wording that a brand comes from a type guard and never from `as`. The same sentence is added to the Branded types row in `typescript-best-practices/SKILL.md`.
 
-Not applied. Every `SKILL.md` that holds a dispatch contract, `reflect` references, and the playbooks keep their text. The `disable-model-invocation: true` line in `typescript-best-practices/SKILL.md` stays out, as in `UPSTREAM.md`. The Claude Code tree from #637 stays excluded. The 1.4.5 manifests are unchanged.
+Not applied. Every `SKILL.md` that holds a dispatch contract, `reflect` references, and the playbooks keep their text. The `disable-model-invocation: true` line in `typescript-best-practices/SKILL.md` stays out, as in `UPSTREAM.md`. The Claude Code tree from #637 stays excluded.
+
+Engineering Toolkit publishes 1.4.6 across its five versioned manifests, so installed 1.4.5 caches pick up the new reference text.
 
 ## Cursor 0.15.6–0.15.25 sync publishes plugin version 1.4.5
 
