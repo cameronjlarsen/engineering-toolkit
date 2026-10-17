@@ -87,6 +87,18 @@ other route runs through that provider's CLI via `pstack-runner`. Children
 receive an assigned plan. They never choose a route, detect or reroute the
 harness, or spawn another model.
 
+Choose the effort before each spawn. Start from the configured role's typed
+Route, and adjust only its effort for this task when needed. The effort must be
+listed for that exact provider and model in the catalog. Keep the provider and
+model fixed, honor an operator-specified effort, and do not rewrite the stored
+descriptor. Pass the chosen Route to the child; the child cannot change it.
+
+Use a fresh child for each new task, fix, retry, follow-up, or second opinion.
+Reuse a live child only when continuing its current assignment preserves
+valuable state, such as a running server or an active browser session. The
+parent owns the decision trail and any playbook; the child receives one bounded
+assignment and the absolute skill path it needs.
+
 | Parent | `claude:` | `codex:` | `cursor:` | `grok:` |
 |---|---|---|---|---|
 | Claude Code | native | Codex CLI | Cursor CLI | Grok CLI |
