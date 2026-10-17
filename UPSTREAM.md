@@ -34,7 +34,7 @@ This sync reviewed Open Pstack through `9368993` (v1.15.0), using its adapted sy
 
 ## Cursor pstack exclusions
 
-- Commits `799151d` and `6fecddb` add and relocate `make-bot-ui`. It depends on Cursor routines, webhook events, and UI primitives that are not part of the shared skill tree. Do not add `make-bot-ui` or a link to it from `poteto-help`.
+- Commits `799151d` and `6fecddb` add and relocate `make-bot-ui`. It depends on Cursor routines, webhook events, and UI primitives that are not part of the shared skill tree. Do not add `make-bot-ui` or a link to it from `engineering-help`.
 - Four `disable-model-invocation: true` lines from `73f8be4` are not applied to `how`, `why`, `unslop`, or `typescript-best-practices`. engineering-mode invokes those skills by name, and the flag blocks that route on Claude Code.
 - Do not add `disable-model-invocation: true` to newly imported skills. The principle leaves remain `user-invocable: false`, so engineering-mode can still invoke them by name.
 - Keep explicit `principle-*` names in the engineering-mode index.

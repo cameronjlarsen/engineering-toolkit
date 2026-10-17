@@ -1,9 +1,9 @@
 ---
-name: poteto-help
-description: Guides users through Engineering Toolkit setup, /engineering-mode, and picking the skill, playbook, or principle for a task. Use for /poteto-help or questions about Engineering Toolkit.
+name: engineering-help
+description: Guides users through Engineering Toolkit setup, /engineering-mode, and picking the skill, playbook, or principle for a task. Use for /engineering-help or questions about Engineering Toolkit.
 ---
 
-# Poteto help
+# Engineering help
 
 Answer the user's question about Engineering Toolkit, hand them a prompt they can send, and link the file the answer came from. For a help question, don't start the work. The user asked how, and an Engineering Toolkit run spends real tokens, so let them send the prompt.
 
@@ -90,7 +90,7 @@ The default answer is `/engineering-mode`, which runs most of the others when it
 | Turn their own working habits into a personal mode skill | [`/automate-me`](../automate-me/SKILL.md) |
 | Turn what a finished task taught into skill edits | [`/reflect`](../reflect/SKILL.md) |
 | Stop agents from repeating the same mistakes in this repo | [`/correct`](../correct/SKILL.md) |
-| Find their way around Engineering Toolkit | `/poteto-help` |
+| Find their way around Engineering Toolkit | `/engineering-help` |
 
 If a skill directory next to this one is missing from the table, read its frontmatter and route by its description. The `principle-*` directories are covered under principles below.
 

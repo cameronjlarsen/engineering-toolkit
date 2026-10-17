@@ -30,7 +30,7 @@ Remaining triggers:
 - Running a benchmark, measuring perf, or reporting a measured speedup or regression → the [**benchmark-checklist** skill](../benchmark-checklist/SKILL.md) before reporting or acting on the number.
 - Asked to restate the user's goal and underlying problem → the [**in-your-own-words** skill](../in-your-own-words/SKILL.md). Asked to sharpen a task before starting → the [**sharpen** skill](../sharpen/SKILL.md).
 - Asked to catch up on this chat, or writing an autopilot update or handoff → the [**ketchup** skill](../ketchup/SKILL.md).
-- Asked to stop recurring agent mistakes in this repo → the [**correct** skill](../correct/SKILL.md). Asked for help with Engineering Toolkit setup or choosing a skill → the [**poteto-help** skill](../poteto-help/SKILL.md).
+- Asked to stop recurring agent mistakes in this repo → the [**correct** skill](../correct/SKILL.md). Asked for help with Engineering Toolkit setup or choosing a skill → the [**engineering-help** skill](../engineering-help/SKILL.md).
 - Before commit → the **deslop** skill (`/deslop`).
 - Shaping commits, splitting a PR, or building a stacked commit story → the **work-unit-commits** skill.
 - Before review → the **no-comments** skill (`/no-comments`).
