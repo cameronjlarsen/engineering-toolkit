@@ -1,5 +1,7 @@
 # Provider dispatch
 
+On T3 Code (the session has `delegate_task`), read [`t3-tools.md`](t3-tools.md) first. Its Routes section replaces the native and external lanes below.
+
 Engineering Toolkit model choices are typed `Route` values written as
 provider-qualified descriptors:
 
