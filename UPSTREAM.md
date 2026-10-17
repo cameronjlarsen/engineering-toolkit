@@ -18,7 +18,7 @@ Do not open issues on Open Pstack for work that belongs in this fork. Keep one s
 | Open Pstack version at fork | `1.4.1` |
 | Engineering Toolkit version | `1.4.5` |
 
-The table above is the current Cursor pstack sync point. At the fresh fetch for this sync, `cursor/main` was `ac4e25a` (#690), not the earlier research snapshot `2284d64`. Since `99743e9`, the only commit touching `pstack/` is `182f2ce` (#637), which adds a generated Claude Code tree and is excluded. This checkout started from Open Pstack 1.4.1, which imported Cursor pstack 0.15.1. `README-UPSTREAM.md` preserves the current Cursor pstack README verbatim. `CHANGES.md` and `NOTICE.md` describe the adaptations and provenance.
+The table above is the current Cursor pstack sync point. At the fresh fetch for this sync, `cursor/main` was `ac4e25a` (#690), not the earlier research snapshot `2284d64`. Since `99743e9`, two commits touch `pstack/`. `182f2ce` (#637) adds a generated Claude Code tree and is excluded. `0317eb8` (#700) changes the branded-type wording in `typescript-best-practices`, and its skill text is applied. The commit row above stays `99743e9`; the reference-file catch-up in `CHANGES.md` takes fourteen files from `0317eb8`. This checkout started from Open Pstack 1.4.1, which imported Cursor pstack 0.15.1. `README-UPSTREAM.md` preserves the current Cursor pstack README verbatim. `CHANGES.md` and `NOTICE.md` describe the adaptations and provenance.
 
 ## Open Pstack remote
 
