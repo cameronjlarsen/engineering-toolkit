@@ -18,13 +18,27 @@ Give each call its own `clientRequestId`, stable across retries of that call, an
 
 On T3, `delegate_task` replaces the native and external lanes in [`provider-dispatch.md`](provider-dispatch.md). Do not start `pstack-runner`. The parent resolves every configured Route once, before any spawn, and children never route.
 
-1. Call `orchestrator_capabilities`. It lists the provider instances this machine can run, each with `canRunChildTask` and its models and options. Instances differ per machine and can be disabled.
-2. A Route `provider:model@effort` goes to the instance whose `driverKind` matches the provider: `claude` to `claudeAgent`, `codex` to `codex`, `cursor` to `cursor`, `grok` to `grok`. The Route's model must appear in that instance's `models`, and its effort in the model's reasoning option (`effort` or `reasoningEffort`). Pass them as `target: { providerInstanceId, model, options }`.
-3. A Route whose instance is disabled, cannot run child tasks, or lacks the model or effort is a named dropout. Do not move it to another instance, another model, or another effort. Do not add a lane in its place.
-4. `inherit-parent` and `auto` omit `target`, so the child runs on the parent's model.
+1. Call `orchestrator_capabilities` once per parent run, before any spawn. It lists the provider instances this machine can run, each with `canRunChildTask`, its models, and each model's options. Instances differ per machine and can be disabled.
+2. `inherit-parent` and `auto` omit `target`, so the child runs on the parent's model.
+3. Resolve a Route `provider:model@effort` in this order. The first failure is a named dropout, and no step searches for an alternative.
+   - **Instance.** Use the instance whose `driverKind` matches the provider in the table below and that has `canRunChildTask`. With none, the dropout is `instance-missing`, or `instance-cannot-run` with the first entry of its `constraints`. With two or more, the dropout is `ambiguous-instance`. Do not choose by order.
+   - **Model.** The Route's model must equal a model `id` in that instance exactly. Do not strip a prefix, match a bare name, or prefer one backend over another: `glm-5.3` does not match `opencode-go/glm-5.3`. A miss is `model-not-served`; list any ids that end in the requested name. The only exception is the Claude aliases `opus` and `fable`, which resolve to the model with the highest numeric revision among `claude-<alias>-N` and `claude-<alias>-N-M`, compared as (N, M) with M = 0 when absent. Never use list order. With no match the dropout is `alias-unresolved`.
+   - **Effort.** The model must have the select option named in the table, and that option must list the Route's effort verbatim. A miss is `effort-option-missing` or `effort-not-offered`. Never map `max` to `xhigh` or pick a nearby value.
+4. Pass `target: { providerInstanceId, model, options: { <effort option id>: <effort> } }`. Always pass the effort. Set no other option.
+
+| Route provider | `driverKind` | Effort option id |
+|----------------|--------------|------------------|
+| `claude` | `claudeAgent` | `effort` |
+| `codex` | `codex` | `reasoningEffort` |
+| `opencode` | `opencode` | `variant` |
+| `cursor`, `grok` | `cursor`, `grok` | not observed yet, so `effort-option-missing` |
+
+The `codex` option id is unverified until a Codex instance is enabled. The `opencode` provider exists once the grammar accepts it (pull request 20). Models whose options are empty cannot carry an effort, so they cannot serve a Route.
+
+A Route names its harness. Never move a lane to another provider's instance, even when that instance serves the same model. Moving a lane is an edit to the sheet that the user accepts in setup.
 
 A panel that loses lanes continues with the completed ones, as `provider-dispatch.md` requires, and says how many providers ran. A required review with no completed reviewer stays blocked.
 
 ## Ledger
 
-End a reply that dispatched work with one line per delegated step: the role, then the `providerInstanceId/model` it ran on, or `dropout: <reason>`, or `in-thread: <reason>`.
+End a reply that dispatched work with one line per delegated step: the role, then the `providerInstanceId/model` it ran on and, for an alias, the requested name, or `dropout: <tag> <reason>`, or `in-thread: <reason>`. Finish with `N of M lanes ran, P providers`.
