@@ -4,6 +4,8 @@ This repository is `cameronjlarsen/engineering-toolkit`. It started from Open Ps
 
 This fork keeps one shared `plugins/engineering-toolkit/skills/` tree for Cursor, Claude Code, and Codex, and aims to run on other coding agents the same way. Keep harness differences at the existing mapping files (`codex-tools.md`, `cursor-tools.md`, `t3-tools.md`, `provider-dispatch.md`). Do not fork a skill per harness and do not add compatibility layers. The parent harness resolves provider routing once. Children do not detect or reroute themselves.
 
+The core skills and playbooks say what to do. They track Cursor pstack, and `UPSTREAM.md` lists the renames and exclusions. They keep Claude Code tool names. Each of `codex-tools.md`, `cursor-tools.md`, and `t3-tools.md` says how its host starts and waits for subagents. `provider-dispatch.md` holds the route table. `/setup-engineering-toolkit` writes one model sheet per parent, and a role set to `inherit-parent` or `auto` runs on the parent's own model. This repository owns the Azure DevOps and Origin review flow, `engineering-agent`, `comment-sicko`, and playbook fixes. Keep `engineering-mode/scripts/runner/` and `engineering-mode/scripts/routing/` until the trial in issue #28 decides their removal.
+
 Before opening a pull request, run the Bun tests, strict typecheck, static invariants, and plugin validation.
 
 Nothing merges, tags, releases, or rolls out until the exact candidate is installed and the changed behavior passes a live test from the real user surface. Unit tests, validators, source inspection, and self-reports do not satisfy this gate. What to test depends on what the pull request changes:
