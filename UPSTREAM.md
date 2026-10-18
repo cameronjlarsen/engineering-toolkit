@@ -12,12 +12,12 @@ Do not open issues on Open Pstack for work that belongs in this fork. Keep one s
 | --- | --- |
 | Repository | `https://github.com/cursor/plugins.git` |
 | Path | `pstack/` |
-| Commit | `99743e9c151c8537cbbf1f98bb38f34ef3368453` |
+| Commit | `4382e687a50b8d2c5ce4d141d001186589cff8d5` |
 | Cursor pstack version | `0.15.25` |
 | Open Pstack version at fork | `1.4.1` |
 | Engineering Toolkit version | `1.4.6` |
 
-The table above is the current Cursor pstack sync point. At the fresh fetch for this sync, `cursor/main` was `ac4e25a` (#690), not the earlier research snapshot `2284d64`. Since `99743e9`, two commits touch `pstack/`. `182f2ce` (#637) adds a generated Claude Code tree and is excluded. `0317eb8` (#700) changes the branded-type wording in `typescript-best-practices`, and its skill text is applied. The commit row above stays `99743e9`; the reference-file catch-up in `CHANGES.md` takes fourteen files from `0317eb8`. This checkout started from Open Pstack 1.4.1, which imported Cursor pstack 0.15.1. `README-UPSTREAM.md` preserves the current Cursor pstack README verbatim. `CHANGES.md` and `NOTICE.md` describe the adaptations and provenance.
+The table above is the current Cursor pstack sync point. At the fresh fetch for this sync, `cursor/main` was `4382e68` (#709), the last commit to touch `pstack/`. Eight commits touch `pstack/` since `99743e9`. Applied: `16541c6` (#692) and `bc14437` (#708) in `ketchup`, `4382e68` (#709) as `create-formal-verification-skill`, and the README refresh from `019a6a2` (#704) in `README-UPSTREAM.md`. Already in the tree: `0317eb8` (#700), whose reference-file catch-up in `CHANGES.md` takes fourteen files, and `a968159` (#702), since every skill name already matches its folder. Excluded: `182f2ce` (#637) and `1b80080` (#705), which add and extend a generated Claude Code tree, and the `docs/guide` edits in #704. The commit row moves to `4382e68`. Cursor's manifest still reads `0.15.25`, so that row does not change. This checkout started from Open Pstack 1.4.1, which imported Cursor pstack 0.15.1. `README-UPSTREAM.md` preserves the current Cursor pstack README verbatim. `CHANGES.md` and `NOTICE.md` describe the adaptations and provenance.
 
 ## Cursor pstack exclusions
 
@@ -31,6 +31,7 @@ The table above is the current Cursor pstack sync point. At the fresh fetch for 
 - The `70b2dc8` hunks that shrink arena, architect, and interrogate from four runners to three are not applied. Those panels stay four runners.
 - Cursor `df58112` / #511 is not applied: keep the Sol defaults, four-runner panels, and current model budgets. Do not take `setup-pstack`'s default budget change; this fork keeps operator overrides and Opus routes at `@medium`.
 - Do not take the `b93e811` `~/.cursor/plugins/` search in `poteto-agent`, the Built-in PR tool paragraph, Cursor manifests, `docs/guide`, or the Agent Plugins v1 root manifest.
+- Do not take Cursor's generated Claude Code tree or adapter (`182f2ce` / #637, `1b80080` / #705): `harness/pstack/`, `pstack/docs/harness/claude-code.md`, the harness generator and plugin-validation scripts, and the `~/.claude/rules/pstack-models.md` model sheet path. The adapter maps a non-Claude model slug to the session model, which is a weaker-model fallback. Also do not take `scripts/check-pstack-docs.mjs` or the `docs/guide` edits from `019a6a2` / #704.
 - Keep this fork's removal of native `pstack-*` plugin agents.
 - The Claude manifest does not take the logo field from `efa2a53` because Claude Code has no schema for it. The shared asset is exposed through the Codex manifest instead.
 - Do not replace `plugins/engineering-toolkit/assets/logo.png` with Cursor pstack or Open Pstack bytes. This fork owns that catalog mark. Keep the file under 512 KiB.

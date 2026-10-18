@@ -158,6 +158,7 @@ The table uses the short upstream names. Claude Code exposes each native skill w
 | `/no-comments` | strip comments before review via the `comment-sicko` subagent, then fix what it finds |
 | `/create-verification-skill` | generate a project-local verification skill and feature map |
 | `/maintain-verification-skill` | re-sync a drifted verification skill and its feature map |
+| `/create-formal-verification-skill` | formally verify a race, invariant, or other property that tests rarely reach, and leave a project-local skill that rechecks it |
 | `/deslop` | deslop a diff before commit |
 | `/babysit` | monitor an open PR, fix CI/comments, keep it merge-ready |
 | `/thermo-nuclear-code-quality-review` | extremely strict maintainability audit |
