@@ -101,11 +101,11 @@ failed first run creates neither artifact.
 
 | Family | Pair source | Claude parent | Codex parent | Cursor parent | Availability proof |
 |---|---|---|---|---|---|
-| Fable | Fable matrix row + selected effort | native Agent `pstack-fable-<effort>` | Claude CLI | native Task `pstack-fable-<effort>` plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
+| Fable | Fable matrix row + selected effort | native Agent `pstack-lane` with `model` `fable` and the effort | Claude CLI | native Task `pstack-lane` plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
 | Sol | Sol matrix row + selected effort | `codex exec` | native `spawn_agent` | Codex CLI | `codex debug models` without `--bundled` as the model list, plus `codex login status` plus one-turn probe or native one-turn probe |
 | Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | native Task host-spawn | native one-turn probe or `grok models` plus one-turn probe |
-| Opus | Opus matrix row + selected effort | native Agent `pstack-opus-<effort>` | Claude CLI | native Task `pstack-opus-<effort>` plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
-| Sonnet 5.5 | Additional selectable-model row + selected effort | native Agent `pstack-sonnet-<effort>` | Claude CLI | native Task `pstack-sonnet-<effort>` plus exact live selector for the resolved effort | native one-turn probe or `claude auth status --json` plus one-turn probe |
+| Opus | Opus matrix row + selected effort | native Agent `pstack-lane` with `model` `opus` and the effort | Claude CLI | native Task `pstack-lane` plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
+| Sonnet 5.5 | Additional selectable-model row + selected effort | native Agent `pstack-lane` with `model` `sonnet` and the effort | Claude CLI | native Task `pstack-lane` plus exact live selector for the resolved effort | native one-turn probe or `claude auth status --json` plus one-turn probe |
 
 Use a tiny read-only probe that returns a unique marker. A login-status
 command alone proves credentials, not that the selected model and effort run.
