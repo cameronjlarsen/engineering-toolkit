@@ -2,6 +2,18 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## Cursor 0317eb8 to 4382e68 sync keeps 1.4.6 manifests
+
+This checkout applies Cursor pstack through `4382e687a50b8d2c5ce4d141d001186589cff8d5` without bumping off 1.4.6. Installed 1.4.6 caches do not pick up this text until the next version bump.
+
+Taken. #692 and #708: `ketchup` lists every item that waits on the user, each with its link, effect, evidence, risk, and pick, and the reply grows with the item count. #709: `create-formal-verification-skill`. The README refresh from #704, as `README-UPSTREAM.md`.
+
+Adapted. `ketchup` keeps the fork's autopilot clause, its read-only paragraph, and the harness-neutral chart wording in place of `/visualize`. The new skill and `ketchup` carry no `disable-model-invocation`, as `UPSTREAM.md` requires. `engineering-help` takes the new `ketchup` row text and a row for the new skill. `docs/reference.md` lists the new skill.
+
+Already applied. #700 and #702. Every skill name in this tree already matches its folder.
+
+Not applied. #637 and #705, which add and extend Cursor's generated Claude Code tree and adapter. The adapter writes the model sheet to `~/.claude/rules/`, maps non-Claude slugs to the session model, and reads skills with `Read` because Cursor keeps `disable-model-invocation`. This fork keeps its own manifests, hook, sheet path, and dispatch. The `docs/guide` edits and `scripts/check-pstack-docs.mjs` from #704 are also left out.
+
 ## Cursor reference-file catch-up publishes plugin version 1.4.6
 
 The 0.15.25 sync left thirteen reference files on text that Cursor's #495, #538, and #571 had since changed, and `typescript-best-practices/references/patterns.md` behind #700. This checkout takes all fourteen from Cursor pstack `0317eb8` byte for byte, apart from the documented renames. Open Pstack v1.15.0 carries the same text for the thirteen.
