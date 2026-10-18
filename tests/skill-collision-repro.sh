@@ -115,7 +115,6 @@ grep -q '/et:setup-engineering-toolkit' "$repo/README.md" || identity_bad="$iden
 grep -Fq '/add-plugin https://github.com/cameronjlarsen/engineering-toolkit' "$repo/README.md" || identity_bad="$identity_bad README missing Cursor /add-plugin GitHub URL"$'\n'
 [ -e "$repo/plugins/engineering-toolkit/skills/setup-pstack" ] && identity_bad="$identity_bad leftover skills/setup-pstack"$'\n'
 grep -Fq '~/.cursor/rules/engineering-toolkit-models.mdc' "$repo/plugins/engineering-toolkit/skills/setup-engineering-toolkit/SKILL.md" || identity_bad="$identity_bad setup skill lost Cursor sheet path"$'\n'
-grep -Fq 'engineering-toolkit-models.mdc' "$repo/plugins/engineering-toolkit/skills/engineering-mode/scripts/routing/parent.ts" || identity_bad="$identity_bad parent.ts lost Cursor sheet path"$'\n'
 hook="$repo/plugins/engineering-toolkit/hooks/session-start-context.md"
 grep -Fq 'You have Engineering Toolkit.' "$hook" || identity_bad="$identity_bad SessionStart hook lost Engineering Toolkit greeting"$'\n'
 grep -Fq '`et:engineering-mode`' "$hook" || identity_bad="$identity_bad SessionStart hook lost et:engineering-mode"$'\n'

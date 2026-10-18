@@ -2,7 +2,6 @@ import { describe, expect, it } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { shippedCatalog } from "../routing/catalog.ts";
-import { firstRunRoleMap } from "../routing/parent.ts";
 import type { ModelSlug } from "../routing/route.ts";
 import { loadRoleMap, printRoleMap } from "../routing/sheet.ts";
 import { EFFORTS, type Effort } from "./types.ts";
@@ -403,10 +402,12 @@ describe("model matrix", () => {
 
   it("parses setup's first-run sheet, prose included, on every parent", () => {
     const sheet = firstRunSheet(setup);
-    for (const parent of ["claude-code", "codex", "cursor"] as const) {
+    const reference = loadRoleMap(sheet, "claude-code");
+    if (!reference.ok) throw new Error(`claude-code: ${JSON.stringify(reference.error)}`);
+    for (const parent of ["codex", "cursor"] as const) {
       const loaded = loadRoleMap(sheet, parent);
       if (!loaded.ok) throw new Error(`${parent}: ${JSON.stringify(loaded.error)}`);
-      expect(loaded.value).toEqual(firstRunRoleMap("claude-code", shippedCatalog()));
+      expect(loaded.value).toEqual(reference.value);
     }
   });
 
@@ -437,10 +438,18 @@ describe("model matrix", () => {
       expect(onApp?.efforts).toEqual(row.selectableEfforts);
       expect(onApp?.nativeStem).toBe(row.pluginAgentStem);
     }
-    const printed = printRoleMap(firstRunRoleMap("claude-code", catalog));
+    const firstRun = loadRoleMap(firstRunSheet(setup), "claude-code");
+    if (!firstRun.ok) throw new Error(JSON.stringify(firstRun.error));
+    const printed = printRoleMap(firstRun.value);
+    expect(printed).toContain("feature, refactoring: grok:grok-4.7@xhigh");
     expect(printed).toContain("bug-fix: codex:gpt-6-sol@max");
     expect(printed).toContain("perf-issue: codex:gpt-6-sol@max");
     expect(printed).toContain("hillclimb: codex:gpt-6-sol@max");
+    expect(printed).toContain("judgment and prose: claude:fable@max");
+    expect(printed).toContain("hardest tasks: claude:fable@max");
+    expect(printed).toContain("how explorer: grok:grok-4.7@xhigh");
+    expect(printed).toContain("how explainer: claude:fable@max");
+    expect(printed).toContain("swarm workers: grok:grok-4.7@xhigh");
     const panel = quad.join(", ");
     for (const role of PANEL_ROLES) {
       expect(printed).toContain(`${role}: ${panel}`);

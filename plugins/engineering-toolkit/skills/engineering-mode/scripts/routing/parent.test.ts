@@ -1,27 +1,33 @@
 import { describe, expect, it } from "bun:test";
-import { homedir } from "node:os";
-import { join } from "node:path";
 import { shippedCatalog, SOL_CLI_MODEL } from "./catalog.ts";
 import {
-  applyAcceptedMigrations,
-  applyIntegrationPatch,
-  detectParent,
-  firstRunRoleMap,
   parentIdentityKeys,
-  parentProfile,
   proposeStalePinMigrations,
-  renderParentFiles,
   unwrapStoredSheet,
-  wrapMdc,
 } from "./parent.ts";
-import {
-  modelSlug,
-  route,
-  type ModelSlug,
-  type ParentHost,
-  type RoleMap,
-} from "./route.ts";
+import { modelSlug, type ParentHost, type RoleMap } from "./route.ts";
 import { loadRoleMap, printRoleMap } from "./sheet.ts";
+
+const BASE_SHEET = `# Engineering Toolkit model configuration
+
+Descriptor grammar: 3
+
+feature, refactoring: grok:grok-4.7@xhigh
+bug-fix: codex:gpt-6-sol@max
+perf-issue: codex:gpt-6-sol@max
+hillclimb: codex:gpt-6-sol@max
+judgment and prose: claude:fable@max
+hardest tasks: claude:fable@max
+how explorer: grok:grok-4.7@xhigh
+how explainer: claude:fable@max
+why investigators, synthesizer: inherit-parent
+reflect tooling, judgment, divergent, synthesizer: inherit-parent
+arena runners: claude:fable@max, codex:gpt-6-sol@max, grok:grok-4.7@xhigh, claude:opus@xhigh
+arena cross-judge pool: claude:fable@max, codex:gpt-6-sol@max, grok:grok-4.7@xhigh, claude:opus@xhigh
+swarm workers: grok:grok-4.7@xhigh
+architect runners: claude:fable@max, codex:gpt-6-sol@max, grok:grok-4.7@xhigh, claude:opus@xhigh
+interrogate reviewers: claude:fable@max, codex:gpt-6-sol@max, grok:grok-4.7@xhigh, claude:opus@xhigh
+`;
 
 function slug(raw: string) {
   const parsed = modelSlug(raw);
@@ -29,94 +35,19 @@ function slug(raw: string) {
   return parsed.value;
 }
 
-describe("detectParent", () => {
-  it("classifies from exclusive tools and treats env as corroboration", () => {
-    expect(
-      detectParent({ env: {}, tools: new Set(["Task"]) })
-    ).toEqual({ ok: true, value: "cursor" });
-    expect(
-      detectParent({ env: { CLAUDECODE: "1" }, tools: new Set(["Agent"]) })
-    ).toEqual({ ok: true, value: "claude-code" });
-    expect(
-      detectParent({ env: { CODEX_CI: "1" }, tools: new Set(["spawn_agent"]) })
-    ).toEqual({ ok: true, value: "codex" });
+describe("stored sheets", () => {
+  it("passes a bare grammar 3 sheet through unchanged", () => {
+    expect(unwrapStoredSheet(BASE_SHEET)).toEqual({ ok: true, value: BASE_SHEET });
   });
 
-  it("uses env only when tools are silent", () => {
-    expect(
-      detectParent({ env: { CURSOR_AGENT: "1" }, tools: new Set() })
-    ).toEqual({ ok: true, value: "cursor" });
-  });
+  it("unwraps a Cursor always-apply mdc to the grammar 3 body", () => {
+    const stored = `---
+description: Engineering Toolkit model configuration
+alwaysApply: true
+---
 
-  it("does not guess when tools and env disagree", () => {
-    const result = detectParent({
-      env: { CLAUDECODE: "1" },
-      tools: new Set(["Task"]),
-    });
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.error.tag).toBe("ambiguous-parent");
-  });
-
-  it("reports unknown when nothing matches", () => {
-    expect(detectParent({ env: {}, tools: new Set() })).toEqual({
-      ok: false,
-      error: { tag: "unknown-parent" },
-    });
-  });
-});
-
-describe("firstRunRoleMap", () => {
-  it("uses the parent's provider when the parent serves the model", () => {
-    const catalog = shippedCatalog();
-    const cursor = printRoleMap(firstRunRoleMap("cursor", catalog));
-    const claude = printRoleMap(firstRunRoleMap("claude-code", catalog));
-    expect(cursor).toContain("judgment and prose: cursor:fable@max");
-    expect(cursor).toContain("hardest tasks: cursor:fable@max");
-    expect(cursor).toContain(
-      "arena runners: cursor:fable@max, codex:gpt-6-sol@max, cursor:grok-4.7@xhigh, cursor:opus@xhigh"
-    );
-    expect(cursor).not.toContain("claude-code/fable");
-    expect(cursor).not.toContain("grok/grok-4.7");
-    expect(cursor).not.toContain("claude:fable");
-    expect(cursor).not.toContain("grok:grok-4.7");
-    expect(cursor).not.toContain("claude-sonnet-5-5");
-    expect(claude).toContain(
-      "arena runners: claude:fable@max, codex:gpt-6-sol@max, grok:grok-4.7@xhigh, claude:opus@xhigh"
-    );
-
-    const codex = printRoleMap(firstRunRoleMap("codex", catalog));
-    expect(codex).toContain("bug-fix: codex:gpt-6-sol@max");
-    expect(codex).toContain("judgment and prose: claude:fable@max");
-    expect(codex).toContain(
-      "arena runners: claude:fable@max, codex:gpt-6-sol@max, grok:grok-4.7@xhigh, claude:opus@xhigh"
-    );
-  });
-
-  it("writes a sheet that loads back on every parent", () => {
-    const catalog = shippedCatalog();
-    for (const parent of ["claude-code", "codex", "cursor"] as const satisfies readonly ParentHost[]) {
-      const roles = firstRunRoleMap(parent, catalog);
-      expect(loadRoleMap(printRoleMap(roles), parent)).toEqual({ ok: true, value: roles });
-    }
-  });
-});
-
-describe("parent files", () => {
-  it("persists Cursor as one always-apply grammar 3 mdc", () => {
-    const profile = parentProfile("cursor");
-    expect(profile.sheetPath).toBe(
-      join(homedir(), ".cursor", "rules", "engineering-toolkit-models.mdc")
-    );
-    expect(profile.mappingDoc).toBe("cursor-tools.md");
-    const sheet = printRoleMap(firstRunRoleMap("cursor", shippedCatalog()));
-    const files = renderParentFiles(profile, sheet);
-    expect(files.integration.kind).toBe("none");
-    expect(files.sheet.contents.startsWith("---\n")).toBe(true);
-    expect(files.sheet.contents).toContain("alwaysApply: true");
-    const unwrapped = unwrapStoredSheet(files.sheet.contents);
-    expect(unwrapped).toEqual({ ok: true, value: sheet });
-    expect(wrapMdc(files.sheet.contents)).toBe(files.sheet.contents);
+${BASE_SHEET}`;
+    expect(unwrapStoredSheet(stored)).toEqual({ ok: true, value: BASE_SHEET });
   });
 
   it("stops when a Cursor mdc is an upstream Task-slug rule", () => {
@@ -131,43 +62,6 @@ Use grok-4.6-fast-xhigh for arena.
       ok: false,
       error: { tag: "inconsistent-integration" },
     });
-  });
-
-  it("is idempotent for Claude include and Codex bounded-block patches", () => {
-    const claude = applyIntegrationPatch("# notes\n", {
-      kind: "ensure-line",
-      path: "CLAUDE.md",
-      line: "@~/.claude/engineering-toolkit-models.md",
-    });
-    expect(claude.ok).toBe(true);
-    if (!claude.ok) return;
-    expect(
-      applyIntegrationPatch(claude.value, {
-        kind: "ensure-line",
-        path: "CLAUDE.md",
-        line: "@~/.claude/engineering-toolkit-models.md",
-      })
-    ).toEqual(claude);
-
-    const sheet = "# Engineering Toolkit model configuration\n\nDescriptor grammar: 3\n";
-    const first = applyIntegrationPatch("prefix\n", {
-      kind: "replace-bounded-block",
-      path: "AGENTS.md",
-      begin: "<!-- engineering-toolkit:models:begin -->",
-      end: "<!-- engineering-toolkit:models:end -->",
-      body: sheet,
-    });
-    expect(first.ok).toBe(true);
-    if (!first.ok) return;
-    expect(
-      applyIntegrationPatch(first.value, {
-        kind: "replace-bounded-block",
-        path: "AGENTS.md",
-        begin: "<!-- engineering-toolkit:models:begin -->",
-        end: "<!-- engineering-toolkit:models:end -->",
-        body: sheet,
-      })
-    ).toEqual(first);
   });
 
   it("exports identity keys for every parent including Cursor", () => {
@@ -186,22 +80,23 @@ describe("stale pin migrations", () => {
   }
 
   function sheetWith(overrides: Record<string, string>): string {
-    const base = firstRunRoleMap("claude-code", catalog);
-    const printed = printRoleMap(base);
-    const lines = printed.split("\n").map((line) => {
+    const lines = BASE_SHEET.split("\n").map((line) => {
       const colon = line.indexOf(": ");
       if (colon < 0) return line;
       const role = line.slice(0, colon);
       return role in overrides ? `${role}: ${overrides[role]}` : line;
     });
-    return `${lines.join("\n")}\n`;
+    return lines.join("\n");
   }
 
-  it("proposes sole-model cutovers without rewriting until accepted", () => {
+  it("proposes sole-model cutovers without rewriting the role map", () => {
     const roles = mustLoad(
       sheetWith({ "bug-fix": "codex:gpt-5.6-sol@high" })
     );
-    expect(printRoleMap(roles)).toContain("bug-fix: codex:gpt-5.6-sol@high");
+    const before = printRoleMap(roles);
+    expect(before).toContain("bug-fix: codex:gpt-5.6-sol@high");
+    expect(catalog.get("codex")?.models.has(slug("gpt-5.6-sol"))).toBe(false);
+    expect(catalog.get("codex")?.models.has(SOL_CLI_MODEL)).toBe(true);
 
     const proposals = proposeStalePinMigrations(roles, catalog);
     expect(proposals).toEqual([
@@ -212,32 +107,12 @@ describe("stale pin migrations", () => {
         to: SOL_CLI_MODEL,
       },
     ]);
+    expect(printRoleMap(roles)).toBe(before);
 
-    const stale = roles["bug-fix"];
-    expect(stale.kind).toBe("route");
-    if (stale.kind !== "route") return;
-    expect(catalog.get("codex")?.models.has(slug("gpt-5.6-sol"))).toBe(false);
-    expect(catalog.get("codex")?.models.has(SOL_CLI_MODEL)).toBe(true);
-
-    expect(applyAcceptedMigrations(roles, proposals, [])).toEqual(roles);
-    expect(printRoleMap(applyAcceptedMigrations(roles, proposals, []))).toContain(
-      "bug-fix: codex:gpt-5.6-sol@high"
+    const migrated = mustLoad(
+      sheetWith({ "bug-fix": `codex:${SOL_CLI_MODEL}@high` })
     );
-
-    const accepted = applyAcceptedMigrations(roles, proposals, [{ role: "bug-fix" }]);
-    const fixed = accepted["bug-fix"];
-    expect(fixed.kind).toBe("route");
-    if (fixed.kind !== "route") return;
-    expect(fixed.route.model).toBe(SOL_CLI_MODEL);
-    expect(fixed.route.effort).toBe("high");
-    expect(fixed.route.app).toBe("codex");
-    expect(catalog.get("codex")?.models.has(fixed.route.model)).toBe(true);
-    expect(proposeStalePinMigrations(accepted, catalog)).toEqual([]);
-    expect(
-      applyAcceptedMigrations(accepted, proposeStalePinMigrations(accepted, catalog), [
-        { role: "bug-fix" },
-      ])
-    ).toEqual(accepted);
+    expect(proposeStalePinMigrations(migrated, catalog)).toEqual([]);
 
     expect(
       proposeStalePinMigrations(
@@ -247,8 +122,7 @@ describe("stale pin migrations", () => {
     ).toEqual([]);
 
     const typo = mustLoad(sheetWith({ "bug-fix": "codex:gpt-6-sool@high" }));
-    const typoProposals = proposeStalePinMigrations(typo, catalog);
-    expect(typoProposals).toEqual([
+    expect(proposeStalePinMigrations(typo, catalog)).toEqual([
       {
         site: { role: "bug-fix" },
         app: "codex",
@@ -256,28 +130,12 @@ describe("stale pin migrations", () => {
         to: SOL_CLI_MODEL,
       },
     ]);
-    const typoLeft = applyAcceptedMigrations(typo, typoProposals, []);
-    const typoRoute = typoLeft["bug-fix"];
-    expect(typoRoute.kind).toBe("route");
-    if (typoRoute.kind !== "route") return;
-    expect(catalog.get("codex")?.models.has(typoRoute.route.model)).toBe(false);
 
     const codexParent = mustLoad(
-      printRoleMap({
-        ...firstRunRoleMap("codex", catalog),
-        "bug-fix": {
-          kind: "route",
-          route: route({
-            model: slug("gpt-5.6-sol"),
-            app: "codex",
-            effort: "max",
-          }),
-        },
-      }),
+      sheetWith({ "bug-fix": "codex:gpt-5.6-sol@max" }),
       "codex"
     );
-    const omitted = proposeStalePinMigrations(codexParent, catalog);
-    expect(omitted).toEqual([
+    expect(proposeStalePinMigrations(codexParent, catalog)).toEqual([
       {
         site: { role: "bug-fix" },
         app: "codex",
@@ -285,14 +143,6 @@ describe("stale pin migrations", () => {
         to: SOL_CLI_MODEL,
       },
     ]);
-    const omittedAccepted = applyAcceptedMigrations(codexParent, omitted, [
-      { role: "bug-fix" },
-    ]);
-    const omittedRoute = omittedAccepted["bug-fix"];
-    expect(omittedRoute.kind).toBe("route");
-    if (omittedRoute.kind !== "route") return;
-    expect(omittedRoute.route.app).toBe("codex");
-    expect(omittedRoute.route.model).toBe(SOL_CLI_MODEL);
   });
 
   it("does not sole-map when a probed list is present", () => {
