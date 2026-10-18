@@ -2,7 +2,6 @@ import { describe, expect, it } from "bun:test";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { shippedCatalog, SOL_CLI_MODEL } from "./catalog.ts";
-import { planLane, resolveRoute } from "./dispatch.ts";
 import {
   applyAcceptedMigrations,
   applyIntegrationPatch,
@@ -21,12 +20,21 @@ import {
   modelSlug,
   route,
   type Access,
+  type Effort,
+  type LanePlan,
+  type ModelSlug,
   type ParentHost,
   type RoleMap,
+  type WorkerPolicy,
 } from "./route.ts";
 import { loadRoleMap, printRoleMap } from "./sheet.ts";
 
 const access: Access = { mode: "read-only", worktree: null };
+const worker: WorkerPolicy = {
+  mayChooseRoute: false,
+  maySpawnAgents: false,
+  inheritCoordinatorMcp: false,
+};
 
 function slug(raw: string) {
   const parsed = modelSlug(raw);
@@ -107,27 +115,29 @@ describe("firstRunRoleMap", () => {
   });
 });
 
+function nativePlan(
+  parent: ParentHost,
+  model: ModelSlug,
+  effort: Effort
+): Extract<LanePlan, { kind: "native"; inherit?: false }> {
+  return {
+    kind: "native",
+    parent,
+    route: { model, app: parent, effort, lane: "native" },
+    access,
+    worker,
+  };
+}
+
+function inheritPlan(parent: ParentHost): Extract<LanePlan, { kind: "native" }> {
+  return { kind: "native", parent, inherit: true, access, worker };
+}
+
 describe("nativeHandle", () => {
   it("names the plugin-agent wire without host primitives", () => {
-    const planned = planLane({
-      parent: "cursor",
-      binding: {
-        kind: "route",
-        route: route({
-          model: slug("fable"),
-          app: "cursor",
-          effort: "max",
-        }),
-      },
-      override: undefined,
-      catalog: shippedCatalog(),
-      inventory: [],
-      access,
-      role: "architect runners",
-    });
-    expect(planned.ok).toBe(true);
-    if (!planned.ok || planned.value.kind !== "native") return;
-    expect(nativeHandle(planned.value, shippedCatalog())).toEqual({
+    expect(
+      nativeHandle(nativePlan("cursor", slug("fable"), "max"), shippedCatalog())
+    ).toEqual({
       kind: "plugin-agent",
       name: pluginAgentName("fable", "max"),
     });
@@ -135,31 +145,12 @@ describe("nativeHandle", () => {
 
   it("names the Sonnet 5.5 plugin agent on Claude Code and Cursor", () => {
     for (const parent of ["claude-code", "cursor"] as const) {
-      const planned = planLane({
-        parent,
-        binding: {
-          kind: "route",
-          route: route({
-          model: slug("claude-sonnet-5-5"),
-            app: parent,
-            effort: "medium",
-          }),
-        },
-        override: undefined,
-        catalog: shippedCatalog(),
-        inventory: parent === "claude-code"
-          ? [{ app: "claude-code", readiness: { kind: "launch-ready" } }]
-          : [],
-        access,
-        role: "feature, refactoring",
-      });
-      expect(planned.ok).toBe(true);
-      if (!planned.ok) throw new Error(`route failed for ${parent}`);
-      expect(planned.value.kind).toBe("native");
-      if (planned.value.kind !== "native") {
-        throw new Error(`expected a native Sonnet route for ${parent}`);
-      }
-      expect(nativeHandle(planned.value, shippedCatalog())).toEqual({
+      expect(
+        nativeHandle(
+          nativePlan(parent, slug("claude-sonnet-5-5"), "medium"),
+          shippedCatalog()
+        )
+      ).toEqual({
         kind: "plugin-agent",
         name: pluginAgentName("sonnet", "medium"),
       });
@@ -167,25 +158,9 @@ describe("nativeHandle", () => {
   });
 
   it("maps cursor:grok-4.7 on a cursor parent to host-spawn", () => {
-    const planned = planLane({
-      parent: "cursor",
-      binding: {
-        kind: "route",
-        route: route({
-          model: slug("grok-4.7"),
-          app: "cursor",
-          effort: "xhigh",
-        }),
-      },
-      override: undefined,
-      catalog: shippedCatalog(),
-      inventory: [],
-      access,
-      role: "feature, refactoring",
-    });
-    expect(planned.ok).toBe(true);
-    if (!planned.ok || planned.value.kind !== "native") return;
-    expect(nativeHandle(planned.value, shippedCatalog())).toEqual({
+    expect(
+      nativeHandle(nativePlan("cursor", slug("grok-4.7"), "xhigh"), shippedCatalog())
+    ).toEqual({
       kind: "host-spawn",
       model: slug("grok-4.7"),
       effort: "xhigh",
@@ -193,18 +168,7 @@ describe("nativeHandle", () => {
   });
 
   it("maps inherit-parent to the engineering-agent wrapper", () => {
-    const planned = planLane({
-      parent: "cursor",
-      binding: { kind: "inherit-parent" },
-      override: undefined,
-      catalog: shippedCatalog(),
-      inventory: [],
-      access,
-      role: "why investigators, synthesizer",
-    });
-    expect(planned.ok).toBe(true);
-    if (!planned.ok || planned.value.kind !== "native") return;
-    expect(nativeHandle(planned.value, shippedCatalog())).toEqual({
+    expect(nativeHandle(inheritPlan("cursor"), shippedCatalog())).toEqual({
       kind: "inherit",
       wrapper: "engineering-agent",
     });
@@ -284,30 +248,6 @@ Use grok-4.6-fast-xhigh for arena.
   });
 });
 
-describe("claude:fable from cursor stays external", () => {
-  it("does not rewrite to Task", () => {
-    const planned = planLane({
-      parent: "cursor",
-      binding: {
-        kind: "route",
-        route: route({
-          model: slug("fable"),
-          app: "claude-code",
-          effort: "max",
-        }),
-      },
-      override: undefined,
-      catalog: shippedCatalog(),
-      inventory: [{ app: "claude-code", readiness: { kind: "launch-ready" } }],
-      access,
-      role: "architect runners",
-    });
-    expect(planned.ok).toBe(true);
-    if (!planned.ok || planned.value.kind !== "external") return;
-    expect(planned.value.launch.app).toBe("claude-code");
-  });
-});
-
 describe("stale pin migrations", () => {
   const catalog = shippedCatalog();
 
@@ -349,18 +289,8 @@ describe("stale pin migrations", () => {
     const stale = roles["bug-fix"];
     expect(stale.kind).toBe("route");
     if (stale.kind !== "route") return;
-    expect(
-      resolveRoute("claude-code", stale.route, catalog, [
-        { app: "codex", readiness: { kind: "launch-ready" } },
-      ])
-    ).toEqual({
-      ok: false,
-      error: {
-        tag: "app-does-not-serve-model",
-        app: "codex",
-        model: slug("gpt-5.6-sol"),
-      },
-    });
+    expect(catalog.get("codex")?.models.has(slug("gpt-5.6-sol"))).toBe(false);
+    expect(catalog.get("codex")?.models.has(SOL_CLI_MODEL)).toBe(true);
 
     expect(applyAcceptedMigrations(roles, proposals, [])).toEqual(roles);
     expect(printRoleMap(applyAcceptedMigrations(roles, proposals, []))).toContain(
@@ -374,19 +304,7 @@ describe("stale pin migrations", () => {
     expect(fixed.route.model).toBe(SOL_CLI_MODEL);
     expect(fixed.route.effort).toBe("high");
     expect(fixed.route.app).toBe("codex");
-    expect(
-      resolveRoute("claude-code", fixed.route, catalog, [
-        { app: "codex", readiness: { kind: "launch-ready" } },
-      ])
-    ).toEqual({
-      ok: true,
-      value: {
-        model: SOL_CLI_MODEL,
-        app: "codex",
-        effort: "high",
-        lane: "external",
-      },
-    });
+    expect(catalog.get("codex")?.models.has(fixed.route.model)).toBe(true);
     expect(proposeStalePinMigrations(accepted, catalog)).toEqual([]);
     expect(
       applyAcceptedMigrations(accepted, proposeStalePinMigrations(accepted, catalog), [
@@ -415,11 +333,7 @@ describe("stale pin migrations", () => {
     const typoRoute = typoLeft["bug-fix"];
     expect(typoRoute.kind).toBe("route");
     if (typoRoute.kind !== "route") return;
-    expect(
-      resolveRoute("claude-code", typoRoute.route, catalog, [
-        { app: "codex", readiness: { kind: "launch-ready" } },
-      ]).ok
-    ).toBe(false);
+    expect(catalog.get("codex")?.models.has(typoRoute.route.model)).toBe(false);
 
     const codexParent = mustLoad(
       printRoleMap({

@@ -1,39 +1,46 @@
 import { describe, expect, it } from "bun:test";
-import { shippedCatalog } from "../routing/catalog.ts";
-import { planLane } from "../routing/dispatch.ts";
 import {
   modelSlug,
-  route,
   type Access,
+  type CliChildApp,
+  type Effort,
+  type LanePlan,
+  type ModelSlug,
+  type ParentHost,
+  type WorkerPolicy,
 } from "../routing/route.ts";
 import { runnerArgv } from "./argv.ts";
 import { parseArgs } from "./cli.ts";
 
 const access: Access = { mode: "read-only", worktree: null };
+const worker: WorkerPolicy = {
+  mayChooseRoute: false,
+  maySpawnAgents: false,
+  inheritCoordinatorMcp: false,
+};
+
+function externalPlan(
+  parent: ParentHost,
+  app: CliChildApp,
+  model: ModelSlug,
+  effort: Effort
+): Extract<LanePlan, { kind: "external" }> {
+  return {
+    kind: "external",
+    parent,
+    route: { model, app, effort, lane: "external" },
+    launch: { app, model, effort },
+    access,
+    worker,
+  };
+}
 
 describe("runnerArgv", () => {
   it("builds --parent cursor --app grok without naming cursor as the child", () => {
     const grok = modelSlug("grok-4.7");
     if (!grok.ok) throw new Error("grok");
-    const planned = planLane({
-      parent: "cursor",
-      binding: {
-        kind: "route",
-        route: route({
-          model: grok.value,
-          app: "grok",
-          effort: "xhigh",
-        }),
-      },
-      override: undefined,
-      catalog: shippedCatalog(),
-      inventory: [{ app: "grok", readiness: { kind: "launch-ready" } }],
-      access,
-      role: "arena runners",
-    });
-    expect(planned.ok).toBe(true);
-    if (!planned.ok || planned.value.kind !== "external") return;
-    const argv = runnerArgv(planned.value, {
+    const planned = externalPlan("cursor", "grok", grok.value, "xhigh");
+    const argv = runnerArgv(planned, {
       promptPath: "prompt.md",
       cwd: "/repo",
       outputPath: "out.md",
@@ -71,25 +78,8 @@ describe("runnerArgv", () => {
   it("preserves the fixed Sonnet 5.5 ID in Claude CLI arguments", () => {
     const sonnet = modelSlug("claude-sonnet-5-5");
     if (!sonnet.ok) throw new Error("sonnet");
-    const planned = planLane({
-      parent: "codex",
-      binding: {
-        kind: "route",
-        route: route({
-          model: sonnet.value,
-          app: "claude-code",
-          effort: "medium",
-        }),
-      },
-      override: undefined,
-      catalog: shippedCatalog(),
-      inventory: [{ app: "claude-code", readiness: { kind: "launch-ready" } }],
-      access,
-      role: "feature, refactoring",
-    });
-    expect(planned.ok).toBe(true);
-    if (!planned.ok || planned.value.kind !== "external") return;
-    const argv = runnerArgv(planned.value, {
+    const planned = externalPlan("codex", "claude-code", sonnet.value, "medium");
+    const argv = runnerArgv(planned, {
       promptPath: "prompt.md",
       cwd: "/repo",
       outputPath: "out.md",

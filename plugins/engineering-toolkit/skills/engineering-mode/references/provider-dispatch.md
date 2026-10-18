@@ -83,11 +83,11 @@ until setup accepts a stale-pin proposal.
 
 ## The parent owns the route
 
-`planLane` is the parent-owned entry point. The top-level harness resolves a
-binding once. A route runs natively only when its provider is the parent. Any
-other route runs through that provider's CLI via `pstack-runner`. Children
-receive an assigned plan. They never choose a route, detect or reroute the
-harness, or spawn another model.
+The top-level harness resolves each binding once, before it spawns anything. A
+route runs natively only when its provider is the parent. Any other route runs
+through that provider's CLI via `pstack-runner`. Children receive an assigned
+plan. They never choose a route, detect or reroute the harness, or spawn
+another model.
 
 Choose the effort before each spawn. Start from the configured role's typed
 Route, and adjust only its effort for this task when needed. The effort must be
