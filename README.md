@@ -2,7 +2,7 @@
 
 This repository is a fork of [Open Pstack](https://github.com/ericlitman/open-pstack). Open Pstack made [Lauren Tan's Cursor pstack plugin](https://github.com/cursor/plugins/tree/main/pstack) work in Claude Code and Codex.
 
-This fork uses that work as a base. One skill tree should parent on Cursor, Claude Code, Codex, and later other coding agents. Today it ships those three parents. It tracks both Open Pstack and Cursor's pstack and pulls in changes as needed.
+This fork uses that work as a base. One skill tree should parent on Cursor, Claude Code, Codex, and later other coding agents. Today it ships those three parents. It tracks Cursor's pstack and pulls in changes as needed. It no longer tracks Open Pstack.
 
 The GitHub repository is [cameronjlarsen/engineering-toolkit](https://github.com/cameronjlarsen/engineering-toolkit). Do not install Lauren's original pstack or `ericlitman/open-pstack` as a stand-in for this fork.
 
@@ -169,7 +169,7 @@ This repository also keeps:
 
 - [the original README](README-UPSTREAM.md), unchanged;
 - [the technical reference](docs/reference.md) for every skill, dependency, and parent-app detail;
-- [the sync record](UPSTREAM.md) for Cursor pstack and Open Pstack;
+- [the sync record](UPSTREAM.md) for Cursor pstack and the Open Pstack fork point;
 - [the change record](CHANGES.md) for every adaptation; and
 - [the attribution record](NOTICE.md) for pstack and the imported Cursor Team Kit skills.
 
@@ -177,7 +177,7 @@ This repository also keeps:
 
 This checkout is Engineering Toolkit 1.4.6. It tracks Cursor pstack 0.15.25 at commit [`99743e9c151c8537cbbf1f98bb38f34ef3368453`](https://github.com/cursor/plugins/commit/99743e9c151c8537cbbf1f98bb38f34ef3368453) and started from Open Pstack 1.4.1.
 
-Three version numbers stay independent. Cursor pstack versions Lauren's plugin. Open Pstack versions the Claude Code and Codex port. This fork versions the checkout you are in.
+Two version numbers stay independent. Cursor pstack versions Lauren's plugin. This fork versions the checkout you are in.
 
 Read [UPSTREAM.md](UPSTREAM.md) before changing content that came from either tracked source. This fork does not promise instant updates. It records the exact commits it follows and reviews new changes in order.
 
