@@ -2,9 +2,11 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
-## Cursor 0317eb8 to 4382e68 sync keeps 1.4.6 manifests
+## Cursor 0317eb8 to 4382e68 sync publishes plugin version 1.4.7
 
-This checkout applies Cursor pstack through `4382e687a50b8d2c5ce4d141d001186589cff8d5` without bumping off 1.4.6. Installed 1.4.6 caches do not pick up this text until the next version bump.
+This checkout applies Cursor pstack through `4382e687a50b8d2c5ce4d141d001186589cff8d5` and publishes 1.4.7 across its five versioned manifests, so installed 1.4.6 caches pick up this text.
+
+This release also carries fork-side removals that change no parent behavior. Typed code that only tests called is gone: `routing/dispatch.ts`, the LanePlan cluster with `runnerArgv` and `nativeHandle`, the budget oracle in `routing/sheet.ts`, and the setup oracle in `routing/parent.ts`. The three `scripts/upstream-*.py` helpers and `scripts/rename-skill-identity.ps1` are deleted, and the rename mapping now lives in `UPSTREAM.md`. This fork no longer tracks Open Pstack.
 
 Taken. #692 and #708: `ketchup` lists every item that waits on the user, each with its link, effect, evidence, risk, and pick, and the reply grows with the item count. #709: `create-formal-verification-skill`. The README refresh from #704, as `README-UPSTREAM.md`.
 

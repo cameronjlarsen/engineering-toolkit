@@ -15,7 +15,7 @@ Do not open issues on Open Pstack for work that belongs in this fork. Keep one s
 | Commit | `4382e687a50b8d2c5ce4d141d001186589cff8d5` |
 | Cursor pstack version | `0.15.25` |
 | Open Pstack version at fork | `1.4.1` |
-| Engineering Toolkit version | `1.4.6` |
+| Engineering Toolkit version | `1.4.7` |
 
 The table above is the current Cursor pstack sync point. At the fresh fetch for this sync, `cursor/main` was `4382e68` (#709), the last commit to touch `pstack/`. Eight commits touch `pstack/` since `99743e9`. Applied: `16541c6` (#692) and `bc14437` (#708) in `ketchup`, `4382e68` (#709) as `create-formal-verification-skill`, and the README refresh from `019a6a2` (#704) in `README-UPSTREAM.md`. Already in the tree: `0317eb8` (#700), whose reference-file catch-up in `CHANGES.md` takes fourteen files, and `a968159` (#702), since every skill name already matches its folder. Excluded: `182f2ce` (#637) and `1b80080` (#705), which add and extend a generated Claude Code tree, and the `docs/guide` edits in #704. The commit row moves to `4382e68`. Cursor's manifest still reads `0.15.25`, so that row does not change. This checkout started from Open Pstack 1.4.1, which imported Cursor pstack 0.15.1. `README-UPSTREAM.md` preserves the current Cursor pstack README verbatim. `CHANGES.md` and `NOTICE.md` describe the adaptations and provenance.
 
