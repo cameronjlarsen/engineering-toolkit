@@ -1,5 +1,6 @@
 import {
   CLI_CHILD_APPS,
+  EFFORTS,
   PARENT_HOSTS,
   type AppId as RouteAppId,
   type CliChildApp,
@@ -7,9 +8,10 @@ import {
   type ParentHost,
 } from "../routing/route.ts";
 
+export { EFFORTS };
+
 export const PARENTS = PARENT_HOSTS;
 export const APPS = CLI_CHILD_APPS;
-export const EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
 export const ACCESS_MODES = ["read-only", "isolated-write"] as const;
 
 export type Parent = ParentHost;

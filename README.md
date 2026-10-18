@@ -96,7 +96,7 @@ In Cursor, run:
 /setup-engineering-toolkit
 ```
 
-Setup checks the models you can actually run, shows how each one will start, and asks before saving the choices. The current default group uses Fable, GPT-5.6 Sol, Grok 4.6, and Opus.
+Setup checks the models you can actually run, shows how each one will start, and asks before saving the choices. The current default group uses Fable, GPT-6 Sol, Grok 4.7, and Opus.
 
 An older model sheet starts using the rolling aliases in memory as soon as this release is installed. Run setup once after updating to persist that migration. It replaces versioned Fable and Opus entries while preserving every role assignment and effort selection.
 
@@ -175,7 +175,7 @@ This repository also keeps:
 
 ## Tracked sources
 
-This checkout is at Open Pstack 1.4.1, which tracks Cursor pstack 0.15.1 at commit [`f8abeddd1862dc73704e3d719dd73df0d51b8c71`](https://github.com/cursor/plugins/commit/f8abeddd1862dc73704e3d719dd73df0d51b8c71).
+This checkout is Engineering Toolkit 1.4.6. It tracks Cursor pstack 0.15.25 at commit [`99743e9c151c8537cbbf1f98bb38f34ef3368453`](https://github.com/cursor/plugins/commit/99743e9c151c8537cbbf1f98bb38f34ef3368453) and started from Open Pstack 1.4.1.
 
 Three version numbers stay independent. Cursor pstack versions Lauren's plugin. Open Pstack versions the Claude Code and Codex port. This fork versions the checkout you are in.
 
