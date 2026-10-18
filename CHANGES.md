@@ -2,6 +2,10 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## T3 maps the Babysit GitHub wait to watch_pull_request
+
+`t3-tools.md` gains one row: on a T3 thread, the Babysit playbook's GitHub wait is `watch_pull_request` followed by the end of the turn, with `unwatch_pull_request` on handoff. Origin and Azure DevOps keep the playbook's own wait. No skill body changes and no version bump.
+
 ## Cursor 0317eb8 to 4382e68 sync publishes plugin version 1.4.7
 
 This checkout applies Cursor pstack through `4382e687a50b8d2c5ce4d141d001186589cff8d5` and publishes 1.4.7 across its five versioned manifests, so installed 1.4.6 caches pick up this text.
