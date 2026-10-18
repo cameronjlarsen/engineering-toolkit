@@ -27,7 +27,7 @@ A Cursor parent plans `cursor:` routes as native.
 - host-spawn: Call `Task` with `model` set to a live Cursor selector for the route's model and effort. Confirm the slug against this session's Task model list. Do not use the `pstack-lane` `subagent_type`. Do not invoke Grok CLI for a `cursor:grok-4.7` route; `grok:grok-4.7` is the Grok CLI.
 - `inherit-parent` and `auto`: `engineering-agent` with `model` omitted or `inherit`.
 
-Writers get a worktree or a unique output directory. The `pstack-lane` definition already forbids nested `Agent` and `Task`.
+Writers get a worktree or a unique output directory. The `pstack-lane` prompt forbids nested `Agent` and `Task`. Cursor ignores the `disallowedTools` and `background` fields in the definition, so the prompt is the only guard.
 
 ## External lanes
 
