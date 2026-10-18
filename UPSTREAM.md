@@ -4,7 +4,7 @@ This fork tracks one source: [Cursor's pstack](https://github.com/cursor/plugins
 
 [Open Pstack](https://github.com/ericlitman/open-pstack) is the Claude Code and Codex port that this checkout started from. This fork no longer tracks it. See [Open Pstack (no longer tracked)](#open-pstack-no-longer-tracked).
 
-Do not open issues on Open Pstack for work that belongs in this fork. Keep one shared `plugins/engineering-toolkit/skills/` tree. Put harness translation in `codex-tools.md`, `cursor-tools.md`, and `provider-dispatch.md`. Do not fork a skill per parent app.
+Do not open issues on Open Pstack for work that belongs in this fork. Keep one shared `plugins/engineering-toolkit/skills/` tree. Put harness translation in `codex-tools.md`, `cursor-tools.md`, `t3-tools.md`, and `provider-dispatch.md`. Do not fork a skill per parent app.
 
 ## Current Cursor pstack sync point
 
