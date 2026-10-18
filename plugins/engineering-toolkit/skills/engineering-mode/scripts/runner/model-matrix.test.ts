@@ -25,13 +25,11 @@ const MATRIX_HEADER = [
   "Model",
   "Default effort",
   "Selectable efforts",
-  "Plugin-agent stem",
 ] as const;
 const ADDITIONAL_HEADER = [
   "Model",
   "Provider",
   "Selectable efforts",
-  "Plugin-agent stem",
 ] as const;
 
 const FAMILY_ORDER = ["fable", "sol", "grok", "opus"] as const;
@@ -81,7 +79,6 @@ interface SupportedModel {
   provider: string;
   model: string;
   selectableEfforts: Effort[];
-  pluginAgentStem: string | null;
 }
 
 interface MatrixRow extends SupportedModel {
@@ -153,19 +150,11 @@ function parseModelMatrix(markdown: string): MatrixRow[] {
       model,
       defaultEffortRaw,
       selectableRaw,
-      stemRaw,
     ] = cells;
     if (!(PROVIDERS as readonly string[]).includes(provider)) {
       throw new Error(`invalid provider: ${provider}`);
     }
     const selectableEfforts = selectableRaw.split(/\s+/).map(asEffort);
-    const pluginAgentStem = stemRaw === "-" ? null : stemRaw;
-    if (pluginAgentStem !== null && !/^[a-z0-9-]+$/.test(pluginAgentStem)) {
-      throw new Error(`invalid plugin-agent stem: ${stemRaw}`);
-    }
-    if ((provider === "claude") !== (pluginAgentStem !== null)) {
-      throw new Error(`${family} stem must be present iff provider is claude`);
-    }
     const defaultEffort = asEffort(defaultEffortRaw);
     if (!selectableEfforts.includes(defaultEffort)) {
       throw new Error(`${family} default effort is not selectable`);
@@ -177,7 +166,6 @@ function parseModelMatrix(markdown: string): MatrixRow[] {
       model,
       defaultEffort,
       selectableEfforts,
-      pluginAgentStem,
     };
   });
 }
@@ -210,19 +198,12 @@ function parseAdditionalModels(markdown: string): SupportedModel[] {
     if (cells.length !== ADDITIONAL_HEADER.length) {
       throw new Error(`additional-model row has ${cells.length} cells: ${line}`);
     }
-    const [model, provider, selectableRaw, stemRaw] = cells;
+    const [model, provider, selectableRaw] = cells;
     if (!(PROVIDERS as readonly string[]).includes(provider)) {
       throw new Error(`invalid provider: ${provider}`);
     }
     const selectableEfforts = selectableRaw.split(/\s+/).map(asEffort);
-    const pluginAgentStem = stemRaw === "-" ? null : stemRaw;
-    if (pluginAgentStem !== null && !/^[a-z0-9-]+$/.test(pluginAgentStem)) {
-      throw new Error(`invalid plugin-agent stem: ${stemRaw}`);
-    }
-    if ((provider === "claude") !== (pluginAgentStem !== null)) {
-      throw new Error(`${model} stem must be present iff provider is claude`);
-    }
-    return { model, provider, selectableEfforts, pluginAgentStem };
+    return { model, provider, selectableEfforts };
   });
 }
 
@@ -307,51 +288,25 @@ describe("model matrix", () => {
     ]);
   });
 
-  it("ships exactly the declared Claude-native frontier agents", () => {
-    const expected = new Set<string>();
-    const familyBodies = new Map<string, string>();
-    for (const row of supportedModels) {
-      const stem = row.pluginAgentStem;
-      if (stem === null) {
-        continue;
-      }
-      for (const effort of row.selectableEfforts) {
-        const name = `pstack-${stem}-${effort}`;
-        expected.add(`${name}.md`);
-        const text = readFileSync(join(AGENTS_DIR, `${name}.md`), "utf8").replaceAll(
-          "\r\n",
-          "\n"
-        );
-        const { fields, body } = parseFrontmatter(text);
-        expect(fields).toEqual({
-          name,
-          description: `Native plugin-agent lane for pstack roles configured as ${row.model}@${effort}.`,
-          model: row.model,
-          effort,
-          background: "true",
-          disallowedTools: "Agent, Task",
-        });
-        const prior = familyBodies.get(stem);
-        if (prior === undefined) {
-          familyBodies.set(stem, body);
-        } else {
-          expect(body).toBe(prior);
-        }
-      }
-    }
-    const declaredCount = supportedModels.reduce(
-      (count, row) =>
-        count +
-        (row.pluginAgentStem === null
-          ? 0
-          : row.selectableEfforts.length),
-      0
-    );
-    expect(expected.size).toBe(declaredCount);
+  it("ships one pstack-lane agent that pins no model or effort", () => {
     const shipped = readdirSync(AGENTS_DIR)
-      .filter((name) => name.startsWith("pstack-") && name.endsWith(".md"))
+      .filter((name) => name.startsWith("pstack-"))
       .sort();
-    expect(shipped).toEqual([...expected].sort());
+    expect(shipped).toEqual(["pstack-lane.md"]);
+    const text = readFileSync(join(AGENTS_DIR, "pstack-lane.md"), "utf8").replaceAll(
+      "\r\n",
+      "\n"
+    );
+    const { fields } = parseFrontmatter(text);
+    expect(fields).toEqual({
+      name: "pstack-lane",
+      description:
+        "Native lane for pstack roles. The parent passes model and effort on each call.",
+      background: "true",
+      disallowedTools: "Agent, Task",
+    });
+    expect(text).not.toMatch(/^model:/m);
+    expect(text).not.toMatch(/^effort:/m);
   });
 
   it("keeps Sonnet 5.5 explicitly selectable outside the default matrix", () => {
@@ -360,7 +315,6 @@ describe("model matrix", () => {
         model: "claude-sonnet-5-5",
         provider: "claude",
         selectableEfforts: [...EFFORTS],
-        pluginAgentStem: "sonnet",
       },
     ]);
     expect(rows).toHaveLength(4);
@@ -436,7 +390,6 @@ describe("model matrix", () => {
         row.model as ModelSlug
       );
       expect(onApp?.efforts).toEqual(row.selectableEfforts);
-      expect(onApp?.nativeStem).toBe(row.pluginAgentStem);
     }
     const firstRun = loadRoleMap(firstRunSheet(setup), "claude-code");
     if (!firstRun.ok) throw new Error(JSON.stringify(firstRun.error));
@@ -478,7 +431,7 @@ describe("model matrix", () => {
       "| Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | native Task host-spawn |"
     );
     expect(setup).toContain(
-      "| Sonnet 5.5 | Additional selectable-model row + selected effort | native Agent `pstack-sonnet-<effort>` | Claude CLI | native Task `pstack-sonnet-<effort>` plus exact live selector for the resolved effort |"
+      "| Sonnet 5.5 | Additional selectable-model row + selected effort | native Agent `pstack-lane` with `model` `sonnet` and the effort | Claude CLI | native Task `pstack-lane` plus exact live selector for the resolved effort |"
     );
   });
 
@@ -492,7 +445,12 @@ describe("model matrix", () => {
     expect(nativeLanes).toContain(
       "match the route's `(provider, model)` to one model-matrix row"
     );
-    expect(nativeLanes).toContain("`pstack-<stem>-<effort>`");
+    expect(nativeLanes).toContain("`subagent_type` `et:pstack-lane`");
+    expect(nativeLanes.replace(/\s+/g, " ")).toContain(
+      "family alias (`sonnet`, `opus`, or `fable`)"
+    );
+    expect(nativeLanes).toContain("Always pass `effort`");
+    expect(nativeLanes).not.toContain("<stem>");
     expect(nativeLanes).toContain("host-spawn");
     expect(nativeLanes).toContain("Set `Task`");
     expect(nativeLanes).toContain("live Cursor selector");
@@ -513,6 +471,7 @@ describe("model matrix", () => {
       .split(/\r?\n/)
       .find((line) => line.includes("plugin-agent:"));
     expect(pluginAgent).toBeDefined();
+    expect(pluginAgent).toContain("`subagent_type` `pstack-lane`");
     expect(pluginAgent).toContain("live Cursor selector");
     expect(pluginAgent).toContain("this session's Task model list");
     expect(pluginAgent).toContain("Do not pass `opus` or `fable`");

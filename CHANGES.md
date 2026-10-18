@@ -2,6 +2,16 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## One `pstack-lane` agent replaces the fifteen `pstack-<model>-<effort>` agents
+
+The fifteen `pstack-{fable,opus,sonnet}-{low,medium,high,xhigh,max}` plugin agents are deleted. One `agents/pstack-lane.md` replaces them. It keeps `background: true` and `disallowedTools: Agent, Task`, and pins no `model` or `effort`. A Claude Code parent calls `Agent` with `subagent_type` `et:pstack-lane`, `model` set to the row's alias (`sonnet`, `opus`, or `fable`), and `effort` set to the resolved effort. The parent must always pass `effort`: a call that omits it inherits the parent's effort. A Cursor parent keeps its selector-carries-model-and-effort `Task` call and names `pstack-lane` as the `subagent_type`.
+
+Accepted decision: Sonnet is now pinned by the `sonnet` alias, not by the fixed revision `claude-sonnet-5-5`, because `Agent` rejects the fixed id. On Claude Code 2.1.302 the alias requested `claude-sonnet-5-5`; a later Sonnet revision would be picked up without a repo change.
+
+Removed with the fifteen agents: the plugin-agent stem column in the model matrix and the Additional selectable models table, the `vendor` and `nativeStem` fields on `ModelEntry`, the `VendorId` type, and the agent-file test in `model-matrix.test.ts`. A new test asserts that `pstack-lane.md` is the only `pstack-*` agent, has the two kept frontmatter lines, and has no `model:` or `effort:` line. No version field changes; a release is a separate PR.
+
+Not verified: Cursor behavior, including whether Cursor honors `disallowedTools` on the shared agent; whether `effort` changes quality or cost; a Fable subagent completing.
+
 ## Cursor 0317eb8 to 4382e68 sync publishes plugin version 1.4.7
 
 This checkout applies Cursor pstack through `4382e687a50b8d2c5ce4d141d001186589cff8d5` and publishes 1.4.7 across its five versioned manifests, so installed 1.4.6 caches pick up this text.

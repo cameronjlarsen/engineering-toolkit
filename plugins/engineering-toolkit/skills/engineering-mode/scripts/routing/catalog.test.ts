@@ -15,15 +15,12 @@ describe("shipped catalog", () => {
     const claudeSonnet = catalog.get("claude-code")?.models.get("claude-sonnet-5-5" as never);
     expect(claudeSonnet).toMatchObject({
       family: "claude-sonnet-5-5",
-      vendor: "anthropic",
       efforts: ["low", "medium", "high", "xhigh", "max"],
       cli: { effort: "flag", model: "claude-sonnet-5-5" },
-      nativeStem: "sonnet",
     });
     const cursorSonnet = catalog.get("cursor")?.models.get("claude-sonnet-5-5" as never);
     expect(cursorSonnet).toMatchObject({
       family: "claude-sonnet-5-5",
-      nativeStem: "sonnet",
     });
     if (cursorSonnet === undefined) throw new Error("missing Cursor Sonnet model");
     expect(cliModelFor(cursorSonnet, "xhigh")).toBe("claude-sonnet-5-5-xhigh");
@@ -39,7 +36,6 @@ describe("shipped catalog", () => {
       "grok-4.7",
       "opus",
     ]);
-    expect(cursor?.models.get("grok-4.7" as never)?.nativeStem).toBeNull();
   });
 
   it("puts the effort in Cursor slugs and keeps a flag for CLI apps", () => {

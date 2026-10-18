@@ -77,7 +77,7 @@ The marketplace install is the normal user path. Direct links are only for testi
 │   │   ├── engineering-mode/references/{codex-tools,cursor-tools,provider-dispatch}.md  # tool + provider routing
 │   │   └── engineering-mode/scripts/      # bun/bash/node tooling: watch-pr, orch, runner, check-plan.mjs, worktree-audit.sh
 │   ├── hooks/                        # SessionStart auto-fire: injects the engineering-mode mandate (Claude Code only)
-│   └── agents/                       # Claude subagents, including native Fable and Opus lanes at each selectable effort
+│   └── agents/                       # Claude subagents, including the shared `pstack-lane` native lane
 ├── tests/skill-collision-repro.sh    # native-skill package invariants and Claude invocation checks
 ├── LICENSE                           # pstack upstream MIT
 ├── LICENSE-cursor-team-kit           # cursor-team-kit upstream MIT
@@ -175,7 +175,7 @@ The table uses the short upstream names. Claude Code exposes each native skill w
 
 `comment-sicko` is the read-only comment reviewer the `no-comments` skill spawns. Upstream names it `Comment Sicko`; the port renames it to `comment-sicko` so the name is a valid `subagent_type`. Invoke it through `/no-comments`, not directly.
 
-Fable and Opus each ship at `low`, `medium`, `high`, `xhigh`, and `max`. Names are `pstack-<stem>-<effort>`. `pstack-fable-max` and `pstack-opus-xhigh` remain. Each file selects the rolling family alias and requested effort, runs in the background, and denies nested Agent/Task dispatch. Engineering Toolkit dispatches them from typed Route values and `provider:model@effort` wire values; they are not user-facing workflows.
+`pstack-lane` is the one native lane for every Claude-served route. It pins no model and no effort: the parent passes `model` (`sonnet`, `opus`, or `fable`) and `effort` on each `Agent` call. It runs in the background and denies nested Agent/Task dispatch. Engineering Toolkit dispatches it from typed Route values and `provider:model@effort` wire values; it is not a user-facing workflow.
 
 ## Differences from upstream
 

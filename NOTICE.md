@@ -65,7 +65,7 @@ Files authored for this port (not derived from upstream):
 - `plugins/engineering-toolkit/skills/engineering-mode/scripts/bootstrap.test.ts`
 - `plugins/engineering-toolkit/skills/engineering-mode/scripts/check-plan.test.ts`
 - `plugins/engineering-toolkit/skills/babysit/SKILL.md` (independently authored; workflow informed by Cursor's public `/babysit` behavior)
-- `plugins/engineering-toolkit/agents/pstack-fable-*.md` and `plugins/engineering-toolkit/agents/pstack-opus-*.md` (Claude-native frontier lanes at each selectable effort)
+- `plugins/engineering-toolkit/agents/pstack-lane.md` (shared Claude-native lane; the parent passes model and effort per call)
 - `plugins/engineering-toolkit/hooks/session-start-context.md` (the hook's mandate)
 - `NOTICE.md` (this file)
 - `README.md`

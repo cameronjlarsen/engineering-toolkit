@@ -23,11 +23,11 @@ Shared skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuesti
 
 A Cursor parent plans `cursor:` routes as native.
 
-- plugin-agent: Call `Task` with `subagent_type` `pstack-<stem>-<effort>` and `model` set to a live Cursor selector from this session's Task model list that matches the route's family and effort. Opus matches `claude-opus-*`. Fable matches `claude-fable-*`. Sonnet 5.5 selectors are `claude-sonnet-5-5-low`, `claude-sonnet-5-5-medium`, `claude-sonnet-5-5-high`, `claude-sonnet-5-5-xhigh`, and `claude-sonnet-5-5-max`; use the selector matching the resolved effort. Do not pass `opus` or `fable`. Do not pass `sonnet` as the selector. Do not guess another Sonnet selector or use another Sonnet revision. Do not omit `model`. An omitted or unmatched selector inherits the parent and is a dropout. Do not set `model` to a different family's slug such as `grok-4.7-high` or `gpt-6-sol-medium`. If this session has no matching selector, drop the lane.
-- host-spawn: Call `Task` with `model` set to a live Cursor selector for the route's model and effort. Confirm the slug against this session's Task model list. Do not use a plugin-agent `subagent_type`. Do not invoke Grok CLI for a `cursor:grok-4.7` route; `grok:grok-4.7` is the Grok CLI.
+- plugin-agent: Call `Task` with `subagent_type` `pstack-lane` and `model` set to a live Cursor selector from this session's Task model list that matches the route's family and effort. Opus matches `claude-opus-*`. Fable matches `claude-fable-*`. Sonnet 5.5 selectors are `claude-sonnet-5-5-low`, `claude-sonnet-5-5-medium`, `claude-sonnet-5-5-high`, `claude-sonnet-5-5-xhigh`, and `claude-sonnet-5-5-max`; use the selector matching the resolved effort. Do not pass `opus` or `fable`. Do not pass `sonnet` as the selector. Do not guess another Sonnet selector or use another Sonnet revision. Do not omit `model`. An omitted or unmatched selector inherits the parent and is a dropout. Do not set `model` to a different family's slug such as `grok-4.7-high` or `gpt-6-sol-medium`. If this session has no matching selector, drop the lane.
+- host-spawn: Call `Task` with `model` set to a live Cursor selector for the route's model and effort. Confirm the slug against this session's Task model list. Do not use the `pstack-lane` `subagent_type`. Do not invoke Grok CLI for a `cursor:grok-4.7` route; `grok:grok-4.7` is the Grok CLI.
 - `inherit-parent` and `auto`: `engineering-agent` with `model` omitted or `inherit`.
 
-Writers get a worktree or a unique output directory. Plugin-agent definitions already forbid nested `Agent` and `Task`.
+Writers get a worktree or a unique output directory. The `pstack-lane` definition already forbids nested `Agent` and `Task`.
 
 ## External lanes
 

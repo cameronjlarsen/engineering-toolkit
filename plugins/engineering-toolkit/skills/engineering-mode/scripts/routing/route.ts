@@ -9,7 +9,6 @@ export type AppId = (typeof APP_IDS)[number];
 export type CliChildApp = (typeof CLI_CHILD_APPS)[number];
 export type Effort = (typeof EFFORTS)[number];
 export type ModelSlug = string & { readonly __modelSlug: unique symbol };
-export type VendorId = "anthropic" | "openai" | "xai" | "unknown";
 
 export interface Route {
   readonly model: ModelSlug;
@@ -64,10 +63,8 @@ export type CliModel =
 
 export interface ModelEntry {
   readonly family: ModelSlug;
-  readonly vendor: VendorId;
   readonly efforts: readonly Effort[];
   readonly cli: CliModel;
-  readonly nativeStem: string | null;
 }
 
 export interface AppRecord {
