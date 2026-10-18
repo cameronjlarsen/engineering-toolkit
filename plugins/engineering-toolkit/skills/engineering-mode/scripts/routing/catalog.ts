@@ -1,9 +1,7 @@
 import {
-  CLI_CHILD_APPS,
   EFFORTS,
   type AppId,
   type AppRecord,
-  type CliChildApp,
   type CliModel,
   type Effort,
   type ModelEntry,
@@ -41,7 +39,6 @@ export function shippedCatalog(): AppCatalog {
   const sonnet = model(SONNET_5_5_MODEL, "anthropic", flag(SONNET_5_5_MODEL), "sonnet");
   const claudeCode: AppRecord = {
     id: "claude-code",
-    launch: "cli-auth",
     models: byFamily([
       model("fable", "anthropic", flag("fable"), "fable"),
       model("opus", "anthropic", flag("opus"), "opus"),
@@ -50,17 +47,14 @@ export function shippedCatalog(): AppCatalog {
   };
   const codex: AppRecord = {
     id: "codex",
-    launch: "cli-auth",
     models: byFamily([model(SOL_CLI_MODEL, "openai", flag(SOL_CLI_MODEL), null)]),
   };
   const grok: AppRecord = {
     id: "grok",
-    launch: "cli-auth",
     models: byFamily([model("grok-4.7", "xai", flag("grok-4.7"), null)]),
   };
   const cursor: AppRecord = {
     id: "cursor",
-    launch: "cli-auth",
     models: byFamily([
       model("fable", "anthropic", inSlug("claude-fable-5-1-{effort}"), "fable"),
       model("opus", "anthropic", inSlug("claude-opus-5-5-{effort}"), "opus"),
@@ -97,8 +91,4 @@ export function soleModel(app: AppId, catalog: AppCatalog): ModelSlug | null {
   if (models === undefined || models.size !== 1) return null;
   for (const slug of models.keys()) return slug;
   return null;
-}
-
-export function launchableApps(): readonly CliChildApp[] {
-  return CLI_CHILD_APPS;
 }

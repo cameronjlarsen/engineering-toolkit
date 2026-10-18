@@ -3,8 +3,6 @@ import { join } from "node:path";
 import { SOL_CLI_MODEL, soleModel, type AppCatalog } from "./catalog.ts";
 import {
   type AppId,
-  type Effort,
-  type LanePlan,
   type ModelSlug,
   type PanelRoleId,
   type ParentHost,
@@ -17,13 +15,6 @@ import {
   route,
 } from "./route.ts";
 import { PANEL_ROLE_IDS, SINGLE_ROLE_IDS } from "./sheet.ts";
-
-export type PluginAgentName = string & { readonly __pluginAgentName: unique symbol };
-
-export type NativeHandle =
-  | { readonly kind: "inherit"; readonly wrapper: "engineering-agent" }
-  | { readonly kind: "plugin-agent"; readonly name: PluginAgentName }
-  | { readonly kind: "host-spawn"; readonly model: ModelSlug; readonly effort: Effort };
 
 export type ParentDetectError =
   | { readonly tag: "unknown-parent" }
@@ -378,31 +369,6 @@ export function applyAcceptedMigrations(
     "interrogate reviewers": roles["interrogate reviewers"].map((binding, lane) =>
       rewrite({ role: "interrogate reviewers", lane }, binding)
     ),
-  };
-}
-
-export function pluginAgentName(stem: string, effort: Effort): PluginAgentName {
-  return `pstack-${stem}-${effort}` as PluginAgentName;
-}
-
-export function nativeHandle(
-  plan: Extract<LanePlan, { kind: "native" }>,
-  catalog: AppCatalog
-): NativeHandle {
-  if (plan.inherit === true) {
-    return { kind: "inherit", wrapper: "engineering-agent" };
-  }
-  const model = catalog.get(plan.parent)?.models.get(plan.route.model);
-  if (model?.nativeStem) {
-    return {
-      kind: "plugin-agent",
-      name: pluginAgentName(model.nativeStem, plan.route.effort),
-    };
-  }
-  return {
-    kind: "host-spawn",
-    model: plan.route.model,
-    effort: plan.route.effort,
   };
 }
 

@@ -76,8 +76,7 @@ that the persisted sheet is stale and that `/setup-engineering-toolkit` will rew
 after its normal probes and confirmation. Unknown versioned Claude models
 remain invalid. The external runner rejects a missed Fable or Opus version pin
 instead of silently executing it. Sol and Grok pins have no read-time alias. A
-model the catalog does not serve fails dispatch as `app-does-not-serve-model`
-until setup accepts a stale-pin proposal.
+model the catalog does not serve fails dispatch until setup accepts a stale-pin proposal.
 
 `fast` is part of Cursor's Grok selector, not a Grok Build CLI model or effort flag. The portable Grok route pins the current CLI model `grok-4.7`. The first-run Grok effort is `xhigh`. Cursor also serves `grok-4.7`. `cursor:grok-4.7` is native host-spawn on a Cursor parent and runs through the Cursor CLI from any other parent. `grok:grok-4.7` is always the Grok CLI.
 
