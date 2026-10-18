@@ -84,7 +84,7 @@ The marketplace install is the normal user path. Direct links are only for testi
 ├── LICENSE-gentle-ai                 # Gentle AI upstream MIT (work-unit-commits)
 ├── LICENSE-superpowers               # superpowers upstream MIT (hook runner)
 ├── NOTICE.md                         # attribution table
-├── UPSTREAM.md                       # Cursor pstack and Open Pstack tracked sources
+├── UPSTREAM.md                       # Cursor pstack sync record and Open Pstack fork point
 ├── CHANGES.md                        # per-skill substitution audit
 ├── README.md                         # plain-English introduction and quick start
 └── docs/reference.md                 # this technical reference

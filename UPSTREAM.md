@@ -1,9 +1,8 @@
 # Tracked sources
 
-This fork tracks two sources.
+This fork tracks one source: [Cursor's pstack](https://github.com/cursor/plugins/tree/main/pstack), Lauren Tan's original plugin.
 
-1. [Cursor's pstack](https://github.com/cursor/plugins/tree/main/pstack) is Lauren Tan's original plugin.
-2. [Open Pstack](https://github.com/ericlitman/open-pstack) is the Claude Code and Codex port that this checkout started from.
+[Open Pstack](https://github.com/ericlitman/open-pstack) is the Claude Code and Codex port that this checkout started from. This fork no longer tracks it. See [Open Pstack (no longer tracked)](#open-pstack-no-longer-tracked).
 
 Do not open issues on Open Pstack for work that belongs in this fork. Keep one shared `plugins/engineering-toolkit/skills/` tree. Put harness translation in `codex-tools.md`, `cursor-tools.md`, and `provider-dispatch.md`. Do not fork a skill per parent app.
 
@@ -19,18 +18,6 @@ Do not open issues on Open Pstack for work that belongs in this fork. Keep one s
 | Engineering Toolkit version | `1.4.6` |
 
 The table above is the current Cursor pstack sync point. At the fresh fetch for this sync, `cursor/main` was `ac4e25a` (#690), not the earlier research snapshot `2284d64`. Since `99743e9`, two commits touch `pstack/`. `182f2ce` (#637) adds a generated Claude Code tree and is excluded. `0317eb8` (#700) changes the branded-type wording in `typescript-best-practices`, and its skill text is applied. The commit row above stays `99743e9`; the reference-file catch-up in `CHANGES.md` takes fourteen files from `0317eb8`. This checkout started from Open Pstack 1.4.1, which imported Cursor pstack 0.15.1. `README-UPSTREAM.md` preserves the current Cursor pstack README verbatim. `CHANGES.md` and `NOTICE.md` describe the adaptations and provenance.
-
-## Open Pstack remote
-
-The maintainer checkout names Open Pstack as `upstream`:
-
-```shell
-git remote add upstream https://github.com/ericlitman/open-pstack.git
-```
-
-Fetch Open Pstack `main` and inspect commits after the recorded Open Pstack version before you merge them here.
-
-This sync reviewed Open Pstack through `9368993` (v1.15.0), using its adapted sync commits `29f224e`, `63eedbf`, `d462f0a`, and `d8eeb4d` as references. The fork point remains v1.4.1.
 
 ## Cursor pstack exclusions
 
@@ -48,9 +35,11 @@ This sync reviewed Open Pstack through `9368993` (v1.15.0), using its adapted sy
 - The Claude manifest does not take the logo field from `efa2a53` because Claude Code has no schema for it. The shared asset is exposed through the Codex manifest instead.
 - Do not replace `plugins/engineering-toolkit/assets/logo.png` with Cursor pstack or Open Pstack bytes. This fork owns that catalog mark. Keep the file under 512 KiB.
 
-## Open Pstack comparison
+## Open Pstack (no longer tracked)
 
-The Windows SessionStart fix from v1.8.0 is imported. The model registry and generated catalog, extra providers (DeepSeek Harness, Antigravity, OpenCode, Amp, Cursor CLI, Devin), release tooling, and comment sweep are not imported.
+The fork point is Open Pstack 1.4.1. The last sync reviewed Open Pstack through `9368993` (v1.15.0). This fork does not fetch, compare, or import from Open Pstack after that review. The Windows SessionStart fix from v1.8.0 is imported.
+
+These parts of Open Pstack are not imported: the model registry and generated catalog, the extra providers (DeepSeek Harness, Antigravity, OpenCode, Amp, Cursor CLI, Devin), the release tooling, and the comment sweep. Do not add the `upstream` remote or merge Open Pstack commits. Take a change from Open Pstack only as a separate, deliberate decision, and record it in `NOTICE.md`.
 
 ## Check Cursor pstack for changes
 
@@ -99,4 +88,4 @@ Cursor's `README.md` becomes `README-UPSTREAM.md` and stays verbatim. Never rewr
 5. Run CI-equivalent checks locally. Then run the installed Cursor, Claude Code, and Codex behavioral lanes required by the changed surface. Unit tests alone are not a release gate.
 6. Merge the reviewed change before tagging a release of this fork.
 
-Cursor pstack, Open Pstack, and this fork keep independent version numbers. Cursor's version identifies the imported plugin content. Open Pstack's version identifies the Claude Code and Codex port. This fork's version identifies the checkout you are in.
+Cursor pstack and this fork keep independent version numbers. Cursor's version identifies the imported plugin content. This fork's version identifies the checkout you are in. The Open Pstack version in the table above records the fork point only.
