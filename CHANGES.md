@@ -2,6 +2,12 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## Cursor mapping: the `pstack-lane` prompt is the only guard against nested agents
+
+`cursor-tools.md` no longer says the `pstack-lane` definition forbids nested `Agent` and `Task`. Cursor's subagent frontmatter reads `name`, `description`, `model`, `readonly`, and `is_background`. It ignores `disallowedTools` and `background`. In a live run, the child listed `Task` among its tools, and it refused a nested spawn because the prompt forbids it. No version bump.
+
+Not verified: Cursor's documented limit that a subagent cannot launch a subagent, because the child refused before it tried; the named Sonnet selector, because the Free plan cannot select named models.
+
 ## T3 maps the Babysit GitHub wait to watch_pull_request
 
 `t3-tools.md` gains one row: on a T3 thread, the Babysit playbook's GitHub wait is `watch_pull_request` followed by the end of the turn, with `unwatch_pull_request` on handoff. Origin and Azure DevOps keep the playbook's own wait. No skill body changes and no version bump.
