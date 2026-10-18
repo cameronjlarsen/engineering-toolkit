@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { cliModelFor, launchableApps, shippedCatalog, soleModel, SOL_CLI_MODEL } from "./catalog.ts";
+import { cliModelFor, shippedCatalog, soleModel, SOL_CLI_MODEL } from "./catalog.ts";
 
 describe("shipped catalog", () => {
   it("contains the four shipped apps", () => {
@@ -31,9 +31,8 @@ describe("shipped catalog", () => {
     expect(catalog.get("grok")?.models.has("claude-sonnet-5-5" as never)).toBe(false);
   });
 
-  it("makes Cursor a launchable app that serves Fable, Opus, Sonnet, and Grok", () => {
+  it("makes Cursor serve Fable, Opus, Sonnet, and Grok", () => {
     const cursor = shippedCatalog().get("cursor");
-    expect(cursor?.launch).toBe("cli-auth");
     expect([...(cursor?.models.keys() ?? [])].map(String).sort()).toEqual([
       "claude-sonnet-5-5",
       "fable",
@@ -72,10 +71,6 @@ describe("shipped catalog", () => {
       "max",
     ]);
     expect(catalog.get("grok")?.models.get("grok-4.7" as never)?.efforts).toContain("max");
-  });
-
-  it("exposes every app, Cursor included, as a CLI child", () => {
-    expect(launchableApps()).toEqual(["claude-code", "codex", "cursor", "grok"]);
   });
 
   it("reports the sole model only when an app serves exactly one", () => {

@@ -70,10 +70,30 @@ git diff --stat 99743e9c151c8537cbbf1f98bb38f34ef3368453..cursor/main -- pstack
 
 No output means the tracked pstack tree has not changed. This comparison does not need a polling service or generated mirror branch.
 
+## Renames applied on every sync
+
+Incoming Cursor pstack text uses Cursor's names. Rewrite them as follows. Apply the rows from the top, because the package row must run before the general `poteto-mode` row.
+
+| Cursor pstack | This fork |
+| --- | --- |
+| `pstack/skills/`, `pstack/agents/`, `pstack/assets/` | `plugins/engineering-toolkit/skills/`, `plugins/engineering-toolkit/agents/`, `plugins/engineering-toolkit/assets/` |
+| `@cursor-skill/poteto-mode-tools` | `@engineering-toolkit/engineering-mode-tools` |
+| `.poteto-mode-tools-install-key` | `.engineering-mode-tools-install-key` |
+| `skills/poteto-mode` (any path prefix) | `skills/engineering-mode` |
+| `/poteto-mode` | `/engineering-mode` |
+| `Poteto mode` | `Engineering mode` |
+| `poteto-mode` | `engineering-mode` |
+| `poteto-agent` (file `agents/poteto-agent.md`, `subagent_type`) | `engineering-agent` |
+| `poteto-help` (skill directory, `/poteto-help`) | `engineering-help` |
+| `setup-pstack` | `setup-engineering-toolkit` |
+| `pstack-models.mdc` | `engineering-toolkit-models.mdc` |
+
+Cursor's `README.md` becomes `README-UPSTREAM.md` and stays verbatim. Never rewrite `README-UPSTREAM.md`, `LICENSE`, `LICENSE-cursor-team-kit`, or `LICENSE-superpowers`. After a sync, grep the changed files for `poteto`. A hit outside `README-UPSTREAM.md` means a row was missed. Capitalized `Poteto-mode` with a hyphen is not covered by the rows above. Rewrite it by hand.
+
 ## Incorporate a change
 
 1. Track the work in this fork. Do not file it on `ericlitman/open-pstack`.
-2. Read each incoming commit in order. Bring over its intent and content. Then apply only the substitutions documented in `CHANGES.md`, plus this fork's Cursor-parent mapping.
+2. Read each incoming commit in order. Bring over its intent and content. Then apply the renames above and the substitutions documented in `CHANGES.md`, plus this fork's Cursor-parent mapping.
 3. Keep one shared `plugins/engineering-toolkit/skills/` tree.
 4. Update the commit and version in this file, the affected provenance rows in `NOTICE.md`, and `README-UPSTREAM.md` when Cursor pstack changes it.
 5. Run CI-equivalent checks locally. Then run the installed Cursor, Claude Code, and Codex behavioral lanes required by the changed surface. Unit tests alone are not a release gate.

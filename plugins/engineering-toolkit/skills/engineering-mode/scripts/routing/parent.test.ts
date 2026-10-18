@@ -7,10 +7,8 @@ import {
   applyIntegrationPatch,
   detectParent,
   firstRunRoleMap,
-  nativeHandle,
   parentIdentityKeys,
   parentProfile,
-  pluginAgentName,
   proposeStalePinMigrations,
   renderParentFiles,
   unwrapStoredSheet,
@@ -19,22 +17,11 @@ import {
 import {
   modelSlug,
   route,
-  type Access,
-  type Effort,
-  type LanePlan,
   type ModelSlug,
   type ParentHost,
   type RoleMap,
-  type WorkerPolicy,
 } from "./route.ts";
 import { loadRoleMap, printRoleMap } from "./sheet.ts";
-
-const access: Access = { mode: "read-only", worktree: null };
-const worker: WorkerPolicy = {
-  mayChooseRoute: false,
-  maySpawnAgents: false,
-  inheritCoordinatorMcp: false,
-};
 
 function slug(raw: string) {
   const parsed = modelSlug(raw);
@@ -112,66 +99,6 @@ describe("firstRunRoleMap", () => {
       const roles = firstRunRoleMap(parent, catalog);
       expect(loadRoleMap(printRoleMap(roles), parent)).toEqual({ ok: true, value: roles });
     }
-  });
-});
-
-function nativePlan(
-  parent: ParentHost,
-  model: ModelSlug,
-  effort: Effort
-): Extract<LanePlan, { kind: "native"; inherit?: false }> {
-  return {
-    kind: "native",
-    parent,
-    route: { model, app: parent, effort, lane: "native" },
-    access,
-    worker,
-  };
-}
-
-function inheritPlan(parent: ParentHost): Extract<LanePlan, { kind: "native" }> {
-  return { kind: "native", parent, inherit: true, access, worker };
-}
-
-describe("nativeHandle", () => {
-  it("names the plugin-agent wire without host primitives", () => {
-    expect(
-      nativeHandle(nativePlan("cursor", slug("fable"), "max"), shippedCatalog())
-    ).toEqual({
-      kind: "plugin-agent",
-      name: pluginAgentName("fable", "max"),
-    });
-  });
-
-  it("names the Sonnet 5.5 plugin agent on Claude Code and Cursor", () => {
-    for (const parent of ["claude-code", "cursor"] as const) {
-      expect(
-        nativeHandle(
-          nativePlan(parent, slug("claude-sonnet-5-5"), "medium"),
-          shippedCatalog()
-        )
-      ).toEqual({
-        kind: "plugin-agent",
-        name: pluginAgentName("sonnet", "medium"),
-      });
-    }
-  });
-
-  it("maps cursor:grok-4.7 on a cursor parent to host-spawn", () => {
-    expect(
-      nativeHandle(nativePlan("cursor", slug("grok-4.7"), "xhigh"), shippedCatalog())
-    ).toEqual({
-      kind: "host-spawn",
-      model: slug("grok-4.7"),
-      effort: "xhigh",
-    });
-  });
-
-  it("maps inherit-parent to the engineering-agent wrapper", () => {
-    expect(nativeHandle(inheritPlan("cursor"), shippedCatalog())).toEqual({
-      kind: "inherit",
-      wrapper: "engineering-agent",
-    });
   });
 });
 

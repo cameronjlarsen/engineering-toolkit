@@ -323,7 +323,7 @@ Upstream pstack jumped from `0.1.0` → `0.9.2` between syncs. 30+ commits, incl
 | --- | --- | --- |
 | `Task` tool | `Agent` tool | Claude Code's `Agent` tool is the equivalent. |
 | `subagent_type: generalPurpose` | `subagent_type: "general-purpose"` | Kebab-case in Claude Code. |
-| `subagent_type: "poteto-agent"` | `subagent_type: "poteto-agent"` | Unchanged — this plugin ships that agent. |
+| `subagent_type: "poteto-agent"` | `subagent_type: "engineering-agent"` | This plugin ships `engineering-agent`; see the rename table in `UPSTREAM.md`. |
 | `readonly: true` / `readonly: false` | (dropped; rewritten as "pick a subagent_type that retains MCP access") | Claude Code controls tool/MCP access via subagent_type, not a per-call readonly flag. |
 | `AskQuestion` | `AskUserQuestion` | Tool rename; semantics match. |
 | Cursor `/loop` (built-in) | Claude Code `loop` skill | 1:1 replacement; available as a built-in skill. |
@@ -430,7 +430,7 @@ Upstream pstack jumped from `0.1.0` → `0.9.2` between syncs. 30+ commits, incl
 - **`/loop`, `/deslop`, `/babysit` slash references.** These all resolve in Claude Code now (`loop` is a built-in skill; `deslop` and `babysit` ship in this plugin).
 - **`run_in_background: true`.** Claude Code's `Agent` tool supports this — kept as-is.
 - **"currently open files, recent edits, the cursor location"** in `why/SKILL.md` (line 59). "Cursor location" here means editor cursor (caret position), not the IDE; generic phrasing, no edit.
-- **`poteto-agent` subagent ID.** Plugin ships this agent; references stay.
+- **`engineering-agent` subagent ID.** Plugin ships this agent in place of upstream's `poteto-agent`; see the rename table in `UPSTREAM.md`.
 - **Cursor's `/create-skill` writing style guidance referenced indirectly.** Pointed at `plugin-dev:skill-development` which covers the same ground in Claude Code. If you want stricter parity, also install Anthropic's `superpowers:writing-skills` skill.
 
 ## Forking note
