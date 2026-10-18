@@ -1,18 +1,11 @@
 import { describe, expect, it } from "bun:test";
-import { shippedCatalog } from "./catalog.ts";
 import {
   modelSlug,
   route,
   type AppId,
   type Effort,
-  type RoleMap,
 } from "./route.ts";
-import {
-  applyBudget,
-  loadRoleMap,
-  parseBudgetLine,
-  printRoleMap,
-} from "./sheet.ts";
+import { loadRoleMap, printRoleMap } from "./sheet.ts";
 
 const roles = [
   "feature, refactoring",
@@ -341,94 +334,7 @@ describe("sheet validation and round trips", () => {
   });
 });
 
-const ALL_EFFORTS: readonly Effort[] = ["low", "medium", "high", "xhigh", "max"];
-
-function mustLoad(values: Partial<Record<(typeof roles)[number], string>> = {}): RoleMap {
-  const result = loadRoleMap(sheet(values), "claude-code");
-  if (!result.ok) throw new Error("expected a role map");
-  return result.value;
-}
-
-describe("sheet budget", () => {
-  it("parses unlimited and small budget lines", () => {
-    expect(parseBudgetLine("# budget: unlimited (max)")).toEqual({
-      ok: true,
-      value: { label: "unlimited", target: "max" },
-    });
-    expect(parseBudgetLine("  # budget: small (medium)")).toEqual({
-      ok: true,
-      value: { label: "small", target: "medium" },
-    });
-  });
-
-  it("rejects a budget line whose label and target disagree", () => {
-    expect(parseBudgetLine("# budget: small (max)")).toEqual({
-      ok: false,
-      error: { tag: "invalid-budget", raw: "# budget: small (max)" },
-    });
-  });
-
-  it("applies small to real routes and leaves inherit-parent", () => {
-    const roles = mustLoad({
-      "judgment and prose": "claude:fable@max",
-      "arena runners": "grok:grok-4.6@xhigh, inherit-parent",
-    });
-    const budget = parseBudgetLine("# budget: small (medium)");
-    expect(budget.ok).toBe(true);
-    if (!budget.ok) return;
-    const result = applyBudget(roles, budget.value, () => ALL_EFFORTS);
-    expect(result.needsChoice).toEqual([]);
-    expect(result.roles["judgment and prose"]).toEqual(routeValue("fable", "claude-code", "medium"));
-    expect(result.roles["arena runners"]).toEqual([
-      routeValue("grok-4.6", "grok", "medium"),
-      { kind: "inherit-parent" },
-    ]);
-    expect(result.roles["why investigators, synthesizer"]).toEqual({ kind: "inherit-parent" });
-  });
-
-  it("clamps each route to its own provider's efforts", () => {
-    const catalog = shippedCatalog();
-    const roles = mustLoad({
-      "arena runners": "grok:grok-4.7@max, cursor:grok-4.7@max",
-    });
-    const result = applyBudget(
-      roles,
-      { label: "large", target: "xhigh" },
-      (configured) => catalog.get(configured.app)?.models.get(configured.model)?.efforts ?? []
-    );
-    expect(result.roles["arena runners"]).toEqual([
-      routeValue("grok-4.7", "grok", "xhigh"),
-      routeValue("grok-4.7", "cursor", "xhigh"),
-    ]);
-  });
-
-  it("leaves explicit efforts under unlimited", () => {
-    const roles = mustLoad({ "judgment and prose": "claude:fable@max" });
-    const budget = parseBudgetLine("# budget: unlimited (max)");
-    expect(budget.ok).toBe(true);
-    if (!budget.ok) return;
-    const result = applyBudget(roles, budget.value, () => ALL_EFFORTS);
-    expect(result.needsChoice).toEqual([]);
-    expect(result.roles["judgment and prose"]).toEqual(routeValue("fable", "claude-code", "max"));
-  });
-
-  it("marks needsChoice when no selectable effort is at or below the target", () => {
-    const roles = mustLoad({ "judgment and prose": "claude:fable@max" });
-    const budget = parseBudgetLine("# budget: small (medium)");
-    expect(budget.ok).toBe(true);
-    if (!budget.ok) return;
-    const result = applyBudget(roles, budget.value, () => ["high", "xhigh", "max"]);
-    expect(result.needsChoice).toEqual(["judgment and prose"]);
-    expect(result.roles["judgment and prose"]).toEqual(routeValue("fable", "claude-code", "max"));
-  });
-
-  it("prints an optional budget comment before the role rows", () => {
-    const roles = mustLoad({ "judgment and prose": "claude:fable@max" });
-    const printed = printRoleMap(roles, { label: "large", target: "xhigh" });
-    expect(printed).toContain("# budget: large (xhigh)\n");
-    expect(loadRoleMap(printed, "claude-code").ok).toBe(true);
-  });
-
+describe("sheet budget comment", () => {
   it("still loads a sheet that records a budget among the comments", () => {
     const result = loadRoleMap(
       [
