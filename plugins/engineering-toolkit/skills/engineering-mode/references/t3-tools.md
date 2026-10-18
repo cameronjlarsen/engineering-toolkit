@@ -1,6 +1,6 @@
 # T3 Code tool mapping for Engineering Toolkit
 
-Shared skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuestion`) in shared prose. A T3 thread is a Claude Code or Codex session that also has the `t3-code` MCP tools, so read [`codex-tools.md`](codex-tools.md) for a Codex thread and use Claude's tool names as written for a Claude thread. This file changes only how subagents launch. It applies when the session has `delegate_task` and `orchestrator_capabilities`. Without them, the parent app's mapping applies.
+Shared skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuestion`) in shared prose. A T3 thread is a Claude Code or Codex session that also has the `t3-code` MCP tools, so read [`codex-tools.md`](codex-tools.md) for a Codex thread and use Claude's tool names as written for a Claude thread. This file changes how subagents launch and how a GitHub PR wait ends. It applies when the session has `delegate_task` and `orchestrator_capabilities`. Without them, the parent app's mapping applies.
 
 ## Subagent actions
 
@@ -13,6 +13,14 @@ Shared skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuesti
 | Follow-up to a finished child | A fresh `delegate_task` with the consolidated brief |
 
 Give each call its own `clientRequestId`, stable across retries of that call, and keep each returned `taskId`. A child gets only its brief, so pass absolute paths. A persona (`engineering-agent`, `comment-sicko`) is a brief that opens with "Read `<plugin root>/agents/<name>.md` in full and act as it says". Writers get a worktree or a unique output directory, as in the parent app's mapping.
+
+## GitHub PR wait
+
+| Shared skill / Claude action | T3 equivalent |
+|------------------------------|---------------|
+| Babysit wait on a GitHub PR (`watch-pr`, `gh pr checks --watch`, `/loop`) | Triage the existing comments, call `watch_pull_request`, and end the turn |
+
+T3 wakes the thread when a check fails, the required checks pass, someone else comments or reviews, or the branch conflicts. Only comments posted after the call wake it, so handle the existing ones first. A wake is news, not a merge decision: read the PR state again before you act. When you hand the work back, call `unwatch_pull_request` first. A subagent cannot watch. Origin and Azure DevOps keep the Babysit playbook's own wait.
 
 ## Routes
 

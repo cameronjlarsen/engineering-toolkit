@@ -2,6 +2,10 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## T3 maps the Babysit GitHub wait to watch_pull_request
+
+`t3-tools.md` gains one row: on a T3 thread, the Babysit playbook's GitHub wait is `watch_pull_request` followed by the end of the turn, with `unwatch_pull_request` on handoff. Origin and Azure DevOps keep the playbook's own wait. No skill body changes and no version bump.
+
 ## One `pstack-lane` agent replaces the fifteen `pstack-<model>-<effort>` agents
 
 The fifteen `pstack-{fable,opus,sonnet}-{low,medium,high,xhigh,max}` plugin agents are deleted. One `agents/pstack-lane.md` replaces them. It keeps `background: true` and `disallowedTools: Agent, Task`, and pins no `model` or `effort`. A Claude Code parent calls `Agent` with `subagent_type` `et:pstack-lane`, `model` set to the row's alias (`sonnet`, `opus`, or `fable`), and `effort` set to the resolved effort. The parent must always pass `effort`: a call that omits it inherits the parent's effort. A Cursor parent keeps its selector-carries-model-and-effort `Task` call and names `pstack-lane` as the `subagent_type`.
