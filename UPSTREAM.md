@@ -17,7 +17,7 @@ Do not open issues on Open Pstack for work that belongs in this fork. Keep one s
 | Open Pstack version at fork | `1.4.1` |
 | Engineering Toolkit version | `1.4.7` |
 
-The table above is the current Cursor pstack sync point. At the fresh fetch for this sync, `cursor/main` was `4382e68` (#709), the last commit to touch `pstack/`. Eight commits touch `pstack/` since `99743e9`. Applied: `16541c6` (#692) and `bc14437` (#708) in `ketchup`, `4382e68` (#709) as `create-formal-verification-skill`, and the README refresh from `019a6a2` (#704) in `README-UPSTREAM.md`. Already in the tree: `0317eb8` (#700), whose reference-file catch-up in `CHANGES.md` takes fourteen files, and `a968159` (#702), since every skill name already matches its folder. Excluded: `182f2ce` (#637) and `1b80080` (#705), which add and extend a generated Claude Code tree, and the `docs/guide` edits in #704. The commit row moves to `4382e68`. Cursor's manifest still reads `0.15.25`, so that row does not change. This checkout started from Open Pstack 1.4.1, which imported Cursor pstack 0.15.1. `README-UPSTREAM.md` preserves the current Cursor pstack README verbatim. `CHANGES.md` and `NOTICE.md` describe the adaptations and provenance.
+The table above is the current Cursor pstack sync point. At the fresh fetch for this sync, `cursor/main` was `4382e68` (#709), the last commit to touch `pstack/`. Eight commits touch `pstack/` since `99743e9`. Applied: `16541c6` (#692) and `bc14437` (#708) in `ketchup`, `4382e68` (#709) as `create-formal-verification-skill`, and the README refresh from `019a6a2` (#704) in `README-UPSTREAM.md`. Already in the tree: `0317eb8` (#700), whose reference-file catch-up took fourteen files, and `a968159` (#702), since every skill name already matches its folder. Excluded: `182f2ce` (#637) and `1b80080` (#705), which add and extend a generated Claude Code tree, and the `docs/guide` edits in #704. The commit row moves to `4382e68`. Cursor's manifest still reads `0.15.25`, so that row does not change. This checkout started from Open Pstack 1.4.1, which imported Cursor pstack 0.15.1. `README-UPSTREAM.md` preserves the current Cursor pstack README verbatim. `CHANGES.md` and `NOTICE.md` describe the adaptations and provenance.
 
 ## Cursor pstack exclusions
 
@@ -32,7 +32,7 @@ The table above is the current Cursor pstack sync point. At the fresh fetch for 
 - Cursor `df58112` / #511 is not applied: keep the Sol defaults, four-runner panels, and current model budgets. Do not take `setup-pstack`'s default budget change; this fork keeps operator overrides and Opus routes at `@medium`.
 - Do not take the `b93e811` `~/.cursor/plugins/` search in `poteto-agent`, the Built-in PR tool paragraph, Cursor manifests, `docs/guide`, or the Agent Plugins v1 root manifest.
 - Do not take Cursor's generated Claude Code tree or adapter (`182f2ce` / #637, `1b80080` / #705): `harness/pstack/`, `pstack/docs/harness/claude-code.md`, the harness generator and plugin-validation scripts, and the `~/.claude/rules/pstack-models.md` model sheet path. The adapter maps a non-Claude model slug to the session model, which is a weaker-model fallback. Also do not take `scripts/check-pstack-docs.mjs` or the `docs/guide` edits from `019a6a2` / #704.
-- Keep this fork's single `pstack-lane` plugin agent in place of Cursor's per-model native `pstack-*` agents. It pins no model or effort; the parent passes both on each call.
+- Keep this fork's single `pstack-lane` plugin agent in place of Cursor's per-model native `pstack-*` agents. It pins no model or effort; the parent passes both on each call. Sonnet is pinned by the `sonnet` alias, because `Agent` rejects the fixed id `claude-sonnet-5-5`. Claude Code 2.1.302 resolved the alias to `claude-sonnet-5-5`, and a later Sonnet revision is picked up without a repo change. The parent must always pass `effort`, because a call that omits it inherits the parent's effort. Cursor's subagent frontmatter ignores `disallowedTools` and `background`, so on Cursor the `pstack-lane` prompt is the only guard against nested `Agent` and `Task`.
 - The Claude manifest does not take the logo field from `efa2a53` because Claude Code has no schema for it. The shared asset is exposed through the Codex manifest instead.
 - Do not replace `plugins/engineering-toolkit/assets/logo.png` with Cursor pstack or Open Pstack bytes. This fork owns that catalog mark. Keep the file under 512 KiB.
 
@@ -83,10 +83,21 @@ Cursor's `README.md` becomes `README-UPSTREAM.md` and stays verbatim. Never rewr
 ## Incorporate a change
 
 1. Track the work in this fork. Do not file it on `ericlitman/open-pstack`.
-2. Read each incoming commit in order. Bring over its intent and content. Then apply the renames above and the substitutions documented in `CHANGES.md`, plus this fork's Cursor-parent mapping.
+2. Read each incoming commit in order. Bring over its intent and content. Then apply the renames above and the substitutions audited in `CHANGES.md`, plus this fork's Cursor-parent mapping.
 3. Keep one shared `plugins/engineering-toolkit/skills/` tree.
 4. Update the commit and version in this file, the affected provenance rows in `NOTICE.md`, and `README-UPSTREAM.md` when Cursor pstack changes it.
 5. Run CI-equivalent checks locally. Then run the installed Cursor, Claude Code, and Codex behavioral lanes required by the changed surface. Unit tests alone are not a release gate.
 6. Merge the reviewed change before tagging a release of this fork.
 
 Cursor pstack and this fork keep independent version numbers. Cursor's version identifies the imported plugin content. This fork's version identifies the checkout you are in. The Open Pstack version in the table above records the fork point only.
+
+## Maintenance
+
+- The Engineering Toolkit version string lives in `plugins/engineering-toolkit/.claude-plugin/plugin.json`, `plugins/engineering-toolkit/.codex-plugin/plugin.json`, `plugins/engineering-toolkit/.cursor-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.cursor-plugin/marketplace.json`, and the Engineering Toolkit version row above. A catalog version bump updates all six. `tests/skill-collision-repro.sh` checks that they match. The Open Pstack row stays the version this checkout started from. `.agents/plugins/marketplace.json` carries no version field.
+- The canonical default panel quad is the model matrix in `provider-dispatch.md` (`provider:model@default` in family-row order). It is copied into the three panel skills (`arena`, `architect`, `interrogate`) and the `setup-engineering-toolkit` first-run sheet. Keep those copies grep-identical when models change. The static test derives the quad from the matrix.
+- After a change to `skills/engineering-mode/scripts/`, run `bun install --frozen-lockfile`, `bun run test`, and `bun run typecheck` from that directory.
+- `hooks/session-start-context.md` restates skill one-liners. Re-verify it whenever skill names or descriptions change.
+- The package must not contain a `commands/` layer. Claude Code and Codex load the native `skills/` tree directly, and a command layer doubles the workflow inventory.
+- The 23 `principle-*` leaves carry `user-invocable: false` to keep them out of the user picker while `engineering-mode` reads them by path. Claude honors the metadata. Codex 0.149.0 does not ([open-pstack#8](https://github.com/ericlitman/open-pstack/issues/8)). They must not carry `disable-model-invocation`, which makes them unreachable to the model.
+- Re-run the behavioral mode of `tests/skill-collision-repro.sh` after Claude Code upgrades to check model-initiated and user-initiated native skill invocation.
+- `plugin.json` declares no `dependencies`. The Claude Code desktop app loads plugins with `--plugin-dir`, which strips marketplace identity, so a cross-marketplace dependency never resolves and the loader disables the whole plugin with `dependency-unsatisfied`. `optional: true` passes `claude plugin validate` but the loader ignores it (tested on 2.1.197). `plugin-dev` is a manual install; see `docs/reference.md`.

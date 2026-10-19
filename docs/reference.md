@@ -116,7 +116,7 @@ Nothing is declared in `plugin.json`. Install the one companion plugin yourself:
   /plugin install plugin-dev@claude-plugins-official
   ```
 
-  Until 0.9.2 this was a `dependencies` entry in `plugin.json`. The desktop app's `--plugin-dir` load mode can never resolve cross-marketplace dependencies and hard-disables the whole plugin, so 0.9.3 removed the declaration — full mechanism in the 0.9.3 entry of [CHANGES.md](../CHANGES.md). Without `plugin-dev` installed, only the skill-authoring routes degrade; everything else works.
+  Until 0.9.2 this was a `dependencies` entry in `plugin.json`. The desktop app's `--plugin-dir` load mode can never resolve cross-marketplace dependencies and hard-disables the whole plugin, so 0.9.3 removed the declaration. The loader disables the plugin with `dependency-unsatisfied`, and `optional: true` is not honored (see Maintenance in [UPSTREAM.md](../UPSTREAM.md)). Without `plugin-dev` installed, only the skill-authoring routes degrade; everything else works.
 
 Not declared as deps, but referenced in skill bodies:
 
