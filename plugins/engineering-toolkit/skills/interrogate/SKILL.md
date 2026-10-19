@@ -5,7 +5,7 @@ description: "Use for \"interrogate\", \"adversarial review\", \"multi-model rev
 
 # Interrogate
 
-Spawn one reviewer per configured model to adversarially review code changes. Each model gets the same prompt and rubric. The adversarial signal comes from model diversity, not assigned personas.
+Spawn one reviewer per configured model to adversarially review code changes. Each model gets the same prompt and rubric. The adversarial signal comes from model diversity, not assigned personas. With no sheet that is one reviewer and no diversity, and the report says so.
 
 The deliverable is a synthesized verdict. Do NOT auto-apply changes.
 
@@ -34,16 +34,9 @@ Write one clear paragraph. If you're unsure about the intent, ask the user befor
 
 ## Step 3, Spawn Reviewers
 
-Start all reviewers in one fan-out phase. Use the `interrogate reviewers` line in the current harness's `engineering-toolkit-models` sheet, one reviewer per entry, extending or shrinking the Reviewer A/B/C/D labels below to the configured entry count. If the sheet or that line is missing, use the table defaults. Native reviewers use the parent subagent primitive. External reviewers use the launcher directly and must return a complete, model-verified receipt.
+Start all reviewers in one fan-out phase. Use the `interrogate reviewers` line in the current harness's `engineering-toolkit-models` sheet, one reviewer per entry, labeled Reviewer A, B, C, and so on. If the sheet or that line is missing, run one reviewer on `inherit-parent` (the parent model) and say that `/setup-engineering-toolkit` configures a multi-model panel. Native reviewers use the parent subagent primitive. External reviewers use the launcher directly and must return a complete, model-verified receipt.
 
-| Subagent | Default model |
-|----------|---------------|
-| Reviewer A | `claude:fable@max` |
-| Reviewer B | `codex:gpt-6-sol@max` |
-| Reviewer C | `grok:grok-4.7@xhigh` |
-| Reviewer D | `claude:opus@xhigh` |
-
-For each reviewer, route the configured descriptor with `read-only` access and a unique output/receipt path. If the descriptor is `inherit-parent` or `auto`, use the parent subagent primitive without a model override. If a provider, login, or model is unavailable, record a dropout and continue with the completed reviewers. Never pick the closest model or silently fall back; that destroys the meaning of cross-provider agreement.
+For each reviewer, route the configured descriptor with `read-only` access and a unique output/receipt path. If the descriptor is `inherit-parent` or `auto`, use the parent subagent primitive without a model override. A provider-qualified entry follows [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md). If a configured entry does not resolve, record a dropout and continue with the completed reviewers. Never pick the closest model or silently fall back; that destroys the meaning of cross-provider agreement.
 
 Read `references/reviewer-prompt.md` and fill in the template with:
 1. The stated intent
@@ -58,7 +51,7 @@ The same filled template goes to all reviewers, so every model applies the code-
 As results come back, build a unified picture:
 
 1. **Parse all findings** from the reviewers
-2. **Identify consensus**. Findings raised by 2+ models independently are highest signal.
+2. **Identify consensus**. Findings raised by 2+ models independently are highest signal. With one reviewer there is no cross-model signal: skip this step, say so in the report, and write "single reviewer, no cross-model signal" in the Agreement Map.
 3. **Identify lone-model findings**. Still worth reading, but weight accordingly.
 4. **Deduplicate**. Different models may describe the same issue differently. Merge these and note which models raised it.
 5. **Note disagreements**. If one model flags something and another explicitly says the opposite, that's useful context for the verdict.

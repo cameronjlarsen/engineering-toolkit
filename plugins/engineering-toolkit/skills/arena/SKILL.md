@@ -26,7 +26,7 @@ The N candidates will receive the same prompt, so the prompt is the contract.
 
 1. State the artifact each candidate is producing.
 2. Derive the rubric. State what success looks like for *this* task, then turn it into 3-6 concrete gradeable criteria. The rubric is the picker's tool in Phase D. Candidates only see the task.
-3. Pick the runners. Use the `arena runners` line in the current harness's `engineering-toolkit-models` sheet. If the sheet or that line is missing, default to one each on `claude:fable@max`, `codex:gpt-6-sol@max`, `grok:grok-4.7@xhigh`, `claude:opus@xhigh`. An `auto` or `inherit-parent` entry in this line or the cross-judge line means the parent model. If a provider, login, or model is unavailable, record a dropout and continue. Never pick the closest model or silently fall back. Spawn more when the arena covers multiple design directions. Same descriptor N times when the work is generation-bound rather than judgment-sensitive.
+3. Pick the runners. Use the `arena runners` line in the current harness's `engineering-toolkit-models` sheet. If the sheet or that line is missing, default to `inherit-parent`: every runner is the parent model, and `/setup-engineering-toolkit` configures a panel. An `auto` or `inherit-parent` entry in this line or the cross-judge line means the parent model. A provider-qualified entry follows [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md). If a configured entry does not resolve, record a dropout and continue. Never pick the closest model or silently fall back. Spawn more when the arena covers multiple design directions. Same descriptor N times when the work is generation-bound rather than judgment-sensitive.
 4. Assign output paths. Each candidate writes to its own location (a git worktree where possible, otherwise `/tmp/arena-<slug>/candidate-<n>/`), per the **separate-before-serializing-shared-state** principle skill.
 
 ## Phase B: Fan out
@@ -39,13 +39,13 @@ An external lane counts only when its receipt says `complete` and carries either
 
 ## Phase C: Cross-judge
 
-After all Phase B candidates complete, choose the judge descriptor from the `arena cross-judge pool` line in the current harness's `engineering-toolkit-models` sheet. If the sheet or that line is missing, choose from the runner defaults above. Prefer a provider different from the parent and the likely base candidate. Dispatch one read-only judge through the provider contract. It sees the rubric and completed candidates by path label, scores each criterion, and recommends a base with rationale. It runs in parallel with the parent's reading in Phase D, not with the candidates themselves. Don't dispatch the judge while candidates are still writing.
+After all Phase B candidates complete, choose the judge descriptor from the `arena cross-judge pool` line in the current harness's `engineering-toolkit-models` sheet. If the sheet or that line is missing, the judge is the parent model. Prefer a provider different from the parent and the likely base candidate when the sheet offers one. Dispatch one read-only judge through the provider contract. It sees the rubric and completed candidates by path label, scores each criterion, and recommends a base with rationale. It runs in parallel with the parent's reading in Phase D, not with the candidates themselves. Don't dispatch the judge while candidates are still writing.
 
 ## Phase D: Pick a base
 
 Read every candidate end to end before picking.
 
-Score each candidate against the rubric criterion by criterion, not on holistic feel. Compare against the cross-judge. Agreement on the base confirms the pick. Disagreement means one of you is biased or the rubric was ambiguous. Read both rationales before deciding.
+Score each candidate against the rubric criterion by criterion, not on holistic feel. Compare against the cross-judge. Agreement on the base confirms the pick only when the judge is a different model from the candidate. A judge on the parent model repeating the parent's own candidates is a same-model check, not confirmation. Disagreement means one of you is biased or the rubric was ambiguous. Read both rationales before deciding.
 
 Pick the base on which candidate a future maintainer can extend most easily without breaking invariants. Prefer the cleaner boundary or smaller API when two feel tied, per the Laziness Protocol.
 
@@ -59,7 +59,7 @@ Fold each graft in by hand, per the **redesign-from-first-principles** principle
 
 Record what was grafted, from which candidate, and what was rejected and why.
 
-When N candidates converge on the same shape, that is a strong agreement signal. Note the convergence in the record and ship the consensus shape. No graft is needed. When N candidates wildly diverge, Phase A was under-specified. Reframe and re-run rather than averaging the divergence.
+When N candidates converge on the same shape, that is a strong agreement signal when the runners are different models. Same-model convergence is weak evidence. Note the convergence in the record and ship the consensus shape. No graft is needed. When N candidates wildly diverge, Phase A was under-specified. Reframe and re-run rather than averaging the divergence.
 
 ## Phase F: Verify
 
