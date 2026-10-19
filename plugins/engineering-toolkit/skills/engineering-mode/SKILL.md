@@ -100,7 +100,7 @@ For `inherit-parent`, `auto`, or an unconfigured native ad-hoc helper, prefer `e
 
 Start independent lanes together, use file pointers rather than inlined dumps, preserve only the tools or MCPs the task needs, and give each writer a worktree or unique output directory. Use a fresh child for each new task, fix, retry, follow-up, or second opinion. Reuse a live child only to continue its current assignment when it holds valuable state. `/setup-engineering-toolkit` configures the descriptor per role; per-spawn effort choices do not rewrite it.
 
-You own every subagent's work. Review the diff and write your own summary, don't pass through what it said. Interrupt-chained resumes silently drop directives, so fire a fresh subagent with consolidated scope rather than trusting a "done" summary. A second opinion is the same prompt against a different model. Agreement is high-signal.
+You own every subagent's work. Review the diff and write your own summary, don't pass through what it said. Interrupt-chained resumes silently drop directives, so fire a fresh subagent with consolidated scope rather than trusting a "done" summary. A second opinion is the same prompt against another model when the sheet names one. Agreement is high-signal then. On the parent model it is a same-model check, and agreement is weak evidence.
 
 ## Writing the reply
 
