@@ -211,11 +211,11 @@ The port is editorial, not mechanical. Anywhere upstream pstack assumed Cursor-s
 | Cursor's `/goal` (standing objective across turns) | The program objective written into the run's standing orders and restated in the todolist |
 | The Cursor agent store (path in the system prompt) | `~/.claude/orchestrate/<project-slug>/`, which survives the session restarts a multi-day program expects |
 | Model rule `~/.cursor/rules/engineering-toolkit-models.mdc` | This fork keeps grammar 3 in that `.mdc` (always-apply wrapper). Claude Code writes `~/.claude/engineering-toolkit-models.md`, included from `CLAUDE.md`. Upstream Task slugs are not a second grammar. |
-| Multi-model panels (arena, architect, interrogate) | Provider dispatch restores the upstream frontier quad: `claude:fable@max`, `codex:gpt-6-sol@max`, `grok:grok-4.7@xhigh`, `claude:opus@xhigh`. Same-provider lanes stay native; external lanes use the bundled runner. |
+| Multi-model panels (arena, architect, interrogate) | Provider dispatch restores the upstream frontier quad: `claude:fable@max`, `codex:gpt-6-sol@max`, `grok:grok-4.7@xhigh`, `claude:opus@xhigh`. Same-provider lanes stay native. On Claude Code, other providers use the bundled runner. On Codex or Cursor with no `delegate_task`, they are named dropouts. |
 
 ### Cross-vendor dispatch
 
-The earlier Open Pstack port collapsed panels to Claude-only models. The bundled runner restores cross-provider judgment without adding a daemon or model-router service. A Cursor parent runs Fable and Opus as native plugin-agent Tasks with a live family selector on `Task.model`, Grok as native host-spawn, and shells out to Claude and Codex. Named `grok/...` still uses Grok CLI. Claude Code shells out to Codex and Grok. Codex shells out to Claude and Grok. The top-level parent chooses every route and each external process receives a complete task directly, so there is no supervising model invocation and no child-side harness detection.
+The earlier Open Pstack port collapsed panels to Claude-only models. The bundled runner restores cross-provider judgment without adding a daemon or model-router service. A Cursor parent runs Fable and Opus as native plugin-agent Tasks with a live family selector on `Task.model`, Grok as native host-spawn, and reports a named dropout for a Claude, Codex, or Grok Route when the session has no `delegate_task`. Claude Code shells out to Codex, Cursor, and Grok. A Codex parent reports the same dropouts. The top-level parent chooses every route and each external process receives a complete task directly, so there is no supervising model invocation and no child-side harness detection.
 
 ### What's deliberately kept
 

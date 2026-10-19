@@ -30,7 +30,7 @@ Cursor writes `~/.cursor/rules/engineering-toolkit-models.mdc`. YAML frontmatter
 
 ### 1. Establish the parent
 
-Use the harness and tool surface running this skill: Claude Code, Codex, or Cursor. Environment markers may corroborate that top-level answer, but do not launch a child and ask it to detect where it came from. Record the parent: a route is native only when its provider is the parent, and grammar 2 migration gives an omitted app the parent's provider. Task without `spawn_agent` is Cursor. `Agent` without Task is Claude Code. `spawn_agent` is Codex. Two strong matches is ambiguous. Write nothing until the parent is known.
+Use the harness and tool surface running this skill: Claude Code, Codex, or Cursor. Environment markers may corroborate that top-level answer, but do not launch a child and ask it to detect where it came from. Record the parent: a route is native only when its provider is the parent, and grammar 2 migration gives an omitted app the parent's provider. Task without `spawn_agent` is Cursor. `Agent` without Task is Claude Code. `spawn_agent` is Codex. Two strong matches is ambiguous. Write nothing until the parent is known. Also record whether the session has `delegate_task`. With it, the session is a T3 thread and `t3-tools.md` resolves each Route. Without it, a Codex or Cursor parent can run only its own provider's Routes.
 
 ### 2. Load current state
 
@@ -101,11 +101,11 @@ failed first run creates neither artifact.
 
 | Family | Pair source | Claude parent | Codex parent | Cursor parent | Availability proof |
 |---|---|---|---|---|---|
-| Fable | Fable matrix row + selected effort | native Agent `pstack-lane` with `model` `fable` and the effort | Claude CLI | native Task `pstack-lane` plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
-| Sol | Sol matrix row + selected effort | `codex exec` | native `spawn_agent` | Codex CLI | `codex debug models` without `--bundled` as the model list, plus `codex login status` plus one-turn probe or native one-turn probe |
-| Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | native Task host-spawn | native one-turn probe or `grok models` plus one-turn probe |
-| Opus | Opus matrix row + selected effort | native Agent `pstack-lane` with `model` `opus` and the effort | Claude CLI | native Task `pstack-lane` plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
-| Sonnet 5.5 | Additional selectable-model row + selected effort | native Agent `pstack-lane` with `model` `sonnet` and the effort | Claude CLI | native Task `pstack-lane` plus exact live selector for the resolved effort | native one-turn probe or `claude auth status --json` plus one-turn probe |
+| Fable | Fable matrix row + selected effort | native Agent `pstack-lane` with `model` `fable` and the effort | dropout | native Task `pstack-lane` plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
+| Sol | Sol matrix row + selected effort | `codex exec` | native `spawn_agent` | dropout | `codex debug models` without `--bundled` as the model list, plus `codex login status` plus one-turn probe or native one-turn probe |
+| Grok | Grok matrix row + selected effort | Grok CLI | dropout | native Task host-spawn | native one-turn probe or `grok models` plus one-turn probe |
+| Opus | Opus matrix row + selected effort | native Agent `pstack-lane` with `model` `opus` and the effort | dropout | native Task `pstack-lane` plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
+| Sonnet 5.5 | Additional selectable-model row + selected effort | native Agent `pstack-lane` with `model` `sonnet` and the effort | dropout | native Task `pstack-lane` plus exact live selector for the resolved effort | native one-turn probe or `claude auth status --json` plus one-turn probe |
 
 Use a tiny read-only probe that returns a unique marker. A login-status
 command alone proves credentials, not that the selected model and effort run.
@@ -117,10 +117,14 @@ effort, the route is unknown, not launch-ready.
 Only the exact Cursor selector for the resolved Sonnet effort qualifies. The
 selector suffix must match the effort, such as `claude-sonnet-5-5-xhigh`. Do
 not guess a selector or accept another Sonnet revision.
-A `cursor:` route from a Claude Code or Codex parent is external. Probe it
+A `cursor:` route from a Claude Code parent is external. Probe it
 with `cursor-agent status` plus a one-turn `pstack-runner --app cursor`
 probe. Record native and external results separately. Never call the external
 launcher for a same-host route.
+
+On a Codex or Cursor parent with no `delegate_task`, a Route for another
+provider is a named dropout (`dropout` in the table above). Do not probe it and
+do not call the launcher. It is not a failed probe and does not block the write.
 
 Receipts and native transcripts prove the requested effort and route. They do
 not prove hidden applied reasoning depth. There is no implicit timeout,
@@ -144,9 +148,13 @@ documented role key.
 
 Show app discovery, readiness, rolling-alias migrations, the chosen budget
 label and target effort, the route table for this parent, every rendered
-role and Route wire value, and each line step 2 dropped. Ask for confirmation before writing.
+role and Route wire value, and each line step 2 dropped. On a Codex or Cursor
+parent with no `delegate_task`, list each role whose Route names another
+provider and say that it will drop out on this host, with no substitution. Offer
+to change it to a native Route or `inherit-parent`; keeping it is allowed, for a
+T3 thread that serves it. Ask for confirmation before writing.
 
-Every selected route must have passed step 5. Why and Reflect require the
+Every selected route must have passed step 5, except a named dropout. Why and Reflect require the
 parent's live MCP surface. Keep their roles on `inherit-parent` or `auto`;
 external override is a typed reject. `inherit-parent` and `auto` always
 validate, but say when they reduce a panel's provider diversity. For panel
@@ -164,6 +172,7 @@ parent's provider when the live parent already serves that model, and the
 family's CLI home otherwise. The example below is the Claude Code render. On
 Cursor, Fable, Opus, and Grok use cursor. On Codex, Sol uses codex natively
 and Fable and Opus use claude. Every documented role remains present.
+The Codex render is for a T3 Codex thread; a plain Codex session reports a dropout for each Claude, Cursor, or Grok Route.
 `inherit-parent` and `auto` use the parent model natively and still count as
 one panel lane. For an explicitly selected Sonnet 5.5 route, omit the app on
 Claude Code or Cursor, and name `claude-code` on Codex.
@@ -212,7 +221,8 @@ PLUGIN_ROOT=<plugin root> bun -e 'const [sheetPath, parent] = process.argv.slice
 ```
 
 Then run one
-small read-only mixed panel from this parent using selected routes, distinct output/receipt paths, and an
+small read-only mixed panel from this parent using selected routes (native routes only
+on a Codex or Cursor parent with no `delegate_task`), distinct output/receipt paths, and an
 independent cross-judge. Launch native agents and external processes in the
 background with retained handles, then drain them. Verify transcripts and
 receipts. A structural config check or unit test is not a substitute.
