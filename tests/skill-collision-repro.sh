@@ -215,34 +215,25 @@ canon_quad="$(awk '
 ' "$dispatch")"
 quad_bad=""
 [ -n "$canon_quad" ] || quad_bad="could not read the canonical quad from $dispatch"$'\n'
-# Anchor on the quad's last slug rather than a hard-coded one, so a model swap in
-# setup-engineering-toolkit cannot leave this check hunting for a slug nobody ships any more.
-anchor="${canon_quad##* }"
-# arena and architect each state the quad on one line; interrogate lists it
-# as one slug per row of its Reviewer A/B/C/D table (upstream #167).
-for name in arena architect; do
+# The panel skills carry no provider-qualified default: with no sheet they run
+# on inherit-parent, so a single-provider machine never loses lanes to a
+# default. Only setup's first-run sheet seeds the quad.
+for name in arena architect interrogate swarm how; do
   skill="$repo/plugins/engineering-toolkit/skills/$name/SKILL.md"
-  n="$(grep -Fc "$anchor" "$skill" || true)"
-  if [ "$n" != "1" ]; then
-    quad_bad="$quad_bad$skill: expected exactly 1 default-quad line, found $n"$'\n'
-    continue
-  fi
-  got="$(grep -F "$anchor" "$skill" | quad_of)"
-  [ "$got" = "$canon_quad" ] || quad_bad="$quad_bad$skill: [$got] != [$canon_quad]"$'\n'
+  got="$(quad_of < "$skill")"
+  [ -z "$got" ] || quad_bad="$quad_bad$skill: provider-qualified default [$got]"$'\n'
+  grep -Fq 'inherit-parent' "$skill" || quad_bad="$quad_bad$skill: missing-sheet default is not inherit-parent"$'\n'
 done
-interrogate="$repo/plugins/engineering-toolkit/skills/interrogate/SKILL.md"
-got="$(grep -E '^\| Reviewer [A-Z] \|' "$interrogate" | quad_of)"
-[ "$got" = "$canon_quad" ] || quad_bad="$quad_bad$interrogate reviewer table: [$got] != [$canon_quad]"$'\n'
 while IFS= read -r line; do
   got="$(printf '%s\n' "$line" | quad_of)"
   [ "$got" = "$canon_quad" ] || quad_bad="$quad_bad$setup role row: [$got] != [$canon_quad]"$'\n'
 done < <(grep -E '^(arena runners|arena cross-judge pool|architect runners|interrogate reviewers):' "$setup")
 if [ -n "$quad_bad" ]; then
-  note "FAIL: the default model quad is not identical across provider dispatch, the panel skills, and setup-engineering-toolkit:"
+  note "FAIL: panel skills carry a provider-qualified default, or setup rows drift from the model matrix:"
   note "$quad_bad"
   fail=1
 else
-  note "ok: default quad in panel skills and setup-engineering-toolkit first-run ($canon_quad)"
+  note "ok: panel skills default to inherit-parent; setup first-run keeps the quad ($canon_quad)"
 fi
 
 plugin="$repo/plugins/engineering-toolkit"
