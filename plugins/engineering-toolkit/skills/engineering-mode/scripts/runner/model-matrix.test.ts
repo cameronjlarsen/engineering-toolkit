@@ -534,7 +534,15 @@ describe("model matrix", () => {
       expect(text).toContain(rule);
       expect(text).toContain("no `delegate_task`");
     }
-    expect(flat(CURSOR_TOOLS_PATH)).not.toContain("pstack-runner --parent cursor");
+    const flatDispatch = flat(DISPATCH_PATH);
+    expect(flatDispatch).not.toContain("from any other parent");
+    expect(flatDispatch).not.toContain("on Claude Code or Codex");
+    expect(flatDispatch).toContain("A `claude:` Route is a dropout here.");
+    expect(flat(CURSOR_TOOLS_PATH)).not.toContain("pstack-runner --parent");
+    expect(flat(CODEX_TOOLS_PATH)).not.toContain("runner/pstack-runner");
+    expect(
+      readFileSync(join(PLUGIN_ROOT, "../../docs/reference.md"), "utf8")
+    ).not.toContain("Codex shells out");
     const flatSetup = setup.replace(/\s+/g, " ");
     expect(flatSetup).toContain("a Route for another provider is a named dropout");
     expect(flatSetup).toContain("will drop out on this host, with no substitution");

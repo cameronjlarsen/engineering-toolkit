@@ -172,6 +172,7 @@ parent's provider when the live parent already serves that model, and the
 family's CLI home otherwise. The example below is the Claude Code render. On
 Cursor, Fable, Opus, and Grok use cursor. On Codex, Sol uses codex natively
 and Fable and Opus use claude. Every documented role remains present.
+The Codex render is for a T3 Codex thread; a plain Codex session reports a dropout for each Claude, Cursor, or Grok Route.
 `inherit-parent` and `auto` use the parent model natively and still count as
 one panel lane. For an explicitly selected Sonnet 5.5 route, omit the app on
 Claude Code or Cursor, and name `claude-code` on Codex.

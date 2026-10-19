@@ -32,7 +32,7 @@ The allowed effort universe is exactly `low`, `medium`, `high`, `xhigh`, `max`. 
 ## Additional selectable models
 
 These models do not add a family or seed a first-run role.
-Use `claude:claude-sonnet-5-5@<effort>` on Claude Code or Codex, and
+Use `claude:claude-sonnet-5-5@<effort>` on Claude Code or a T3 Codex thread, and
 `cursor:claude-sonnet-5-5@<effort>` on Cursor.
 
 | Model | Provider | Selectable efforts |
@@ -78,7 +78,7 @@ remain invalid. The external runner rejects a missed Fable or Opus version pin
 instead of silently executing it. Sol and Grok pins have no read-time alias. A
 model the catalog does not serve fails dispatch until setup accepts a stale-pin proposal.
 
-`fast` is part of Cursor's Grok selector, not a Grok Build CLI model or effort flag. The portable Grok route pins the current CLI model `grok-4.7`. The first-run Grok effort is `xhigh`. Cursor also serves `grok-4.7`. `cursor:grok-4.7` is native host-spawn on a Cursor parent and runs through the Cursor CLI from any other parent. `grok:grok-4.7` is always the Grok CLI.
+`fast` is part of Cursor's Grok selector, not a Grok Build CLI model or effort flag. The portable Grok route pins the current CLI model `grok-4.7`. The first-run Grok effort is `xhigh`. Cursor also serves `grok-4.7`. `cursor:grok-4.7` is native host-spawn on a Cursor parent, runs through the Cursor CLI from a Claude Code parent, and is a dropout on a Codex parent with no `delegate_task`. `grok:grok-4.7` is always the Grok CLI.
 
 ## The parent owns the route
 
@@ -134,8 +134,8 @@ Native dispatch avoids a second CLI startup and its base context.
 - Codex: call `spawn_agent` with the route's model and `reasoning_effort`,
   the complete task, grounding paths, access mode, and unique output location.
   Use an isolated worktree for a writer.
-- Cursor: match the route's `(provider, model)` to one model-matrix row. A row with
-  provider `claude` dispatches through `pstack-lane`. Set `Task` `model` to a live Cursor selector from this session's Task model list that matches that row's family and effort. Do not pass `opus` or `fable`. Do not omit `model`. An omitted selector inherits the parent. Any other row
+- Cursor: only a `cursor:` Route is native. Match its family to one model-matrix row. A row with
+  provider `claude` dispatches through `pstack-lane`. A `claude:` Route is a dropout here. Set `Task` `model` to a live Cursor selector from this session's Task model list that matches that row's family and effort. Do not pass `opus` or `fable`. Do not omit `model`. An omitted selector inherits the parent. Any other row
   dispatches through host-spawn: `Task` with `model` set to a live Cursor
   selector for that model and effort. Pass the complete task, grounding paths,
   access mode, and unique output location in the `Task` prompt.
