@@ -1,12 +1,12 @@
 # CHANGES — applied substitutions
 
-This file is the audit of the Cursor → Claude Code substitutions applied in skill bodies. It keeps the substitution table, the files imported or added, the per-skill edits, and what was deliberately left unchanged. Release-by-release history lives in git history, tags, and pull requests. Sync points, exclusions, renames, and maintenance rules live in [UPSTREAM.md](UPSTREAM.md). The shared tree also runs on Codex and Cursor; see [Codex port](#codex-port).
+This file is the audit of the Cursor → Claude Code substitutions applied in skill bodies. It keeps the substitution table, the files imported or added, the per-skill edits, and what was deliberately left unchanged, as recorded for the original port. Later removals, such as the `commands/` stubs and the `plugin.json` dependency, are in the Maintenance section of [UPSTREAM.md](UPSTREAM.md). Release-by-release history lives in git history, tags, and pull requests. Sync points, exclusions, renames, and maintenance rules live in [UPSTREAM.md](UPSTREAM.md). The shared tree also runs on Codex and Cursor; see [Codex port](#codex-port).
 
 ## Codex port
 
-pstack also ships as a Codex plugin. The skill bodies are not forked or regenerated. The same `skills/` tree serves both runtimes. One mapping file does the Claude-to-Codex translation. That single-mapping-file spine is the same one the official `superpowers` plugin ships for Codex.
+Engineering Toolkit also ships as a Codex plugin. The skill bodies are not forked or regenerated. The same `skills/` tree serves every supported host. One mapping file does the Claude-to-Codex translation. That single-mapping-file spine is the same one the official `superpowers` plugin ships for Codex.
 
-pstack diverges from superpowers in one respect, and it is deliberate. superpowers writes its skill prose in tool-neutral language ("dispatch a subagent"), so no skill names a runtime tool and no per-skill note is needed. pstack instead keeps the upstream Claude-native prose intact, to stay in lockstep with upstream sync, and adds a one-line Platform note to each skill that names a Claude primitive. The note points at the mapping. Rewriting 44 upstream skills into neutral language would fork them from upstream and was rejected for that reason.
+This fork diverges from superpowers in one respect, and it is deliberate. superpowers writes its skill prose in tool-neutral language ("dispatch a subagent"), so no skill names a runtime tool and no per-skill note is needed. This fork instead keeps the upstream Claude-native prose intact, to stay in lockstep with upstream sync, and adds a one-line Platform note to each skill that names a Claude primitive. The note points at the mapping. Rewriting the upstream skills into neutral language would fork them from upstream and was rejected for that reason.
 
 The single mapping file is `plugins/engineering-toolkit/skills/engineering-mode/references/codex-tools.md`. Cursor and T3 have `cursor-tools.md` and `t3-tools.md` on the same pattern.
 

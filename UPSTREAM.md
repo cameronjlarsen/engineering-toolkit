@@ -33,6 +33,10 @@ The table above is the current Cursor pstack sync point. At the fresh fetch for 
 - Do not take the `b93e811` `~/.cursor/plugins/` search in `poteto-agent`, the Built-in PR tool paragraph, Cursor manifests, `docs/guide`, or the Agent Plugins v1 root manifest.
 - Do not take Cursor's generated Claude Code tree or adapter (`182f2ce` / #637, `1b80080` / #705): `harness/pstack/`, `pstack/docs/harness/claude-code.md`, the harness generator and plugin-validation scripts, and the `~/.claude/rules/pstack-models.md` model sheet path. The adapter maps a non-Claude model slug to the session model, which is a weaker-model fallback. Also do not take `scripts/check-pstack-docs.mjs` or the `docs/guide` edits from `019a6a2` / #704.
 - Keep this fork's single `pstack-lane` plugin agent in place of Cursor's per-model native `pstack-*` agents. It pins no model or effort; the parent passes both on each call. Sonnet is pinned by the `sonnet` alias, because `Agent` rejects the fixed id `claude-sonnet-5-5`. Claude Code 2.1.302 resolved the alias to `claude-sonnet-5-5`, and a later Sonnet revision is picked up without a repo change. The parent must always pass `effort`, because a call that omits it inherits the parent's effort. Cursor's subagent frontmatter ignores `disallowedTools` and `background`, so on Cursor the `pstack-lane` prompt is the only guard against nested `Agent` and `Task`.
+- `ketchup` keeps the fork's autopilot clause, its read-only paragraph, and harness-neutral chart wording in place of `/visualize`. Keep those through later `ketchup` syncs.
+- Opening a PR omits upstream's "about 40 lines" squash-body cutoff. Keep the fork's required installed-version, user-action, and observed-result evidence sections.
+- `principle-test-behavior-not-implementation` and `principle-attack-the-premise` carry narrow local corrections. The first warns conditionally about assertions that miss relevant behavior; `toBeDefined`, `toBeTruthy`, `toBeInstanceOf`, and `toBeGreaterThan(0)` do fail on `undefined`, and useful negative-path, prompt/configuration, and relational contract checks stay valid. The second limits the actor census and reassignment prescription to imbalance problems; an even census is evidence against an asymmetry hypothesis, not proof that a shared premise is correct. Take upstream's equivalent corrections if they land.
+- A reference-file catch-up leaves every `SKILL.md` that holds a dispatch contract, the `reflect` references, and the playbooks on this fork's text.
 - The Claude manifest does not take the logo field from `efa2a53` because Claude Code has no schema for it. The shared asset is exposed through the Codex manifest instead.
 - Do not replace `plugins/engineering-toolkit/assets/logo.png` with Cursor pstack or Open Pstack bytes. This fork owns that catalog mark. Keep the file under 512 KiB.
 
@@ -73,7 +77,7 @@ Incoming Cursor pstack text uses Cursor's names. Rewrite them as follows. Apply 
 | `/poteto-mode` | `/engineering-mode` |
 | `Poteto mode` | `Engineering mode` |
 | `poteto-mode` | `engineering-mode` |
-| `poteto-agent` (file `agents/poteto-agent.md`, `subagent_type`) | `engineering-agent` |
+| `poteto-agent` (file `agents/poteto-agent.md`, `subagent_type`) | `engineering-agent` (no `poteto-agent` alias) |
 | `poteto-help` (skill directory, `/poteto-help`) | `engineering-help` |
 | `setup-pstack` | `setup-engineering-toolkit` |
 | `pstack-models.mdc` | `engineering-toolkit-models.mdc` |
@@ -98,6 +102,6 @@ Cursor pstack and this fork keep independent version numbers. Cursor's version i
 - After a change to `skills/engineering-mode/scripts/`, run `bun install --frozen-lockfile`, `bun run test`, and `bun run typecheck` from that directory.
 - `hooks/session-start-context.md` restates skill one-liners. Re-verify it whenever skill names or descriptions change.
 - The package must not contain a `commands/` layer. Claude Code and Codex load the native `skills/` tree directly, and a command layer doubles the workflow inventory.
-- The 23 `principle-*` leaves carry `user-invocable: false` to keep them out of the user picker while `engineering-mode` reads them by path. Claude honors the metadata. Codex 0.149.0 does not ([open-pstack#8](https://github.com/ericlitman/open-pstack/issues/8)). They must not carry `disable-model-invocation`, which makes them unreachable to the model.
+- Every `principle-*` leaf carries `user-invocable: false` to keep them out of the user picker while `engineering-mode` reads them by path. Claude honors the metadata. Codex 0.149.0 does not ([open-pstack#8](https://github.com/ericlitman/open-pstack/issues/8)). They must not carry `disable-model-invocation`, which makes them unreachable to the model.
 - Re-run the behavioral mode of `tests/skill-collision-repro.sh` after Claude Code upgrades to check model-initiated and user-initiated native skill invocation.
 - `plugin.json` declares no `dependencies`. The Claude Code desktop app loads plugins with `--plugin-dir`, which strips marketplace identity, so a cross-marketplace dependency never resolves and the loader disables the whole plugin with `dependency-unsatisfied`. `optional: true` passes `claude plugin validate` but the loader ignores it (tested on 2.1.197). `plugin-dev` is a manual install; see `docs/reference.md`.
