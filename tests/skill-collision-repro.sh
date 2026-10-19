@@ -469,18 +469,21 @@ for role in bug-fix perf-issue hillclimb; do
   if [ "$setup_descriptor" != "$sol_descriptor" ]; then
     solo_code_bad="${solo_code_bad}${setup} ${role}: [${setup_descriptor}] != [${sol_descriptor}]"$'\n'
   fi
+done
+# With no sheet, every role playbook delegates on the parent model.
+for role in feature refactoring bug-fix perf-issue hillclimb; do
   role_playbook="$plugin/skills/engineering-mode/playbooks/$role.md"
   playbook_descriptor="$(sed -n 's/.*default `\([^`]*\)`.*/\1/p' "$role_playbook")"
-  if [ "$playbook_descriptor" != "$sol_descriptor" ]; then
-    solo_code_bad="${solo_code_bad}${role_playbook}: [${playbook_descriptor}] != [${sol_descriptor}]"$'\n'
+  if [ "$playbook_descriptor" != "inherit-parent" ]; then
+    solo_code_bad="${solo_code_bad}${role_playbook}: [${playbook_descriptor}] != [inherit-parent]"$'\n'
   fi
 done
 if [ -n "$solo_code_bad" ]; then
-  note "FAIL: solo code roles must use the sol row:"
+  note "FAIL: solo code roles must use the sol row in setup, and role playbooks must default to inherit-parent:"
   note "$solo_code_bad"
   fail=1
 else
-  note "ok: solo code roles stay on the sol row ($sol_descriptor)"
+  note "ok: solo code roles stay on the sol row in setup ($sol_descriptor); playbooks default to inherit-parent"
 fi
 
 codex_manifest="$plugin/.codex-plugin/plugin.json"
