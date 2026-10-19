@@ -5,7 +5,13 @@ import {
   type AppId,
   type Effort,
 } from "./route.ts";
-import { loadRoleMap, printRoleMap } from "./sheet.ts";
+import {
+  HOST_SHEET_PATH,
+  appSheetPath,
+  loadRoleMap,
+  printRoleMap,
+  resolveActiveSheet,
+} from "./sheet.ts";
 
 const roles = [
   "feature, refactoring",
@@ -346,5 +352,100 @@ describe("sheet budget comment", () => {
       "claude-code"
     );
     expect(result.ok).toBe(true);
+  });
+});
+
+describe("active sheet resolution", () => {
+  it("names the per-app path for each parent", () => {
+    expect(appSheetPath("claude-code")).toBe("~/.claude/engineering-toolkit-models.md");
+    expect(appSheetPath("codex")).toBe("~/.codex/engineering-toolkit-models.md");
+    expect(appSheetPath("cursor")).toBe("~/.cursor/rules/engineering-toolkit-models.mdc");
+  });
+
+  it("prefers the host sheet when the session can delegate and the host file exists", () => {
+    expect(
+      resolveActiveSheet({
+        hasDelegation: true,
+        hostSheetExists: true,
+        appSheetExists: true,
+        parent: "claude-code",
+      })
+    ).toEqual({ kind: "host", path: HOST_SHEET_PATH });
+  });
+
+  it("falls through to the per-app sheet when the host sheet is missing", () => {
+    expect(
+      resolveActiveSheet({
+        hasDelegation: true,
+        hostSheetExists: false,
+        appSheetExists: true,
+        parent: "codex",
+      })
+    ).toEqual({ kind: "app", path: "~/.codex/engineering-toolkit-models.md" });
+  });
+
+  it("ignores the host sheet when the session has no delegate tool", () => {
+    expect(
+      resolveActiveSheet({
+        hasDelegation: false,
+        hostSheetExists: true,
+        appSheetExists: true,
+        parent: "cursor",
+      })
+    ).toEqual({ kind: "app", path: "~/.cursor/rules/engineering-toolkit-models.mdc" });
+  });
+
+  it("returns none when no sheet exists so roles inherit the parent", () => {
+    expect(
+      resolveActiveSheet({
+        hasDelegation: true,
+        hostSheetExists: false,
+        appSheetExists: false,
+        parent: "claude-code",
+      })
+    ).toEqual({ kind: "none", path: null });
+    expect(
+      resolveActiveSheet({
+        hasDelegation: false,
+        hostSheetExists: false,
+        appSheetExists: false,
+        parent: "cursor",
+      })
+    ).toEqual({ kind: "none", path: null });
+  });
+
+  it("parses the documented host-sheet example budget", () => {
+    const example = [
+      "# Engineering Toolkit model configuration",
+      "# Example only.",
+      "Descriptor grammar: 3",
+      "judgment and prose: claude:opus@medium",
+      "hardest tasks: claude:opus@medium",
+      "how explainer: claude:opus@medium",
+      "feature, refactoring: cursor:grok-4.7@high",
+      "how explorer: cursor:grok-4.7@high",
+      "swarm workers: cursor:grok-4.7@high",
+      "bug-fix: codex:gpt-6.1-sol@high",
+      "perf-issue: codex:gpt-6.1-sol@high",
+      "hillclimb: codex:gpt-6.1-sol@high",
+      "arena runners: claude:opus@medium, codex:gpt-6.1-sol@high, cursor:grok-4.7@high",
+      "arena cross-judge pool: claude:opus@medium, codex:gpt-6.1-sol@high, cursor:grok-4.7@high",
+      "architect runners: claude:opus@medium, codex:gpt-6.1-sol@high, cursor:grok-4.7@high",
+      "interrogate reviewers: claude:opus@medium, codex:gpt-6.1-sol@high, cursor:grok-4.7@high",
+      "why investigators, synthesizer: inherit-parent",
+      "reflect tooling, judgment, divergent, synthesizer: inherit-parent",
+    ].join("\n");
+    const result = loadRoleMap(example, "claude-code");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value["judgment and prose"]).toEqual(routeValue("opus", "claude-code", "medium"));
+    expect(result.value["feature, refactoring"]).toEqual(routeValue("grok-4.7", "cursor", "high"));
+    expect(result.value["bug-fix"]).toEqual(routeValue("gpt-6.1-sol", "codex", "high"));
+    expect(result.value["arena runners"]).toEqual([
+      routeValue("opus", "claude-code", "medium"),
+      routeValue("gpt-6.1-sol", "codex", "high"),
+      routeValue("grok-4.7", "cursor", "high"),
+    ]);
+    expect(result.value["why investigators, synthesizer"]).toEqual({ kind: "inherit-parent" });
   });
 });

@@ -1,6 +1,8 @@
 # Provider dispatch
 
-On T3 Code (the session has `delegate_task`), read [`t3-tools.md`](t3-tools.md) first. Its Routes section replaces the native and external lanes below.
+When the session has a delegate tool (`delegate_task` today), read the
+Delegation host contract in [`t3-tools.md`](t3-tools.md) first. Its active-sheet
+order and Routes section replace the native and external lanes below.
 
 Engineering Toolkit model choices are typed `Route` values written as
 provider-qualified descriptors:
@@ -111,7 +113,7 @@ A Codex or Cursor session with no `delegate_task` cannot start another
 provider's model, so a Route that names another provider is a named dropout:
 the parent reports the role, the Route, and `no delegate_task`. It does not run the lane on the
 parent, substitute a model, or start `pstack-runner`. A session that has
-`delegate_task` is a T3 thread, and [`t3-tools.md`](t3-tools.md) resolves its Routes.
+`delegate_task` satisfies the Delegation host contract, and [`t3-tools.md`](t3-tools.md) resolves its Routes.
 
 Internally the `claude` provider is the `claude-code` app id, which is also the
 value of `--parent` and `--app` for Claude Code.
