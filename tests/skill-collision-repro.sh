@@ -224,10 +224,15 @@ for name in arena architect interrogate swarm how; do
   [ -z "$got" ] || quad_bad="$quad_bad$skill: provider-qualified default [$got]"$'\n'
   grep -Fq 'inherit-parent' "$skill" || quad_bad="$quad_bad$skill: missing-sheet default is not inherit-parent"$'\n'
 done
-while IFS= read -r line; do
+for role in "arena runners" "arena cross-judge pool" "architect runners" "interrogate reviewers"; do
+  line="$(grep -E "^${role}:" "$setup" || true)"
+  if [ -z "$line" ]; then
+    quad_bad="$quad_bad$setup lost the first-run row: $role"$'\n'
+    continue
+  fi
   got="$(printf '%s\n' "$line" | quad_of)"
-  [ "$got" = "$canon_quad" ] || quad_bad="$quad_bad$setup role row: [$got] != [$canon_quad]"$'\n'
-done < <(grep -E '^(arena runners|arena cross-judge pool|architect runners|interrogate reviewers):' "$setup")
+  [ "$got" = "$canon_quad" ] || quad_bad="$quad_bad$setup role row $role: [$got] != [$canon_quad]"$'\n'
+done
 if [ -n "$quad_bad" ]; then
   note "FAIL: panel skills carry a provider-qualified default, or setup rows drift from the model matrix:"
   note "$quad_bad"

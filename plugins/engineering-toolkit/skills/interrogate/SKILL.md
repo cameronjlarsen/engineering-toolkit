@@ -51,7 +51,7 @@ The same filled template goes to all reviewers, so every model applies the code-
 As results come back, build a unified picture:
 
 1. **Parse all findings** from the reviewers
-2. **Identify consensus**. Findings raised by 2+ models independently are highest signal.
+2. **Identify consensus**. Findings raised by 2+ models independently are highest signal. With one reviewer there is no cross-model signal: skip this step, say so in the report, and write "single reviewer, no cross-model signal" in the Agreement Map.
 3. **Identify lone-model findings**. Still worth reading, but weight accordingly.
 4. **Deduplicate**. Different models may describe the same issue differently. Merge these and note which models raised it.
 5. **Note disagreements**. If one model flags something and another explicitly says the opposite, that's useful context for the verdict.

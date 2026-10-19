@@ -45,7 +45,7 @@ After all Phase B candidates complete, choose the judge descriptor from the `are
 
 Read every candidate end to end before picking.
 
-Score each candidate against the rubric criterion by criterion, not on holistic feel. Compare against the cross-judge. Agreement on the base confirms the pick. Disagreement means one of you is biased or the rubric was ambiguous. Read both rationales before deciding.
+Score each candidate against the rubric criterion by criterion, not on holistic feel. Compare against the cross-judge. Agreement on the base confirms the pick only when the judge is a different model from the candidate. A judge on the parent model repeating the parent's own candidates is a same-model check, not confirmation. Disagreement means one of you is biased or the rubric was ambiguous. Read both rationales before deciding.
 
 Pick the base on which candidate a future maintainer can extend most easily without breaking invariants. Prefer the cleaner boundary or smaller API when two feel tied, per the Laziness Protocol.
 
@@ -59,7 +59,7 @@ Fold each graft in by hand, per the **redesign-from-first-principles** principle
 
 Record what was grafted, from which candidate, and what was rejected and why.
 
-When N candidates converge on the same shape, that is a strong agreement signal. Note the convergence in the record and ship the consensus shape. No graft is needed. When N candidates wildly diverge, Phase A was under-specified. Reframe and re-run rather than averaging the divergence.
+When N candidates converge on the same shape, that is a strong agreement signal when the runners are different models. Same-model convergence is weak evidence. Note the convergence in the record and ship the consensus shape. No graft is needed. When N candidates wildly diverge, Phase A was under-specified. Reframe and re-run rather than averaging the divergence.
 
 ## Phase F: Verify
 
