@@ -2,6 +2,12 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## A Route for another provider on Codex or Cursor without `delegate_task` is a named dropout
+
+Issue #28 decision 5. On a Codex or Cursor parent with no `delegate_task`, a `claude:`, `codex:`, `cursor:`, or `grok:` Route that is not the parent's own provider is a named dropout: the parent reports the role and the Route, starts no `pstack-runner`, runs nothing on the parent, and substitutes no model. `provider-dispatch.md` turns the Codex and Cursor rows of the parent table into `dropout`, limits the launcher to a Claude Code parent, and drops the Codex and Cursor background-launch bullets. `codex-tools.md` and `cursor-tools.md` state the rule for their host. `cursor-tools.md` replaces its External lanes section with Other providers. `/setup-engineering-toolkit` marks those cells `dropout`, does not probe them, lists the affected roles at confirmation and offers a native Route or `inherit-parent`; keeping one stays allowed for a T3 thread that serves it. A session with `delegate_task` still resolves Routes through `t3-tools.md`. A Claude Code parent keeps its external lanes until the trial in #28 ends. No version bump.
+
+Not verified: any live harness. See the pull request.
+
 ## Cursor mapping: the `pstack-lane` prompt is the only guard against nested agents
 
 `cursor-tools.md` no longer says the `pstack-lane` definition forbids nested `Agent` and `Task`. Cursor's subagent frontmatter reads `name`, `description`, `model`, `readonly`, and `is_background`. It ignores `disallowedTools` and `background`. In a live run, the child listed `Task` among its tools, and it refused a nested spawn because the prompt forbids it. No version bump.

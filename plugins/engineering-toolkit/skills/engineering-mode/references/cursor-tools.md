@@ -29,9 +29,9 @@ A Cursor parent plans `cursor:` routes as native.
 
 Writers get a worktree or a unique output directory. The `pstack-lane` prompt forbids nested `Agent` and `Task`. Cursor ignores the `disallowedTools` and `background` fields in the definition, so the prompt is the only guard.
 
-## External lanes
+## Other providers
 
-`pstack-runner --parent cursor --app <claude-code|codex|grok>` runs `claude:`, `codex:`, and `grok:` routes. Start it through `Shell` in the background and retain the handle. Never put a `Task` in front of the runner. `--app cursor` is for Claude Code and Codex parents; on a Cursor parent the runner rejects it as same-host.
+With no `delegate_task`, a `claude:`, `codex:`, or `grok:` Route is a named dropout, as `provider-dispatch.md` specifies: report the role and Route, and start no `pstack-runner`, no `Task`, and no substitute. A panel continues with the lanes that ran and says how many providers ran. A Cursor thread in T3 has `delegate_task`, and `t3-tools.md` resolves its Routes.
 
 ## Instructions file
 

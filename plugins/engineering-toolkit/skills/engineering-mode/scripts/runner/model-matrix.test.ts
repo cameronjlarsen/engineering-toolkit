@@ -15,6 +15,10 @@ const CURSOR_TOOLS_PATH = join(
   PLUGIN_ROOT,
   "skills/engineering-mode/references/cursor-tools.md"
 );
+const CODEX_TOOLS_PATH = join(
+  PLUGIN_ROOT,
+  "skills/engineering-mode/references/codex-tools.md"
+);
 const SETUP_PATH = join(PLUGIN_ROOT, "skills/setup-engineering-toolkit/SKILL.md");
 const AGENTS_DIR = join(PLUGIN_ROOT, "agents");
 
@@ -428,10 +432,10 @@ describe("model matrix", () => {
     expect(setup).toContain("<!-- engineering-toolkit:models:begin -->");
     expect(setup).toContain("<!-- engineering-toolkit:models:end -->");
     expect(setup).toContain(
-      "| Grok | Grok matrix row + selected effort | Grok CLI | Grok CLI | native Task host-spawn |"
+      "| Grok | Grok matrix row + selected effort | Grok CLI | dropout | native Task host-spawn |"
     );
     expect(setup).toContain(
-      "| Sonnet 5.5 | Additional selectable-model row + selected effort | native Agent `pstack-lane` with `model` `sonnet` and the effort | Claude CLI | native Task `pstack-lane` plus exact live selector for the resolved effort |"
+      "| Sonnet 5.5 | Additional selectable-model row + selected effort | native Agent `pstack-lane` with `model` `sonnet` and the effort | dropout | native Task `pstack-lane` plus exact live selector for the resolved effort |"
     );
   });
 
@@ -463,7 +467,7 @@ describe("model matrix", () => {
   it("requires Cursor plugin-agent Tasks to pass a live family selector", () => {
     const cursorTools = readFileSync(CURSOR_TOOLS_PATH, "utf8").replaceAll("\r\n", "\n");
     const nativeStart = cursorTools.indexOf("## Native lanes");
-    const externalStart = cursorTools.indexOf("## External lanes");
+    const externalStart = cursorTools.indexOf("## Other providers");
     expect(nativeStart).toBeGreaterThan(-1);
     expect(externalStart).toBeGreaterThan(nativeStart);
     const nativeLanes = cursorTools.slice(nativeStart, externalStart);
@@ -511,5 +515,28 @@ describe("model matrix", () => {
     expect(normalization).toContain("without writing user files");
     expect(normalization).toContain("`/setup-engineering-toolkit` will rewrite it");
     expect(normalization).toContain("runner rejects a missed Fable or Opus version pin");
+  });
+
+  it("makes another provider's Route a named dropout on Codex and Cursor without delegate_task", () => {
+    const flat = (path: string) =>
+      readFileSync(path, "utf8").replaceAll("\r\n", "\n").replace(/\s+/g, " ");
+    const table = dispatch
+      .split("\n")
+      .filter((line) => /^\| (Claude Code|Codex|Cursor) \|/.test(line))
+      .map((line) => line.split("|").map((cell) => cell.trim()).filter(Boolean));
+    expect(table).toEqual([
+      ["Claude Code", "native", "Codex CLI", "Cursor CLI", "Grok CLI"],
+      ["Codex", "dropout", "native", "dropout", "dropout"],
+      ["Cursor", "dropout", "dropout", "native", "dropout"],
+    ]);
+    const rule = "is a named dropout";
+    for (const text of [flat(DISPATCH_PATH), flat(CODEX_TOOLS_PATH), flat(CURSOR_TOOLS_PATH)]) {
+      expect(text).toContain(rule);
+      expect(text).toContain("no `delegate_task`");
+    }
+    expect(flat(CURSOR_TOOLS_PATH)).not.toContain("pstack-runner --parent cursor");
+    const flatSetup = setup.replace(/\s+/g, " ");
+    expect(flatSetup).toContain("a Route for another provider is a named dropout");
+    expect(flatSetup).toContain("will drop out on this host, with no substitution");
   });
 });

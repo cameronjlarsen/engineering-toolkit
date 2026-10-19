@@ -28,7 +28,7 @@ Subagent dispatch needs `multi_agent` enabled. Add to `~/.codex/config.toml`:
 multi_agent = true
 ```
 
-Without it, the native Codex lane is a named dropout. Independent external lanes still run, and the parent records the reduced provider count. Never collapse a panel into a sequential single-model pass.
+Without it, the native Codex lane is a named dropout. Never collapse a panel into a sequential single-model pass.
 
 ## Subagent policy
 
@@ -42,7 +42,7 @@ engineering-mode's Subagents section sets Claude-specific defaults (`subagent_ty
 
 ## Models and providers
 
-Do not replace every configured entry with a Codex model. `/setup-engineering-toolkit` writes provider-qualified values such as `claude:fable@max`, `codex:gpt-6-sol@max`, `grok:grok-4.7@xhigh`, and `cursor:grok-4.7@high`. In a Codex parent, only `codex:...` is native. Route Claude, Cursor, and Grok values through the external launcher exactly as `provider-dispatch.md` specifies. The current default panel intentionally keeps four-provider frontier diversity and contains no older GPT or Claude substitute.
+Do not replace every configured entry with a Codex model. `/setup-engineering-toolkit` writes provider-qualified values such as `claude:fable@max`, `codex:gpt-6-sol@max`, `grok:grok-4.7@xhigh`, and `cursor:grok-4.7@high`. In a Codex parent, only `codex:...` is native. With no `delegate_task`, a `claude:`, `cursor:`, or `grok:` Route is a named dropout, as `provider-dispatch.md` specifies: report the role and Route, and start no external launcher and no substitute. A panel continues with the lanes that ran and says how many providers ran. A Codex thread in T3 has `delegate_task`, and `t3-tools.md` resolves its Routes.
 
 ## Claude built-in skills these skills reference
 
@@ -57,7 +57,7 @@ Some triggers name skills that ship with Claude Code, not this plugin. They do n
 
 ## Vendored scripts
 
-`skills/engineering-mode/scripts/` ships the `watch-pr` PR watcher, the `orch` store CLI, `worktree-audit.sh`, and `runner/pstack-runner`. They are plain bun and bash, so they run the same on Codex; invoke them through `shell`. The external runner additionally needs the assigned `claude`, `codex`, `cursor-agent`, or `grok` executable already authenticated. It rejects a Codex provider when Codex is the parent because that lane belongs on native `spawn_agent`. PR operations use GitHub CLI by default; `orch frontier set --forge gh|origin` selects GitHub CLI or Origin. The scripts need `bun`; `worktree-audit.sh` also needs `jq` and `rg`. It reads Claude Code transcripts under `~/.claude/projects/`; point it at your runtime's transcript directory instead when you run it elsewhere.
+`skills/engineering-mode/scripts/` ships the `watch-pr` PR watcher, the `orch` store CLI, and `worktree-audit.sh`. They are plain bun and bash, so they run the same on Codex; invoke them through `shell`. PR operations use GitHub CLI by default; `orch frontier set --forge gh|origin` selects GitHub CLI or Origin. The scripts need `bun`; `worktree-audit.sh` also needs `jq` and `rg`. It reads Claude Code transcripts under `~/.claude/projects/`; point it at your runtime's transcript directory instead when you run it elsewhere.
 
 ## Instructions file
 

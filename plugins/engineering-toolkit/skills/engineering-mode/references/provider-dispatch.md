@@ -83,8 +83,9 @@ model the catalog does not serve fails dispatch until setup accepts a stale-pin 
 ## The parent owns the route
 
 The top-level harness resolves each binding once, before it spawns anything. A
-route runs natively only when its provider is the parent. Any other route runs
-through that provider's CLI via `pstack-runner`. Children receive an assigned
+route runs natively only when its provider is the parent. On Claude Code, any
+other route runs through that provider's CLI via `pstack-runner`. On Codex and
+Cursor, any other route is a named dropout (see the table). Children receive an assigned
 plan. They never choose a route, detect or reroute the harness, or spawn
 another model.
 
@@ -103,8 +104,14 @@ assignment and the absolute skill path it needs.
 | Parent | `claude:` | `codex:` | `cursor:` | `grok:` |
 |---|---|---|---|---|
 | Claude Code | native | Codex CLI | Cursor CLI | Grok CLI |
-| Codex | Claude Code CLI | native | Cursor CLI | Grok CLI |
-| Cursor | Claude Code CLI | Codex CLI | native | Grok CLI |
+| Codex | dropout | native | dropout | dropout |
+| Cursor | dropout | dropout | native | dropout |
+
+A Codex or Cursor session with no `delegate_task` cannot start another
+provider's model, so a Route that names another provider is a named dropout:
+the parent reports the role, the Route, and `no delegate_task`. It does not run the lane on the
+parent, substitute a model, or start `pstack-runner`. A session that has
+`delegate_task` is a T3 thread, and [`t3-tools.md`](t3-tools.md) resolves its Routes.
 
 Internally the `claude` provider is the `claude-code` app id, which is also the
 value of `--parent` and `--app` for Claude Code.
@@ -143,7 +150,7 @@ Do not send a same-host route to the external runner. It is rejected with exit
 
 ## External lanes
 
-The launcher lives at `skills/engineering-mode/scripts/runner/pstack-runner` under the installed plugin. The parent writes the complete candidate prompt to a unique file, creates a unique output directory or worktree, and invokes the launcher directly. Do not put another agent in front of it.
+Only a Claude Code parent without `delegate_task` starts the launcher; a Codex or Cursor parent reports a dropout instead. It lives at `skills/engineering-mode/scripts/runner/pstack-runner` under the installed plugin. The parent writes the complete candidate prompt to a unique file, creates a unique output directory or worktree, and invokes the launcher directly. Do not put another agent in front of it.
 
 ```text
 pstack-runner \
@@ -177,11 +184,7 @@ Grok authentication preflight has one bounded retry. If the first `grok models` 
 
 The parent tool sandbox still governs whether a subscribed child CLI can reach its credentials and network. Run setup's live probe from the actual parent profile. A blocked external CLI is a loud dropout, not a reason to elevate permissions or substitute a model silently.
 
-The parent invocation must itself be resumable background work:
-
-- Claude Code: call the launcher through a Bash tool invocation with `run_in_background: true` and retain its task ID. A foreground Bash tool call has an automatic ten-minute ceiling even when the runner's own timeout is longer. Shelling out with `&` and losing the task handle is not equivalent.
-- Codex: run the launcher in a persistent exec session that returns a session ID, then wait or poll that handle. Do not hold one foreground tool call open for the model's full runtime.
-- Cursor: call the launcher through a Shell tool invocation in the background and retain its handle. Do not lose the process by backgrounding it without a task id.
+The parent invocation must itself be resumable background work. Call the launcher through a Bash tool invocation with `run_in_background: true` and retain its task ID. A foreground Bash tool call has an automatic ten-minute ceiling even when the runner's own timeout is longer. Shelling out with `&` and losing the task handle is not equivalent.
 
 Start the background process, continue launching the other lanes, then drain their handles. Native and external lanes belong in the same fan-out phase.
 
@@ -204,7 +207,8 @@ Success requires all of these:
 
 The receipt also carries elapsed time, token usage when the CLI exposes it, and cost when available. Keep it with the arena or review artifacts so parent-harness comparisons are evidence-based.
 
-Any missing CLI, failed login, unavailable model, explicit timeout,
+A Route that names another provider on a Codex or Cursor parent with no `delegate_task` is a
+dropout with no receipt, because no lane starts. Any missing CLI, failed login, unavailable model, explicit timeout,
 cancellation, non-zero child exit, malformed result, or model mismatch is a
 receipt-bearing dropout. Unknown readiness remains unknown and rejects the
 selected route; it is not unavailable or verified. Never substitute the parent
