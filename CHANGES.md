@@ -8,7 +8,7 @@ Engineering Toolkit also ships as a Codex plugin. The skill bodies are not forke
 
 This fork diverges from superpowers in one respect, and it is deliberate. superpowers writes its skill prose in tool-neutral language ("dispatch a subagent"), so no skill names a runtime tool and no per-skill note is needed. This fork instead keeps the upstream Claude-native prose intact, to stay in lockstep with upstream sync, and adds a one-line Platform note to each skill that names a Claude primitive. The note points at the mapping. Rewriting the upstream skills into neutral language would fork them from upstream and was rejected for that reason.
 
-The single mapping file is `plugins/engineering-toolkit/skills/engineering-mode/references/codex-tools.md`. Cursor and T3 have `cursor-tools.md` and `t3-tools.md` on the same pattern.
+The single mapping file is `plugins/engineering-toolkit/skills/engineering-mode/references/codex-tools.md`. Cursor has `cursor-tools.md` on the same pattern. `t3-tools.md` is the Delegation host contract, with T3 as one mapping of it.
 
 ## Substitution table
 

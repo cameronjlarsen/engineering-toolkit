@@ -31,7 +31,7 @@ For each candidate, read the first JSONL line and check that `message.content[0]
 
 Start all three read-only lanes in one fan-out phase through provider dispatch. Reviewers need MCP access for context lookups (tickets, chat threads, observability traces referenced in the transcript), so keep them native to the parent. The prompt forbids file writes; the parent applies edits.
 
-Each reviewer and the synthesizer name a role line in the current harness's `engineering-toolkit-models` sheet and a default. Use that line's value, or the default if the sheet or the line is missing. Leave the Route unset when the value is `auto` or `inherit-parent`.
+Each reviewer and the synthesizer name a role line in the active model sheet (see [`t3-tools.md`](../engineering-mode/references/t3-tools.md)) and a default. Use that line's value, or the default if the sheet or the line is missing. Leave the Route unset when the value is `auto` or `inherit-parent`.
 
 | Lens | Role line | Default | Prompt template |
 |---|---|---|---|

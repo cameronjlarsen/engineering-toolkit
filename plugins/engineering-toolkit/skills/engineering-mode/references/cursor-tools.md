@@ -31,7 +31,7 @@ Writers get a worktree or a unique output directory. The `pstack-lane` prompt fo
 
 ## Other providers
 
-With no `delegate_task`, a `claude:`, `codex:`, or `grok:` Route is a named dropout, as `provider-dispatch.md` specifies: report the role and Route, and start no `pstack-runner`, no `Task`, and no substitute. A panel continues with the lanes that ran and says how many providers ran. A Cursor thread in T3 has `delegate_task`, and `t3-tools.md` resolves its Routes.
+When the session is not a delegate host, a `claude:`, `codex:`, or `grok:` Route is a named dropout, as `provider-dispatch.md` specifies: report the role and Route, and start no `pstack-runner`, no `Task`, and no substitute. A panel continues with the lanes that ran and says how many providers ran. On a delegate host, [`t3-tools.md`](t3-tools.md) sets the active sheet and resolves Routes.
 
 ## Instructions file
 

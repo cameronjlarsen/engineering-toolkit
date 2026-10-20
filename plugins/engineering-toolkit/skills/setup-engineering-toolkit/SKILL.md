@@ -5,10 +5,12 @@ description: Configure Engineering Toolkit's typed model routes per role and a r
 
 # Setup Engineering Toolkit
 
-Configure one model sheet for the current parent harness. Read [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md) before probing or writing anything. Its model matrix, grammar 3 wire format, and Route contract are authoritative. Discover apps, but discovery does not enable them. Do not add a second configuration file, a setup binary, or a weaker-model fallback.
+Configure one model sheet for the current session. Read [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md) before probing or writing anything. Its model matrix, grammar 3 wire format, and Route contract are authoritative. Read the Active model sheet section of [`t3-tools.md`](../engineering-mode/references/t3-tools.md) for which sheet counts in this session. Discover apps, but discovery does not enable them. Do not add a weaker-model fallback.
 
 There is no setup binary. This agent procedure discovers, probes, and writes
-the parent sheet after confirmation.
+the sheet after confirmation.
+
+On a delegate host, as `t3-tools.md` defines it, this run writes the host sheet and follows [Delegate-host run](#delegate-host-run), which replaces parts of the steps below. In every other session, this run writes the per-app sheet for the parent:
 
 Claude Code writes `~/.claude/engineering-toolkit-models.md` and loads it from `~/.claude/CLAUDE.md` with:
 
@@ -26,18 +28,20 @@ Codex writes `~/.codex/engineering-toolkit-models.md`. Codex has no `@` include,
 
 Cursor writes `~/.cursor/rules/engineering-toolkit-models.mdc`. YAML frontmatter is harness wiring (`alwaysApply: true`). The body after the closing `---` is the same grammar 3 sheet. There is no companion `.md` file and no Task-slug grammar. If that path already holds an upstream Task-slug rule, stop as inconsistent state instead of rewriting it silently.
 
+Every per-app sheet carries the scope line from `t3-tools.md` under its title: render it with `printRoleMap(roles, { scope: "per-app" })`.
+
 ## Steps
 
 ### 1. Establish the parent
 
-Use the harness and tool surface running this skill: Claude Code, Codex, or Cursor. Environment markers may corroborate that top-level answer, but do not launch a child and ask it to detect where it came from. Record the parent: a route is native only when its provider is the parent, and grammar 2 migration gives an omitted app the parent's provider. Task without `spawn_agent` is Cursor. `Agent` without Task is Claude Code. `spawn_agent` is Codex. Two strong matches is ambiguous. Write nothing until the parent is known. Also record whether the session has `delegate_task`. With it, the session is a T3 thread and `t3-tools.md` resolves each Route. Without it, a Codex or Cursor parent can run only its own provider's Routes.
+Use the harness and tool surface running this skill: Claude Code, Codex, or Cursor. Environment markers may corroborate that top-level answer, but do not launch a child and ask it to detect where it came from. Record the parent: a route is native only when its provider is the parent, and grammar 2 migration gives an omitted app the parent's provider. Task without `spawn_agent` is Cursor. `Agent` without Task is Claude Code. `spawn_agent` is Codex. Two strong matches is ambiguous. Write nothing until the parent is known. On a Codex or Cursor parent that is not a delegate host, only Routes on the parent's own provider can run.
 
 ### 2. Load current state
 
-Read the current parent-specific sheet when it exists and parse it with
-`loadRoleMap(text, parent)`. New sheets are grammar 3. A grammar 2 or grammar 1
-sheet migrates in memory as `provider-dispatch.md` describes; new writes never
-emit either form. Normalize rolling aliases
+Read the per-app sheet for the parent when it exists and parse it with
+`loadRoleMap(text, parent)`. New sheets are grammar 3.
+A grammar 2 or grammar 1 sheet migrates in memory as `provider-dispatch.md`
+describes; new writes never emit either form. Normalize rolling aliases
 `claude-fable-*` and `claude-opus-*` in memory, preserving provider, effort, role,
 and lane order. Record migrations for confirmation. After the sheet is loaded,
 refresh the Codex model list with `codex debug models`. Never pass `--bundled`.
@@ -47,11 +51,11 @@ slugs while the list is unknown. When the refresh succeeds, pass that list to
 `proposeStalePinMigrations`. A slug on the list is not a proposal. A slug on
 neither the shipped catalog nor the list stays unmatched for step 3. Do not
 rewrite a route until the operator accepts a proposal. Unaccepted rows stay
-inconsistent at step 3. Also read a `# budget:`
-line when the sheet has one, and name that current budget later when asking.
-A missing line means no recorded budget yet. If the current sheet is
-missing, read the previous `pstack-models` path for that parent as inbound
-migration. If that is also missing, use the complete first-run role map below.
+inconsistent at step 3. Also read a `# budget:` line when the sheet has one, and
+name that current budget later when asking. A missing line means no recorded
+budget yet. If the current sheet is missing, read the previous `pstack-models`
+path for that parent as inbound migration. If that is also missing, use the
+complete first-run role map below.
 
 Discover the catalog's apps and classify each as installed, launch-ready, or
 unknown. Discovery does not enable apps. A duplicate role row is
@@ -122,7 +126,7 @@ with `cursor-agent status` plus a one-turn `pstack-runner --app cursor`
 probe. Record native and external results separately. Never call the external
 launcher for a same-host route.
 
-On a Codex or Cursor parent with no `delegate_task`, a Route for another
+On a Codex or Cursor parent that is not a delegate host, a Route for another
 provider is a named dropout (`dropout` in the table above). Do not probe it and
 do not call the launcher. It is not a failed probe and does not block the write.
 
@@ -149,10 +153,10 @@ documented role key.
 Show app discovery, readiness, rolling-alias migrations, the chosen budget
 label and target effort, the route table for this parent, every rendered
 role and Route wire value, and each line step 2 dropped. On a Codex or Cursor
-parent with no `delegate_task`, list each role whose Route names another
+parent that is not a delegate host, list each role whose Route names another
 provider and say that it will drop out on this host, with no substitution. Offer
-to change it to a native Route or `inherit-parent`; keeping it is allowed, for a
-T3 thread that serves it. Ask for confirmation before writing.
+to change it to a native Route or `inherit-parent`; keeping it is allowed,
+because a delegate host on the same harness can still run it. Ask for confirmation before writing.
 
 Every selected route must have passed step 5, except a named dropout. Why and Reflect require the
 parent's live MCP surface. Keep their roles on `inherit-parent` or `auto`;
@@ -172,7 +176,7 @@ parent's provider when the live parent already serves that model, and the
 family's CLI home otherwise. The example below is the Claude Code render. On
 Cursor, Fable, Opus, and Grok use cursor. On Codex, Sol uses codex natively
 and Fable and Opus use claude. Every documented role remains present.
-The Codex render is for a T3 Codex thread; a plain Codex session reports a dropout for each Claude, Cursor, or Grok Route.
+The Codex render is for a Codex delegate host; a Codex session that is not one reports a dropout for each Claude, Cursor, or Grok Route.
 `inherit-parent` and `auto` use the parent model natively and still count as
 one panel lane. For an explicitly selected Sonnet 5.5 route, omit the app on
 Claude Code or Cursor, and name `claude-code` on Codex.
@@ -197,16 +201,31 @@ interrogate reviewers: claude:fable@max, codex:gpt-6-sol@max, grok:grok-4.7@xhig
 
 ### 8. Wire it in
 
-Render the parent integration in memory before either write. On Claude, the integration is the single `@~/.claude/engineering-toolkit-models.md` include in `~/.claude/CLAUDE.md`. On Codex, it is the exact sheet bytes between one `<!-- engineering-toolkit:models:begin -->` and `<!-- engineering-toolkit:models:end -->` pair in `~/.codex/AGENTS.md`. Replace that whole bounded block on a rerun. Insert one block at the end on first run. If either marker is missing, duplicated, or reversed, stop and report inconsistent state instead of guessing a boundary. On Cursor, the `.mdc` is both the sheet and the load hook. Wrap `printRoleMap` in the canonical always-apply frontmatter. Read back the grammar 3 body, not the YAML wrapper.
-
-After a confirmed write and readback, delete the previous `pstack-models` sheet for this parent. On Claude, replace `@~/.claude/pstack-models.md` with the new include. On Codex, replace a `pstack:models` marker pair with the new markers in the same write. Do not leave both sheets.
+Render the parent integration in memory before
+either write. On Claude, the integration is the single
+`@~/.claude/engineering-toolkit-models.md` include in `~/.claude/CLAUDE.md`. On
+Codex, it is the exact sheet bytes between one
+`<!-- engineering-toolkit:models:begin -->` and
+`<!-- engineering-toolkit:models:end -->` pair in `~/.codex/AGENTS.md`. Replace
+that whole bounded block on a rerun. Insert one block at the end on first run.
+If either marker is missing, duplicated, or reversed, stop and report
+inconsistent state instead of guessing a boundary. On Cursor, the `.mdc` is both
+the sheet and the load hook. Wrap `printRoleMap` in the canonical always-apply
+frontmatter. Read back the grammar 3 body, not the YAML wrapper. Every render
+uses `printRoleMap(roles, { scope: "per-app" })`. After a
+confirmed write and readback, delete the previous `pstack-models` sheet for this
+parent. On Claude, replace `@~/.claude/pstack-models.md` with the new include.
+On Codex, replace a `pstack:models` marker pair with the new markers in the same
+write. Do not leave both sheets.
 
 Snapshot every target's current bytes. Write the sheet and parent integration
-only after all selected probes pass and the operator confirms. Read both
-targets back and compare them with the in-memory render. If either write or
-readback fails, restore every snapshot and report the failure.
+only after all selected probes pass and the operator
+confirms. Read every written target back and compare it with the in-memory
+render. If either write or readback fails, restore every snapshot and report the
+failure.
 
-Do not copy the model sheet between harnesses without rerunning the parent-specific probes; route availability can differ even on the same host.
+Do not copy a model sheet between harnesses without rerunning the
+parent-specific probes; route availability can differ even on the same host.
 
 ### 9. Behavioral smoke
 
@@ -222,9 +241,57 @@ PLUGIN_ROOT=<plugin root> bun -e 'const [sheetPath, parent] = process.argv.slice
 
 Then run one
 small read-only mixed panel from this parent using selected routes (native routes only
-on a Codex or Cursor parent with no `delegate_task`), distinct output/receipt paths, and an
+on a Codex or Cursor parent that is not a delegate host), distinct output/receipt paths, and an
 independent cross-judge. Launch native agents and external processes in the
 background with retained handles, then drain them. Verify transcripts and
 receipts. A structural config check or unit test is not a substitute.
 
-Report the sheet path, parent route table, requested-effort probe results, smoke results, and external elapsed/token/cost receipts. Re-running this skill re-probes and updates the same sheet. Do not claim the provider exposed hidden applied-effort observability.
+Report the sheet path, parent route table, requested-effort probe results,
+smoke results, and external elapsed/token/cost receipts. Re-running this skill
+re-probes and updates the same sheet. Do not claim the provider exposed hidden
+applied-effort observability.
+
+## Delegate-host run
+
+On a delegate host, run steps 1 to 9 with these replacements. The capability
+list from `orchestrator_capabilities` is the source of truth for every check
+that the shipped catalog or `codex debug models` makes in a per-app run.
+
+- **Step 1.** The host sheet does not depend on the parent, so do not stop when
+  the parent is not Claude Code, Codex, or Cursor (for example, an OpenCode
+  instance). Call `orchestrator_capabilities` once and keep the list. Record the
+  parent harness only when the step 1 tool surface identifies it; it is used only
+  for the inbound migration below.
+- **Step 2.** Read `~/.agents/engineering-toolkit-models.md` and parse it with
+  `loadHostRoleMap(text)`. A grammar 1 or grammar 2 host sheet is inconsistent
+  state: show the error and do not write until the operator fixes it. If the host
+  sheet is missing and the parent is known, read the parent's per-app sheet (or
+  its `pstack-models` sheet) with `loadRoleMap(text, parent)` as inbound
+  migration. That parse makes every provider explicit. Show each migrated role
+  and Route for confirmation in step 7, as for any other migration. If there is
+  no per-app sheet, use the step 7 first-run map, with each family on its home
+  provider (`claude:` for Fable and Opus, `codex:` for Sol, `grok:` for Grok),
+  whatever the parent is. Do not run `codex debug models` or
+  `proposeStalePinMigrations`.
+- **Step 3.** Check each Route with the Routes resolution in `t3-tools.md`
+  (instance, model, effort) against the capability list, not against the shipped
+  catalog. Each failure tag is inconsistent state. Show the instances that do
+  serve that model, and let the operator pick one or `inherit-parent`. Do not
+  pick for them.
+- **Step 4.** When the budget's target effort is not offered, use the highest
+  effort at or below it that the capability list offers for that model.
+- **Step 5.** Probe each selected Route with one read-only `delegate_task` that
+  returns a unique marker and names its model. A child that names the parent
+  model, when the Route names another model, fails the probe.
+- **Step 8.** Write only `~/.agents/engineering-toolkit-models.md` (create
+  `~/.agents/` if needed). Its body is `printRoleMap(roles)`, with no scope line,
+  no YAML wrapper, and no include markers. Do not remove the per-app sheet or
+  its include, block, or rule: sessions that are not delegate hosts still use
+  them. If the parent's per-app sheet exists without the scope line, offer to
+  add it. Re-render that sheet, and on Codex its `AGENTS.md` block, with
+  `printRoleMap(roles, { scope: "per-app" })` from its own loaded roles, so
+  that no Route changes. Snapshot, write, and read back each target as for the
+  host sheet. The example host sheet in `t3-tools.md` is never the written
+  default.
+- **Step 9.** Parse the written body with `loadHostRoleMap`, and run the panel
+  smoke through `delegate_task`.

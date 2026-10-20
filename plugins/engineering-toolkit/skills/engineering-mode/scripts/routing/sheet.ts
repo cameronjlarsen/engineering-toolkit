@@ -43,6 +43,7 @@ const ROLE_IDS = [...SINGLE_ROLE_IDS, ...PANEL_ROLE_IDS] as readonly RoleId[];
 
 export type SheetError =
   | { readonly tag: "invalid-grammar-version"; readonly raw: string }
+  | { readonly tag: "host-sheet-needs-grammar-3"; readonly grammar: number }
   | { readonly tag: "invalid-lane"; readonly role: RoleId; readonly raw: string }
   | { readonly tag: "invalid-descriptor"; readonly role: RoleId; readonly raw: string }
   | { readonly tag: "missing-role"; readonly role: RoleId }
@@ -208,6 +209,21 @@ export function loadRoleMap(
   sheetText: string,
   parent: ParentHost
 ): Result<RoleMap, SheetError> {
+  return parseSheet(sheetText, parent);
+}
+
+/**
+ * The host sheet is shared by every parent harness, so it must not depend on
+ * one: only grammar 3, where every Route names its provider, is accepted.
+ */
+export function loadHostRoleMap(sheetText: string): Result<RoleMap, SheetError> {
+  return parseSheet(sheetText, null);
+}
+
+function parseSheet(
+  sheetText: string,
+  parent: ParentHost | null
+): Result<RoleMap, SheetError> {
   const lines = sheetText.split(/\r?\n/);
   let grammar: Grammar = 1;
   let sawHeader = false;
@@ -235,13 +251,22 @@ export function loadRoleMap(
     entries.set(role, line.slice(separator + 1).trim());
   }
 
+  if (parent === null && grammar !== 3) {
+    return { ok: false, error: { tag: "host-sheet-needs-grammar-3", grammar } };
+  }
+
   for (const role of ROLE_IDS) {
     if (!entries.has(role)) return { ok: false, error: { tag: "missing-role", role } };
   }
 
   const result: Record<string, RoleBinding | readonly RoleBinding[]> = {};
   for (const role of ROLE_IDS) {
-    const parsed = parseRoleLine(role, entries.get(role) as string, grammar, parent);
+    const parsed = parseRoleLine(
+      role,
+      entries.get(role) as string,
+      grammar,
+      parent ?? "claude-code"
+    );
     if (!parsed.ok) return parsed;
     result[role] = parsed.value;
   }
@@ -254,8 +279,16 @@ function printBinding(binding: RoleBinding): string {
   return `${providerOf(app)}:${model}@${effort}`;
 }
 
-export function printRoleMap(roles: RoleMap): string {
-  const lines = ["# Engineering Toolkit model configuration", "", "Descriptor grammar: 3", ""];
+export const PER_APP_SCOPE_LINE =
+  "# Applies only without delegate_task. With delegate_task, use ~/.agents/engineering-toolkit-models.md and ignore this sheet.";
+
+export function printRoleMap(
+  roles: RoleMap,
+  options: { readonly scope?: "host" | "per-app" } = {}
+): string {
+  const lines = ["# Engineering Toolkit model configuration"];
+  if (options.scope === "per-app") lines.push(PER_APP_SCOPE_LINE);
+  lines.push("", "Descriptor grammar: 3", "");
   for (const role of SINGLE_ROLE_IDS) {
     lines.push(`${role}: ${printBinding(roles[role])}`);
   }

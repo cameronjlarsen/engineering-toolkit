@@ -1,6 +1,9 @@
 # Provider dispatch
 
-On T3 Code (the session has `delegate_task`), read [`t3-tools.md`](t3-tools.md) first. Its Routes section replaces the native and external lanes below.
+When the session has `delegate_task` or `orchestrator_capabilities`, read the
+Delegation host contract in [`t3-tools.md`](t3-tools.md) first. On a delegate
+host, its active-sheet rule and Routes section replace the native and external
+lanes below.
 
 Engineering Toolkit model choices are typed `Route` values written as
 provider-qualified descriptors:
@@ -78,7 +81,7 @@ remain invalid. The external runner rejects a missed Fable or Opus version pin
 instead of silently executing it. Sol and Grok pins have no read-time alias. A
 model the catalog does not serve fails dispatch until setup accepts a stale-pin proposal.
 
-`fast` is part of Cursor's Grok selector, not a Grok Build CLI model or effort flag. The portable Grok route pins the current CLI model `grok-4.7`. The first-run Grok effort is `xhigh`. Cursor also serves `grok-4.7`. `cursor:grok-4.7` is native host-spawn on a Cursor parent, runs through the Cursor CLI from a Claude Code parent, and is a dropout on a Codex parent with no `delegate_task`. `grok:grok-4.7` is always the Grok CLI.
+`fast` is part of Cursor's Grok selector, not a Grok Build CLI model or effort flag. The portable Grok route pins the current CLI model `grok-4.7`. The first-run Grok effort is `xhigh`. Cursor also serves `grok-4.7`. `cursor:grok-4.7` is native host-spawn on a Cursor parent, runs through the Cursor CLI from a Claude Code parent, and is a dropout on a Codex parent that is not a delegate host. `grok:grok-4.7` is always the Grok CLI.
 
 ## The parent owns the route
 
@@ -107,11 +110,11 @@ assignment and the absolute skill path it needs.
 | Codex | dropout | native | dropout | dropout |
 | Cursor | dropout | dropout | native | dropout |
 
-A Codex or Cursor session with no `delegate_task` cannot start another
+A Codex or Cursor session that is not a delegate host cannot start another
 provider's model, so a Route that names another provider is a named dropout:
-the parent reports the role, the Route, and `no delegate_task`. It does not run the lane on the
-parent, substitute a model, or start `pstack-runner`. A session that has
-`delegate_task` is a T3 thread, and [`t3-tools.md`](t3-tools.md) resolves its Routes.
+the parent reports the role, the Route, and `not a delegate host`. It does not run the lane on the
+parent, substitute a model, or start `pstack-runner`. On a delegate
+host, [`t3-tools.md`](t3-tools.md) resolves its Routes.
 
 Internally the `claude` provider is the `claude-code` app id, which is also the
 value of `--parent` and `--app` for Claude Code.
@@ -150,7 +153,7 @@ Do not send a same-host route to the external runner. It is rejected with exit
 
 ## External lanes
 
-Only a Claude Code parent without `delegate_task` starts the launcher; a Codex or Cursor parent reports a dropout instead. It lives at `skills/engineering-mode/scripts/runner/pstack-runner` under the installed plugin. The parent writes the complete candidate prompt to a unique file, creates a unique output directory or worktree, and invokes the launcher directly. Do not put another agent in front of it.
+Only a Claude Code parent that is not a delegate host starts the launcher; a Codex or Cursor parent reports a dropout instead. It lives at `skills/engineering-mode/scripts/runner/pstack-runner` under the installed plugin. The parent writes the complete candidate prompt to a unique file, creates a unique output directory or worktree, and invokes the launcher directly. Do not put another agent in front of it.
 
 ```text
 pstack-runner \
@@ -207,7 +210,7 @@ Success requires all of these:
 
 The receipt also carries elapsed time, token usage when the CLI exposes it, and cost when available. Keep it with the arena or review artifacts so parent-harness comparisons are evidence-based.
 
-A Route that names another provider on a Codex or Cursor parent with no `delegate_task` is a
+A Route that names another provider on a Codex or Cursor parent that is not a delegate host is a
 dropout with no receipt, because no lane starts. Any missing CLI, failed login, unavailable model, explicit timeout,
 cancellation, non-zero child exit, malformed result, or model mismatch is a
 receipt-bearing dropout. Unknown readiness remains unknown and rejects the

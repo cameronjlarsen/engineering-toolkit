@@ -9,7 +9,7 @@ Explore the codebase to answer "how does X work?" questions. Produce architectur
 
 **Dispatch contract.** Resolve every configured role through [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md). Values are typed Routes written as `provider:model@effort`. The parent chooses native versus external execution. On Codex, resolve remaining Claude tool names via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
 
-Each spawn below names a role line in the current harness's `engineering-toolkit-models` sheet and a default. Use that line's value, or the default if the sheet or the line is missing. Leave the Route unset when the value is `auto` or `inherit-parent`.
+Each spawn below names a role line in the active model sheet (see [`t3-tools.md`](../engineering-mode/references/t3-tools.md)) and a default. Use that line's value, or the default if the sheet or the line is missing. Leave the Route unset when the value is `auto` or `inherit-parent`.
 
 ## Step 1. Assess Complexity
 
