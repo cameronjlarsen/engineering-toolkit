@@ -92,7 +92,7 @@ T3 wakes the thread when a check fails, the required checks pass, someone else c
 
 ### Routes
 
-On a host that satisfies this contract, the delegate tool replaces the native and external lanes in [`provider-dispatch.md`](provider-dispatch.md). Do not start `pstack-runner`. The parent resolves every configured Route once, before any spawn, and children never route.
+On a host that satisfies this contract, the delegate tool replaces the native lanes in [`provider-dispatch.md`](provider-dispatch.md). The parent resolves every configured Route once, before any spawn, and children never route.
 
 1. Call `orchestrator_capabilities` once per parent run, before any spawn. It lists the provider instances this machine can run, each with `canRunChildTask`, its models, and each model's options. Instances differ per machine and can be disabled. A T3 parent may be Claude Code, Codex, OpenCode, or another enabled instance; the capability list is the source of truth, not this file.
 2. `inherit-parent` and `auto` omit `target`, so the child runs on the parent's model.
