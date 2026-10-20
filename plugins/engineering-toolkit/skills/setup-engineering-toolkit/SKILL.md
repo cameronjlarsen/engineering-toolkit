@@ -75,7 +75,7 @@ Build the new sheet in memory. Do not write it yet.
 
 **Rerun.** Start from the roles step 2 read, in their order.
 
-**First run.** Start from the upstream roles, one family each, and keep only the families this session serves natively. Write the model bare on a per-app sheet. On a host sheet, write `<provider>:<model>` using the instance that serves it, and ask when two do.
+**First run.** Start from the upstream roles, one family each, and keep only the families this session serves natively. For each family, list every model id the session's list serves for it, across all instances and backends: on a delegate host, `gpt-6-sol`, `gpt-6.1-sol`, and an `opencode-go/` copy of the same name are three different ids. Let the operator pick one, or `inherit-parent`. Never pick for them. Write the model bare on a per-app sheet. On a host sheet, write `<provider>:<model>` with the id exactly as the list reports it.
 
 | Family | Roles that use it |
 |---|---|

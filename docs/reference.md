@@ -174,7 +174,7 @@ The table uses the short upstream names. Claude Code exposes each native skill w
 
 `comment-sicko` is the read-only comment reviewer the `no-comments` skill spawns. Upstream names it `Comment Sicko`; the port renames it to `comment-sicko` so the name is a valid `subagent_type`. Invoke it through `/no-comments`, not directly.
 
-`pstack-lane` is the one native lane for every Claude-served route. It pins no model and no effort: the parent passes `model` (`sonnet`, `opus`, or `fable`) and `effort` on each `Agent` call. It runs in the background and denies nested Agent/Task dispatch. Engineering Toolkit dispatches it from the Routes in the model sheet; it is not a user-facing workflow.
+`pstack-lane` is the one native lane for every Claude-served route. It pins no model and no effort: the parent passes `model` (`sonnet`, `opus`, `haiku`, or `fable`) and `effort` on each `Agent` call. It runs in the background and denies nested Agent/Task dispatch. Engineering Toolkit dispatches it from the Routes in the model sheet; it is not a user-facing workflow.
 
 ## Differences from upstream
 

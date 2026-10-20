@@ -48,7 +48,7 @@ A line the parent cannot read is a named dropout for that role. It does not inva
 
 ## Who runs a Route
 
-A Route runs natively when its provider is the parent's own. The parent harness cannot start another provider's CLI, so on every session that is not a delegate host a Route that names another provider is a named dropout: report the role, the Route, and `not a delegate host`. Do not run the lane on the parent, substitute a model, or start a launcher. On a delegate host, [`t3-tools.md`](t3-tools.md) resolves the Route against the live capability list.
+A Route runs natively when its provider is the parent's own. Each harness has one provider token: `claude` on Claude Code, `codex` on Codex, and `cursor` on Cursor. The parent harness cannot start another provider's CLI, so on every session that is not a delegate host a Route that names another provider is a named dropout: report the role, the Route, and `not a delegate host`. Do not run the lane on the parent, substitute a model, or start a launcher. On a delegate host, [`t3-tools.md`](t3-tools.md) resolves the Route against the live capability list.
 
 `fable` and `opus` are Claude Code's rolling aliases. Read an old `claude-fable-<N>` or `claude-opus-<N>` model as `fable` or `opus`, so a stale sheet uses the latest revision. Other versioned Claude ids are a dropout.
 
@@ -60,9 +60,9 @@ Use a fresh child for each new task, fix, retry, follow-up, or second opinion. R
 
 Pass the complete task, grounding paths, access mode, and unique output location in the spawn prompt. Give a writer a dedicated worktree or output directory, never the primary checkout.
 
-- **Claude Code.** Call `Agent` with `subagent_type` `et:pstack-lane`, `model` set to the alias for the Route's model, and `effort` set to the resolved effort. `Agent` accepts only the aliases `sonnet`, `opus`, `haiku`, and `fable`, and an omitted `effort` inherits the parent's, so always pass both. Map `fable` and `claude-fable-*` to `fable`, `opus` and `claude-opus-*` to `opus`, `claude-sonnet-5-5` to `sonnet`, and `claude-haiku-*` to `haiku`. A Route whose model has no alias is a dropout, and so is an effort `Agent` does not accept (`low`, `medium`, `high`, `xhigh`, `max`).
-- **Codex.** Call `spawn_agent` with the Route's model and `reasoning_effort`. A model or effort that `spawn_agent` does not list is a dropout. Use an isolated worktree for a writer.
-- **Cursor.** Follow [`cursor-tools.md`](cursor-tools.md): `Task` with a live selector for the Route's model and effort. An omitted or unmatched selector inherits the parent and is a dropout.
+- **Claude Code.** A Route with no provider or with `claude`. Call `Agent` with `subagent_type` `et:pstack-lane`, `model` set to the alias for the Route's model, and `effort` set to the resolved effort. `Agent` accepts only the aliases `sonnet`, `opus`, `haiku`, and `fable`, and an omitted `effort` inherits the parent's, so always pass both. Map `fable` and `claude-fable-*` to `fable`, `opus` and `claude-opus-*` to `opus`, `claude-sonnet-5-5` to `sonnet`, and `claude-haiku-*` to `haiku`. A Route whose model has no alias is a dropout, and so is an effort `Agent` does not accept (`low`, `medium`, `high`, `xhigh`, `max`).
+- **Codex.** A Route with no provider or with `codex`. Call `spawn_agent` with the Route's model and `reasoning_effort`. A model or effort that `spawn_agent` does not list is a dropout. Use an isolated worktree for a writer.
+- **Cursor.** A Route with no provider or with `cursor`. Follow [`cursor-tools.md`](cursor-tools.md): `Task` with a live selector for the Route's model and effort. An omitted or unmatched selector inherits the parent and is a dropout.
 - **`inherit-parent` and `auto`.** Use the parent's subagent primitive with no model override, or `engineering-agent`.
 
 ## Completion and dropouts
