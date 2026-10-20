@@ -42,7 +42,7 @@ Run this command in Agent chat:
 /add-plugin https://github.com/cameronjlarsen/engineering-toolkit
 ```
 
-Do not install Lauren's original pstack alongside it. Install `et` from the marketplace panel. Run `/setup-engineering-toolkit`. Setup writes grammar 3 into `~/.cursor/rules/engineering-toolkit-models.mdc`. It does not write upstream Task slugs.
+Do not install Lauren's original pstack alongside it. Install `et` from the marketplace panel. Run `/setup-engineering-toolkit`. Setup writes the model sheet into `~/.cursor/rules/engineering-toolkit-models.mdc`. It does not write upstream Task slugs.
 
 ### Claude Code
 
@@ -96,9 +96,9 @@ In Cursor, run:
 /setup-engineering-toolkit
 ```
 
-Setup checks the models you can actually run, shows how each one will start, and asks before saving the choices. The current default group uses Fable, GPT-6 Sol, Grok 4.7, and Opus.
+Setup reads the models this session can run, shows how each one will start, and asks before saving the choices. The first run proposes only the models your session serves, and every other role runs on the parent model.
 
-An older model sheet starts using the rolling aliases in memory as soon as this release is installed. Run setup once after updating to persist that migration. It replaces versioned Fable and Opus entries while preserving every role assignment and effort selection.
+An older model sheet keeps working. Versioned Fable and Opus entries read as the rolling aliases, and a `Descriptor grammar:` header is ignored. Run setup once after updating to rewrite the sheet. In a session that can delegate to other providers, such as T3, setup writes the neutral `~/.agents/engineering-toolkit-models.md`, and any provider that session lists can appear in a Route.
 
 ### 2. Use engineering-mode
 
@@ -175,7 +175,7 @@ This repository also keeps:
 
 ## Tracked sources
 
-This checkout is Engineering Toolkit 1.4.7. It tracks Cursor pstack 0.15.25 at commit [`4382e687a50b8d2c5ce4d141d001186589cff8d5`](https://github.com/cursor/plugins/commit/4382e687a50b8d2c5ce4d141d001186589cff8d5) and started from Open Pstack 1.4.1.
+This checkout is Engineering Toolkit 1.5.0. It tracks Cursor pstack 0.15.25 at commit [`4382e687a50b8d2c5ce4d141d001186589cff8d5`](https://github.com/cursor/plugins/commit/4382e687a50b8d2c5ce4d141d001186589cff8d5) and started from Open Pstack 1.4.1.
 
 Two version numbers stay independent. Cursor pstack versions Lauren's plugin. This fork versions the checkout you are in.
 

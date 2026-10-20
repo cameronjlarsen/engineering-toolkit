@@ -159,11 +159,8 @@ else
   note "ok: public identity is Engineering Toolkit, plugin et, repo cameronjlarsen/engineering-toolkit"
 fi
 
-# Active configuration must use Claude's rolling family aliases. Concrete
-# provider reports may still appear in runner fixtures, but no shipped
+# Active configuration must use Claude's rolling family aliases. No shipped
 # descriptor, native-agent model field, or live test invocation may pin one.
-# Cursor has no rolling alias, so its catalog in-slug templates
-# (claude-opus-5-5-{effort}) are the one allowed code pin.
 legacy_model_pins="$(
   grep -REn \
     --include='*.md' --include='*.ts' --include='*.sh' \
@@ -190,55 +187,42 @@ fi
 
 setup="$repo/plugins/engineering-toolkit/skills/setup-engineering-toolkit/SKILL.md"
 dispatch="$repo/plugins/engineering-toolkit/skills/engineering-mode/references/provider-dispatch.md"
-quad_of() { { grep -oE '(claude|codex|cursor|grok):[a-z0-9.-]+@(low|medium|high|xhigh|max)' || true; } | tr '\n' ' ' | sed 's/ $//'; }
-canon_quad="$(awk '
-  $0 == "## Model matrix" { in_matrix = 1; next }
-  in_matrix && /^## / { exit }
-  in_matrix && /^\|/ {
-    line = $0
-    sub(/^\|/, "", line)
-    sub(/\|$/, "", line)
-    n = split(line, cells, "|")
-    for (i = 1; i <= n; i++) {
-      gsub(/^ +| +$/, "", cells[i])
-      gsub(/`/, "", cells[i])
-    }
-    family = cells[1]
-    if (family == "Family" || family ~ /^:?-+:?$/) next
-    provider = cells[3]
-    model = cells[4]
-    effort = cells[5]
-    if (out != "") out = out " "
-    out = out provider ":" model "@" effort
-  }
-  END { print out }
-' "$dispatch")"
-quad_bad=""
-[ -n "$canon_quad" ] || quad_bad="could not read the canonical quad from $dispatch"$'\n'
+route_of() { { grep -oE '[A-Za-z][A-Za-z0-9_-]*:[A-Za-z0-9./_-]+@(low|medium|high|xhigh|max)' || true; } | tr '\n' ' ' | sed 's/ $//'; }
 # The panel skills carry no provider-qualified default: with no sheet they run
 # on inherit-parent, so a single-provider machine never loses lanes to a
-# default. Only setup's first-run sheet seeds the quad.
+# default. Setup proposes only the families the session serves.
+panel_bad=""
 for name in arena architect interrogate swarm how; do
   skill="$repo/plugins/engineering-toolkit/skills/$name/SKILL.md"
-  got="$(quad_of < "$skill")"
-  [ -z "$got" ] || quad_bad="$quad_bad$skill: provider-qualified default [$got]"$'\n'
-  grep -Fq 'inherit-parent' "$skill" || quad_bad="$quad_bad$skill: missing-sheet default is not inherit-parent"$'\n'
+  got="$(route_of < "$skill")"
+  [ -z "$got" ] || panel_bad="$panel_bad$skill: provider-qualified default [$got]"$'\n'
+  grep -Fq 'inherit-parent' "$skill" || panel_bad="$panel_bad$skill: missing-sheet default is not inherit-parent"$'\n'
 done
-for role in "arena runners" "arena cross-judge pool" "architect runners" "interrogate reviewers"; do
-  line="$(grep -E "^${role}:" "$setup" || true)"
-  if [ -z "$line" ]; then
-    quad_bad="$quad_bad$setup lost the first-run row: $role"$'\n'
-    continue
-  fi
-  got="$(printf '%s\n' "$line" | quad_of)"
-  [ "$got" = "$canon_quad" ] || quad_bad="$quad_bad$setup role row $role: [$got] != [$canon_quad]"$'\n'
+for role in "feature, refactoring" "bug-fix" "perf-issue" "hillclimb" "judgment and prose" "hardest tasks" "how explorer" "how explainer" "why investigators, synthesizer" "reflect tooling, judgment, divergent, synthesizer" "arena runners" "arena cross-judge pool" "swarm workers" "architect runners" "interrogate reviewers"; do
+  grep -q "^${role}: " "$setup" || panel_bad="$panel_bad$setup lost the sheet row: $role"$'\n'
+  grep -Fq "\`${role}\`" "$dispatch" || panel_bad="$panel_bad$dispatch lost the role: $role"$'\n'
 done
-if [ -n "$quad_bad" ]; then
-  note "FAIL: panel skills carry a provider-qualified default, or setup rows drift from the model matrix:"
-  note "$quad_bad"
+if [ -n "$panel_bad" ]; then
+  note "FAIL: panel skills carry a provider-qualified default, or setup and provider-dispatch drift on the role list:"
+  note "$panel_bad"
   fail=1
 else
-  note "ok: panel skills default to inherit-parent; setup first-run keeps the quad ($canon_quad)"
+  note "ok: panel skills default to inherit-parent; setup and provider-dispatch name every role"
+fi
+
+removed_vocab="$(
+  grep -REn \
+    --include='*.md' --include='*.ts' --include='*.sh' --include='*.json' \
+    'pstack-runner|loadRoleMap|loadHostRoleMap|printRoleMap|parseCodexDebugModels|proposeStalePinMigrations|provider-report|pinned-argv|typed Route|scripts/routing|scripts/runner' \
+    "$repo/plugins" "$repo/README.md" "$repo/docs/reference.md" "$repo/AGENTS.md" \
+    2>/dev/null | grep -v '/node_modules/' || true
+)"
+if [ -n "$removed_vocab" ]; then
+  note "FAIL: the removed routing layer is still named:"
+  note "$removed_vocab"
+  fail=1
+else
+  note "ok: the typed routing layer and runner are not named"
 fi
 
 plugin="$repo/plugins/engineering-toolkit"
@@ -459,22 +443,7 @@ else
   note "ok: routed skills stay model-invocable"
 fi
 
-sol_descriptor="$(awk -F '|' '
-  $2 ~ /^[[:space:]]*sol[[:space:]]*$/ {
-    for (i = 4; i <= 6; i++) gsub(/^[[:space:]]+|[[:space:]]+$/, "", $i)
-    print $4 ":" $5 "@" $6
-  }
-' "$dispatch")"
 solo_code_bad=""
-if [ -z "$sol_descriptor" ]; then
-  solo_code_bad="could not read the sol row from $dispatch"$'\n'
-fi
-for role in bug-fix perf-issue hillclimb; do
-  setup_descriptor="$(sed -n "s/^${role}: //p" "$setup")"
-  if [ "$setup_descriptor" != "$sol_descriptor" ]; then
-    solo_code_bad="${solo_code_bad}${setup} ${role}: [${setup_descriptor}] != [${sol_descriptor}]"$'\n'
-  fi
-done
 # With no sheet, every role playbook delegates on the parent model.
 for role in feature refactoring bug-fix perf-issue hillclimb; do
   role_playbook="$plugin/skills/engineering-mode/playbooks/$role.md"
@@ -484,11 +453,11 @@ for role in feature refactoring bug-fix perf-issue hillclimb; do
   fi
 done
 if [ -n "$solo_code_bad" ]; then
-  note "FAIL: solo code roles must use the sol row in setup, and role playbooks must default to inherit-parent:"
+  note "FAIL: role playbooks must default to inherit-parent:"
   note "$solo_code_bad"
   fail=1
 else
-  note "ok: solo code roles stay on the sol row in setup ($sol_descriptor); playbooks default to inherit-parent"
+  note "ok: role playbooks default to inherit-parent"
 fi
 
 codex_manifest="$plugin/.codex-plugin/plugin.json"
