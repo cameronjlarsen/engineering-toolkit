@@ -1,297 +1,127 @@
 ---
 name: setup-engineering-toolkit
-description: Configure Engineering Toolkit's typed model routes per role and a reasoning budget. Discovers apps, probes selected routes, and writes the parent sheet. Use for /setup-engineering-toolkit, "configure Engineering Toolkit models", "engineering toolkit budget", "pstack budget", or changing model choices.
+description: Configure Engineering Toolkit's model routes per role and a reasoning budget. Reads what this session can run, probes the selected routes, and writes the active model sheet. Use for /setup-engineering-toolkit, "configure Engineering Toolkit models", "engineering toolkit budget", "pstack budget", or changing model choices.
 ---
 
 # Setup Engineering Toolkit
 
-Configure one model sheet for the current session. Read [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md) before probing or writing anything. Its model matrix, grammar 3 wire format, and Route contract are authoritative. Read the Active model sheet section of [`t3-tools.md`](../engineering-mode/references/t3-tools.md) for which sheet counts in this session. Discover apps, but discovery does not enable them. Do not add a weaker-model fallback.
+Configure one model sheet for the current session. Read [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md) before you probe or write anything. Its sheet format and Route format are the contract. Read the Active model sheet section of [`t3-tools.md`](../engineering-mode/references/t3-tools.md) for which sheet counts in this session. Do not add a weaker-model fallback.
 
-There is no setup binary. This agent procedure discovers, probes, and writes
-the sheet after confirmation.
+There is no setup binary and no parser. This agent procedure reads the sheet as text, probes the selected routes, and writes the sheet after confirmation.
 
-On a delegate host, as `t3-tools.md` defines it, this run writes the host sheet and follows [Delegate-host run](#delegate-host-run), which replaces parts of the steps below. In every other session, this run writes the per-app sheet for the parent:
+## Which sheet this run writes
 
-Claude Code writes `~/.claude/engineering-toolkit-models.md` and loads it from `~/.claude/CLAUDE.md` with:
+| Session | Sheet | Wiring |
+|---|---|---|
+| Delegate host (`delegate_task` and `orchestrator_capabilities`) | `~/.agents/engineering-toolkit-models.md` | None. Create `~/.agents/` if needed. |
+| Claude Code | `~/.claude/engineering-toolkit-models.md` | The single line `@~/.claude/engineering-toolkit-models.md` in `~/.claude/CLAUDE.md`. |
+| Codex | `~/.codex/engineering-toolkit-models.md` | The exact sheet bytes between one `<!-- engineering-toolkit:models:begin -->` and `<!-- engineering-toolkit:models:end -->` pair in `~/.codex/AGENTS.md`. Replace the whole block on a rerun, or insert one at the end on first run. If a marker is missing, duplicated, or reversed, stop and report inconsistent state. |
+| Cursor | `~/.cursor/rules/engineering-toolkit-models.mdc` | The `.mdc` is both sheet and hook. Put `alwaysApply: true` in its YAML frontmatter and the sheet after the closing `---`. If the path holds an upstream Task-slug rule, stop as inconsistent state. |
+| Any other harness | Print the sheet. | Tell the operator where their harness injects instructions, and that a delegate host would read the neutral `~/.agents/` sheet. Write nothing. |
+
+A per-app sheet carries this line under its title, so a reader of the always-loaded text knows when it applies:
 
 ```text
-@~/.claude/engineering-toolkit-models.md
+# Applies only without delegate_task. With delegate_task, use ~/.agents/engineering-toolkit-models.md and ignore this sheet.
 ```
 
-Codex writes `~/.codex/engineering-toolkit-models.md`. Codex has no `@` include, so mirror the sheet's exact bytes inside one bounded block in `~/.codex/AGENTS.md` and retain the sheet as the editable source of truth:
-
-```text
-<!-- engineering-toolkit:models:begin -->
-<exact contents of ~/.codex/engineering-toolkit-models.md>
-<!-- engineering-toolkit:models:end -->
-```
-
-Cursor writes `~/.cursor/rules/engineering-toolkit-models.mdc`. YAML frontmatter is harness wiring (`alwaysApply: true`). The body after the closing `---` is the same grammar 3 sheet. There is no companion `.md` file and no Task-slug grammar. If that path already holds an upstream Task-slug rule, stop as inconsistent state instead of rewriting it silently.
-
-Every per-app sheet carries the scope line from `t3-tools.md` under its title: render it with `printRoleMap(roles, { scope: "per-app" })`.
+The host sheet has no scope line, no YAML, and no markers. A delegate-host run leaves the per-app sheet and its wiring in place, because sessions that are not delegate hosts still use them.
 
 ## Steps
 
-### 1. Establish the parent
+### 1. Establish the session
 
-Use the harness and tool surface running this skill: Claude Code, Codex, or Cursor. Environment markers may corroborate that top-level answer, but do not launch a child and ask it to detect where it came from. Record the parent: a route is native only when its provider is the parent, and grammar 2 migration gives an omitted app the parent's provider. Task without `spawn_agent` is Cursor. `Agent` without Task is Claude Code. `spawn_agent` is Codex. Two strong matches is ambiguous. Write nothing until the parent is known. On a Codex or Cursor parent that is not a delegate host, only Routes on the parent's own provider can run.
+Use the tool surface running this skill. `delegate_task` plus `orchestrator_capabilities` is a delegate host. Otherwise `Task` without `spawn_agent` is Cursor, `Agent` without `Task` is Claude Code, and `spawn_agent` is Codex. Do not launch a child and ask it where it came from. Two strong matches is ambiguous. Write nothing until the session is known.
 
-### 2. Load current state
+### 2. Read the current sheet
 
-Read the per-app sheet for the parent when it exists and parse it with
-`loadRoleMap(text, parent)`. New sheets are grammar 3.
-A grammar 2 or grammar 1 sheet migrates in memory as `provider-dispatch.md`
-describes; new writes never emit either form. Normalize rolling aliases
-`claude-fable-*` and `claude-opus-*` in memory, preserving provider, effort, role,
-and lane order. Record migrations for confirmation. After the sheet is loaded,
-refresh the Codex model list with `codex debug models`. Never pass `--bundled`.
-Parse that stdout with `parseCodexDebugModels`. A failed refresh is an unknown
-list (`probedModels` omitted), not an empty list: report it. Do not sole-map
-slugs while the list is unknown. When the refresh succeeds, pass that list to
-`proposeStalePinMigrations`. A slug on the list is not a proposal. A slug on
-neither the shipped catalog nor the list stays unmatched for step 3. Do not
-rewrite a route until the operator accepts a proposal. Unaccepted rows stay
-inconsistent at step 3. Also read a `# budget:` line when the sheet has one, and
-name that current budget later when asking. A missing line means no recorded
-budget yet. If the current sheet is missing, read the previous `pstack-models`
-path for that parent as inbound migration. If that is also missing, use the
-complete first-run role map below.
+Read the active sheet as text. Keep every role line you can read. Drop a line whose role is not in the role table in `provider-dispatch.md`. Report a duplicate role before you go on. Read an old `claude-fable-<N>` or `claude-opus-<N>` as `fable` or `opus`, and record each such change for confirmation. A `Descriptor grammar:` header and a `# budget:` line are prose. Name the recorded budget when you ask in step 4.
 
-Discover the catalog's apps and classify each as installed, launch-ready, or
-unknown. Discovery does not enable apps. A duplicate role row is
-inconsistent state; report it before probing. A line whose role is not in
-the step 7 map, such as `how critics`, is from a retired role. Drop it. The
-parser ignores every line that is not a role row, so prose stays readable.
+If the host sheet is missing and the session is a delegate host, read the per-app sheet for this harness as a starting point. Show each carried-over role. A bare model in it becomes `<this harness's provider>:<model>`, because a host sheet needs a provider on every Route. If no sheet exists, use the first-run map in step 6.
 
-### 3. Parse selected routes
+### 3. Learn what this session can run
 
-The four-row model matrix names each family's blank-sheet default. It is not
-the allowlist. A slug is consistent when the shipped catalog or this session's
-refreshed Codex model list contains it. Parse Route wire values as
-`provider:model@effort`. The effort is required; a migrated grammar 2 route
-without one is inconsistent until the operator names its effort.
-`inherit-parent` and `auto` carry no Route. Do not infer a provider from a
-vendor. An effort is inconsistent when the catalog does not list it for that
-model on that provider, such as `cursor:grok-4.7@max`. An unmatched
-provider/model means the slug is absent from both the shipped catalog and the
-refreshed list. An unmatched provider/model, out-of-domain effort, or
-duplicate role is inconsistent state. Stop and show the conflicting rows. Do not probe or
-write while any inconsistency is unresolved. A sheet written before this
-Cursor 0.15.5 Grok default pins the old default models. Delete those role
-lines, or delete the file, then run `/setup-engineering-toolkit` again. A
-rerun keeps any role whose model differs from the default.
+The host's own model list is the source of truth. There is no shipped catalog.
+
+- **Delegate host.** Call `orchestrator_capabilities` once and keep the list. Each Route is checked as `t3-tools.md` resolves it: instance, model, effort. Show the instances that do serve a model that missed, and let the operator pick one or `inherit-parent`. Do not pick for them.
+- **Claude Code.** `Agent` accepts the model aliases `sonnet`, `opus`, `haiku`, and `fable`, and the efforts `low`, `medium`, `high`, `xhigh`, and `max`. Map each Route's model to an alias as `provider-dispatch.md` says.
+- **Codex.** Run `codex debug models` and read its stdout as the list. Never pass `--bundled`. A failed run is an unknown list: report it, and do not accept a model on faith.
+- **Cursor.** Read this session's `Task` model list. A family and effort need an exact selector there.
+
+On a session that is not a delegate host, a Route whose provider is not the parent's own is a named dropout, as `provider-dispatch.md` says. Keep it if the operator wants it, because a delegate host can still run it. Say that it drops out here. A model the list does not contain, or an effort it does not list, is inconsistent state. Stop and show the conflicting rows. Do not probe or write while any is unresolved.
 
 ### 4. Ask for a budget, then apply it
 
-**(a) Ask for a budget.** Prefer AskQuestion. On Claude Code that tool is AskUserQuestion. Offer these four options with these exact labels, and name the current budget when the sheet recorded one.
+Prefer AskQuestion. On Claude Code that tool is AskUserQuestion. Offer these four options with these exact labels, and name the current budget when the sheet recorded one.
 
 - `unlimited, keep max`
 - `large, xhigh reasoning`
 - `medium, high reasoning`
 - `small, medium reasoning`
 
-**(b) Apply it.** Every run, build the working table from the skill defaults in step 7 first. On a re-run, keep any role the operator already changed by family, list, or alias (`inherit-parent`, `auto`). Then apply the budget. `unlimited` leaves every effort as in that table. The other three set the `@effort` of every real Route, panel lanes included, to `xhigh`, `high`, or `medium`. `inherit-parent` and `auto` do not change. If the catalog does not list the target effort for that model on that provider, use its highest listed effort at or below the target, else mark the role as needing a choice. For example, `small` turns `claude:fable@max` into `claude:fable@medium` and `grok:grok-4.7@xhigh` into `grok:grok-4.7@medium`, and `unlimited` leaves `cursor:grok-4.7@xhigh` at `xhigh` because Cursor lists no `max` for it.
+Every run, build the working table from step 6 first. On a rerun, keep any role the operator already changed. Then apply the budget. `unlimited` leaves every effort as in the table. The other three set the `@effort` of every real Route, panel lanes included, to `xhigh`, `high`, or `medium`. `inherit-parent` and `auto` do not change. A Route with no `@effort`, or an effort that is not on the `low`, `medium`, `high`, `xhigh`, `max` ladder, does not change. If the model does not list the target effort, use the highest listed ladder effort at or below it, else mark the role as needing a choice.
 
-**(c) Confirm stays in steps 6 and 7.** Do not repeat the role-confirm questions here.
+### 5. Probe the selected routes
 
-### 5. Probe selected routes
+Probe only the selected Routes, after the budget remap. Spawn one read-only child per Route, with the Route's model and effort, through this session's spawn primitive (`Agent` with `et:pstack-lane`, `spawn_agent`, `Task`, or `delegate_task`). It returns a unique marker and names its own model. A child that names the parent model, when the Route names another model, fails the probe. A login check alone proves credentials, not that the model and effort run.
 
-Probe only selected routes used by the sheet, after the step 4 budget remap, not the pre-budget efforts. Do not blindly probe four
-families when the sheet does not use them. If first-run still proposes the
-four matrix families, probe those selected rows only. Distinguish installed,
-launch-ready, and unknown. A failed probe writes nothing: report the failing
-route and keep the active sheet plus parent integration bytes unchanged. A
-failed first run creates neither artifact.
+On Cursor, a Route needs an exact selector for its family and effort in the session's `Task` list. Without one the Route is unknown, not ready. Do not guess a selector, and do not accept another revision. A named dropout on this session is not probed and does not block the write.
 
-| Family | Pair source | Claude parent | Codex parent | Cursor parent | Availability proof |
-|---|---|---|---|---|---|
-| Fable | Fable matrix row + selected effort | native Agent `pstack-lane` with `model` `fable` and the effort | dropout | native Task `pstack-lane` plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
-| Sol | Sol matrix row + selected effort | `codex exec` | native `spawn_agent` | dropout | `codex debug models` without `--bundled` as the model list, plus `codex login status` plus one-turn probe or native one-turn probe |
-| Grok | Grok matrix row + selected effort | Grok CLI | dropout | native Task host-spawn | native one-turn probe or `grok models` plus one-turn probe |
-| Opus | Opus matrix row + selected effort | native Agent `pstack-lane` with `model` `opus` and the effort | dropout | native Task `pstack-lane` plus live family selector | native one-turn probe or `claude auth status --json` plus one-turn probe |
-| Sonnet 5.5 | Additional selectable-model row + selected effort | native Agent `pstack-lane` with `model` `sonnet` and the effort | dropout | native Task `pstack-lane` plus exact live selector for the resolved effort | native one-turn probe or `claude auth status --json` plus one-turn probe |
+A failed probe writes nothing. Report the failing Route and keep the active sheet and its wiring unchanged. A failed first run creates neither file. There is no implicit timeout. Receipts and transcripts prove the requested route, not hidden applied reasoning depth.
 
-Use a tiny read-only probe that returns a unique marker. A login-status
-command alone proves credentials, not that the selected model and effort run.
-A Cursor plugin-agent probe must also prove the child is the requested family.
-Ask the child which model it is. A reply that names the parent model, or that
-matches `inherit`, fails the probe. Passing only the unique marker is not
-enough. If this session's Task model list has no selector for that family and
-effort, the route is unknown, not launch-ready.
-Only the exact Cursor selector for the resolved Sonnet effort qualifies. The
-selector suffix must match the effort, such as `claude-sonnet-5-5-xhigh`. Do
-not guess a selector or accept another Sonnet revision.
-A `cursor:` route from a Claude Code parent is external. Probe it
-with `cursor-agent status` plus a one-turn `pstack-runner --app cursor`
-probe. Record native and external results separately. Never call the external
-launcher for a same-host route.
-
-On a Codex or Cursor parent that is not a delegate host, a Route for another
-provider is a named dropout (`dropout` in the table above). Do not probe it and
-do not call the launcher. It is not a failed probe and does not block the write.
-
-Receipts and native transcripts prove the requested effort and route. They do
-not prove hidden applied reasoning depth. There is no implicit timeout,
-weaker-model fallback, same-host external fallback, or second mutable
-configuration source.
-
-### 6. Render, preserving role families
+### 6. Render
 
 Build the new sheet in memory. Do not write it yet.
 
-- First run: start from the complete role assignments in step 7.
-- Rerun: start from the normalized complete role map from step 2, preserving
-  each loaded row's lane order and Route provider/model per lane.
+**Rerun.** Start from the roles step 2 read, in their order.
 
-After route selection, ask whether to keep those role assignments or change
-named roles. Keeping them is the default. Apply only named changes. A changed
-role may use a selected Route, `inherit-parent`, or `auto`. Keep every
-documented role key.
+**First run.** Start from the upstream roles, one family each, and keep only the families this session serves natively. Write the model bare on a per-app sheet. On a host sheet, write `<provider>:<model>` using the instance that serves it, and ask when two do.
 
-### 7. Confirm and commit
+| Family | Roles that use it |
+|---|---|
+| Fable | `judgment and prose`, `hardest tasks`, `how explainer` |
+| Sol | `bug-fix`, `perf-issue`, `hillclimb` |
+| Grok | `feature, refactoring`, `how explorer`, `swarm workers` |
+| Opus | none single; it is a panel lane only |
 
-Show app discovery, readiness, rolling-alias migrations, the chosen budget
-label and target effort, the route table for this parent, every rendered
-role and Route wire value, and each line step 2 dropped. On a Codex or Cursor
-parent that is not a delegate host, list each role whose Route names another
-provider and say that it will drop out on this host, with no substitution. Offer
-to change it to a native Route or `inherit-parent`; keeping it is allowed,
-because a delegate host on the same harness can still run it. Ask for confirmation before writing.
+Each panel role (`arena runners`, `arena cross-judge pool`, `architect runners`, `interrogate reviewers`) gets one lane per served family: Fable, Sol, Grok, Opus. A role whose family this session does not serve is `inherit-parent`. If no family is served, a panel is the single entry `inherit-parent`, and the report says that a panel has no diversity until a second model is configured. The two parent-bound roles are always `inherit-parent`.
 
-Every selected route must have passed step 5, except a named dropout. Why and Reflect require the
-parent's live MCP surface. Keep their roles on `inherit-parent` or `auto`;
-external override is a typed reject. `inherit-parent` and `auto` always
-validate, but say when they reduce a panel's provider diversity. For panel
-roles, one lane runs per entry. The list length is the fan-out count.
+After route selection, ask whether to keep the role assignments or change named roles. Keeping them is the default. A changed role may use a selected Route, `inherit-parent`, or `auto`. Keep every role line in the file.
 
-After the operator confirms, write the in-memory render from step 6, including a `# budget:` line with the chosen label and target effort. Never paste the example below as the result. It is only the complete first-run role map used to seed step 2; selected efforts and explicit role changes always replace its example values before writing.
+### 7. Confirm and write
+
+Show the session kind, what the host serves, each carried-over change, the budget label and target effort, every rendered role line, and each line step 2 dropped. Say when `inherit-parent` or `auto` reduces a panel's diversity. Ask for confirmation before writing.
+
+After the operator confirms, snapshot every target's current bytes. Write the sheet and its wiring, then read each target back and compare it with the render. If a write or readback fails, restore every snapshot and report the failure. Delete the previous `pstack-models` sheet for this parent after a confirmed readback, and replace its include or marker pair with the new one in the same write. Do not leave both sheets.
+
+The sheet body is:
 
 ```markdown
 # Engineering Toolkit model configuration
+<the scope line, on a per-app sheet only>
 
-Descriptor grammar: 3
-
-Route choices. Each route is provider:model@effort. First-run uses the
-parent's provider when the live parent already serves that model, and the
-family's CLI home otherwise. The example below is the Claude Code render. On
-Cursor, Fable, Opus, and Grok use cursor. On Codex, Sol uses codex natively
-and Fable and Opus use claude. Every documented role remains present.
-The Codex render is for a Codex delegate host; a Codex session that is not one reports a dropout for each Claude, Cursor, or Grok Route.
-`inherit-parent` and `auto` use the parent model natively and still count as
-one panel lane. For an explicitly selected Sonnet 5.5 route, omit the app on
-Claude Code or Cursor, and name `claude-code` on Codex.
-
-# budget: unlimited (max)
-feature, refactoring: grok:grok-4.7@xhigh
-bug-fix: codex:gpt-6-sol@max
-perf-issue: codex:gpt-6-sol@max
-hillclimb: codex:gpt-6-sol@max
-judgment and prose: claude:fable@max
-hardest tasks: claude:fable@max
-how explorer: grok:grok-4.7@xhigh
-how explainer: claude:fable@max
+# budget: <label> (<effort>)
+feature, refactoring: <entry>
+bug-fix: <entry>
+perf-issue: <entry>
+hillclimb: <entry>
+judgment and prose: <entry>
+hardest tasks: <entry>
+how explorer: <entry>
+how explainer: <entry>
 why investigators, synthesizer: inherit-parent
 reflect tooling, judgment, divergent, synthesizer: inherit-parent
-arena runners: claude:fable@max, codex:gpt-6-sol@max, grok:grok-4.7@xhigh, claude:opus@xhigh
-arena cross-judge pool: claude:fable@max, codex:gpt-6-sol@max, grok:grok-4.7@xhigh, claude:opus@xhigh
-swarm workers: grok:grok-4.7@xhigh
-architect runners: claude:fable@max, codex:gpt-6-sol@max, grok:grok-4.7@xhigh, claude:opus@xhigh
-interrogate reviewers: claude:fable@max, codex:gpt-6-sol@max, grok:grok-4.7@xhigh, claude:opus@xhigh
+arena runners: <entry>, <entry>
+arena cross-judge pool: <entry>, <entry>
+swarm workers: <entry>
+architect runners: <entry>, <entry>
+interrogate reviewers: <entry>, <entry>
 ```
 
-### 8. Wire it in
+Never write the example host sheet in `t3-tools.md` as the default. Do not copy a sheet between harnesses without rerunning step 5: availability differs even on the same host.
 
-Render the parent integration in memory before
-either write. On Claude, the integration is the single
-`@~/.claude/engineering-toolkit-models.md` include in `~/.claude/CLAUDE.md`. On
-Codex, it is the exact sheet bytes between one
-`<!-- engineering-toolkit:models:begin -->` and
-`<!-- engineering-toolkit:models:end -->` pair in `~/.codex/AGENTS.md`. Replace
-that whole bounded block on a rerun. Insert one block at the end on first run.
-If either marker is missing, duplicated, or reversed, stop and report
-inconsistent state instead of guessing a boundary. On Cursor, the `.mdc` is both
-the sheet and the load hook. Wrap `printRoleMap` in the canonical always-apply
-frontmatter. Read back the grammar 3 body, not the YAML wrapper. Every render
-uses `printRoleMap(roles, { scope: "per-app" })`. After a
-confirmed write and readback, delete the previous `pstack-models` sheet for this
-parent. On Claude, replace `@~/.claude/pstack-models.md` with the new include.
-On Codex, replace a `pstack:models` marker pair with the new markers in the same
-write. Do not leave both sheets.
+### 8. Smoke
 
-Snapshot every target's current bytes. Write the sheet and parent integration
-only after all selected probes pass and the operator
-confirms. Read every written target back and compare it with the in-memory
-render. If either write or readback fails, restore every snapshot and report the
-failure.
+Before you call setup complete, read the written sheet back and check that every role line from the render is present, once. Then run one small read-only mixed panel from this session using the selected routes, with distinct output paths and an independent cross-judge. Start the lanes in the background, then drain them. Verify each child's transcript names the assigned model. A file check is not a substitute.
 
-Do not copy a model sheet between harnesses without rerunning the
-parent-specific probes; route availability can differ even on the same host.
-
-### 9. Behavioral smoke
-
-Before declaring setup complete, parse the written sheet body with
-`loadRoleMap(body, parent)` and compare the result with the in-memory role map.
-A parse error or mismatch fails setup; restore the snapshots. `<plugin root>`
-is the installed plugin directory and `<parent>` is `claude-code`, `codex`, or
-`cursor`. The command exits non-zero and prints the typed error on failure:
-
-```shell
-PLUGIN_ROOT=<plugin root> bun -e 'const [sheetPath, parent] = process.argv.slice(-2); const root = process.env.PLUGIN_ROOT; const { unwrapStoredSheet } = await import(`${root}/skills/engineering-mode/scripts/routing/parent.ts`); const { loadRoleMap } = await import(`${root}/skills/engineering-mode/scripts/routing/sheet.ts`); const body = unwrapStoredSheet(await Bun.file(sheetPath).text()); const parsed = body.ok ? loadRoleMap(body.value, parent) : body; console.log(JSON.stringify(parsed.ok ? "ok" : parsed.error)); process.exit(parsed.ok ? 0 : 1);' <sheet path> <parent>
-```
-
-Then run one
-small read-only mixed panel from this parent using selected routes (native routes only
-on a Codex or Cursor parent that is not a delegate host), distinct output/receipt paths, and an
-independent cross-judge. Launch native agents and external processes in the
-background with retained handles, then drain them. Verify transcripts and
-receipts. A structural config check or unit test is not a substitute.
-
-Report the sheet path, parent route table, requested-effort probe results,
-smoke results, and external elapsed/token/cost receipts. Re-running this skill
-re-probes and updates the same sheet. Do not claim the provider exposed hidden
-applied-effort observability.
-
-## Delegate-host run
-
-On a delegate host, run steps 1 to 9 with these replacements. The capability
-list from `orchestrator_capabilities` is the source of truth for every check
-that the shipped catalog or `codex debug models` makes in a per-app run.
-
-- **Step 1.** The host sheet does not depend on the parent, so do not stop when
-  the parent is not Claude Code, Codex, or Cursor (for example, an OpenCode
-  instance). Call `orchestrator_capabilities` once and keep the list. Record the
-  parent harness only when the step 1 tool surface identifies it; it is used only
-  for the inbound migration below.
-- **Step 2.** Read `~/.agents/engineering-toolkit-models.md` and parse it with
-  `loadHostRoleMap(text)`. A grammar 1 or grammar 2 host sheet is inconsistent
-  state: show the error and do not write until the operator fixes it. If the host
-  sheet is missing and the parent is known, read the parent's per-app sheet (or
-  its `pstack-models` sheet) with `loadRoleMap(text, parent)` as inbound
-  migration. That parse makes every provider explicit. Show each migrated role
-  and Route for confirmation in step 7, as for any other migration. If there is
-  no per-app sheet, use the step 7 first-run map, with each family on its home
-  provider (`claude:` for Fable and Opus, `codex:` for Sol, `grok:` for Grok),
-  whatever the parent is. Do not run `codex debug models` or
-  `proposeStalePinMigrations`.
-- **Step 3.** Check each Route with the Routes resolution in `t3-tools.md`
-  (instance, model, effort) against the capability list, not against the shipped
-  catalog. Each failure tag is inconsistent state. Show the instances that do
-  serve that model, and let the operator pick one or `inherit-parent`. Do not
-  pick for them.
-- **Step 4.** When the budget's target effort is not offered, use the highest
-  effort at or below it that the capability list offers for that model.
-- **Step 5.** Probe each selected Route with one read-only `delegate_task` that
-  returns a unique marker and names its model. A child that names the parent
-  model, when the Route names another model, fails the probe.
-- **Step 8.** Write only `~/.agents/engineering-toolkit-models.md` (create
-  `~/.agents/` if needed). Its body is `printRoleMap(roles)`, with no scope line,
-  no YAML wrapper, and no include markers. Do not remove the per-app sheet or
-  its include, block, or rule: sessions that are not delegate hosts still use
-  them. If the parent's per-app sheet exists without the scope line, offer to
-  add it. Re-render that sheet, and on Codex its `AGENTS.md` block, with
-  `printRoleMap(roles, { scope: "per-app" })` from its own loaded roles, so
-  that no Route changes. Snapshot, write, and read back each target as for the
-  host sheet. The example host sheet in `t3-tools.md` is never the written
-  default.
-- **Step 9.** Parse the written body with `loadHostRoleMap`, and run the panel
-  smoke through `delegate_task`.
+Report the sheet path, the Route table for this session, the probe results, and the smoke results. Rerunning this skill re-probes and updates the same sheet.
