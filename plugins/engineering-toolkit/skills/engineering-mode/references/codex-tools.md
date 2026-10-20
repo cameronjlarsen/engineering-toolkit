@@ -42,7 +42,7 @@ engineering-mode's Subagents section sets Claude-specific defaults (`subagent_ty
 
 ## Models and providers
 
-Do not replace every configured entry with a Codex model. `/setup-engineering-toolkit` writes provider-qualified values such as `claude:fable@max`, `codex:gpt-6-sol@max`, `grok:grok-4.7@xhigh`, and `cursor:grok-4.7@high`. In a Codex parent, only `codex:...` is native. With no `delegate_task`, a `claude:`, `cursor:`, or `grok:` Route is a named dropout, as `provider-dispatch.md` specifies: report the role and Route, and start no external launcher and no substitute. A panel continues with the lanes that ran and says how many providers ran. A Codex thread with `delegate_task` follows the Delegation host contract in `t3-tools.md` for Routes and the active sheet.
+Do not replace every configured entry with a Codex model. `/setup-engineering-toolkit` writes provider-qualified values such as `claude:fable@max`, `codex:gpt-6-sol@max`, `grok:grok-4.7@xhigh`, and `cursor:grok-4.7@high`. In a Codex parent, only `codex:...` is native. When the session is not a delegate host, a `claude:`, `cursor:`, or `grok:` Route is a named dropout, as `provider-dispatch.md` specifies: report the role and Route, and start no external launcher and no substitute. A panel continues with the lanes that ran and says how many providers ran. On a delegate host, [`t3-tools.md`](t3-tools.md) sets the active sheet and resolves Routes.
 
 ## Claude built-in skills these skills reference
 

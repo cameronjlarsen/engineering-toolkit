@@ -1,8 +1,8 @@
 # Delegation host contract
 
-Shared skills keep Claude Code tool language (`Skill`, `Agent`, `AskUserQuestion`). This file is the contract for any session that can list provider capabilities and delegate a child to a chosen provider, model, and effort. Today that surface is T3 Code's `delegate_task` and `orchestrator_capabilities`. Without both tools, the parent app's mapping applies: [`codex-tools.md`](codex-tools.md) on Codex, [`cursor-tools.md`](cursor-tools.md) on Cursor, Claude's names as written on Claude Code.
+Shared skills keep Claude Code tool language (`Skill`, `Agent`, `AskUserQuestion`). This file is the contract for a **delegate host**: a session that has both a capability list and a delegate tool, so it can start a child on a chosen provider, model, and effort. Today those tools are T3 Code's `orchestrator_capabilities` and `delegate_task`. A session with only one of them is not a delegate host. The parent app's mapping applies there and in every other session: [`codex-tools.md`](codex-tools.md) on Codex, [`cursor-tools.md`](cursor-tools.md) on Cursor, Claude's names as written on Claude Code.
 
-Skills that dispatch roles read the **active model sheet** through the resolution order below. They do not hard-code a host tool name.
+This file is the only place that defines a delegate host and the active model sheet. Other files link here instead of restating the rule.
 
 ## What a host must provide
 
@@ -12,63 +12,61 @@ Skills that dispatch roles read the **active model sheet** through the resolutio
 | Spawn | Start a child with an explicit target (instance, model, effort options), an async mode, a stable client request id, and a complete brief. Parallel fan-out is N spawn calls in one turn. |
 | Wait | End the turn after dispatch. A child's completion wakes the parent. Probe status mid-turn only when a result is needed before the wake. |
 | Steer / cancel | Cancel a running child and wait until it is terminal. A follow-up to a finished child is a fresh spawn with a consolidated brief, not a silent resume that changes the Route. |
-| Model + effort | Resolve `[provider:]model@effort` against the live capability list. No substitution: a miss is a named dropout. `inherit-parent` and `auto` omit the target so the child runs on the parent's model. |
+| Model + effort | Resolve `provider:model@effort` against the live capability list. No substitution: a miss is a named dropout. `inherit-parent` and `auto` omit the target so the child runs on the parent's model. |
 | Existing-worktree attach | A writer may run in a dedicated worktree or unique output directory the parent already created. Pass absolute paths in the brief. The host does not invent a second checkout policy; it attaches to the path the parent assigned. |
 
 A child gets only its brief. A persona (`engineering-agent`, `comment-sicko`) is a brief that opens with "Read `<plugin root>/agents/<name>.md` in full and act as it says".
 
 ## Active model sheet
 
-Sheet line format is the same everywhere: `[provider:]model@effort`, or `inherit-parent` / `auto`. Grammar 3 writes the provider prefix. A bare slug is valid when the sheet uses one. Only a session with a delegate tool acts on a provider prefix. On any other host, a prefixed Route that names another provider is a named dropout ([`provider-dispatch.md`](provider-dispatch.md)).
+Skills that dispatch roles read the active model sheet. Never rewrite a Route onto another model.
 
-**Which sheet counts** (never rewrite a Route onto another model; never sync one sheet into the other):
+**On a delegate host**, only the host sheet `~/.agents/engineering-toolkit-models.md` counts.
 
-- **Session with a delegate tool.** Only `~/.agents/engineering-toolkit-models.md` counts. Skills read that path. Ignore every per-app sheet for that session. If the host sheet is missing, or a role line is missing, the role is `inherit-parent`.
-- **Session without a delegate tool.** Only the per-app sheet for the parent harness counts:
-  - Claude Code: `~/.claude/engineering-toolkit-models.md`
-  - Codex: `~/.codex/engineering-toolkit-models.md`
-  - Cursor: `~/.cursor/rules/engineering-toolkit-models.mdc`
-  If that sheet is missing, or a role line is missing, the role is `inherit-parent`.
+- One host sheet serves every parent harness, so it must not depend on the parent. It is grammar 3, and every Route names its provider (`provider:model@effort`). Parse it with `loadHostRoleMap` in `scripts/routing/sheet.ts`, which rejects grammar 1 and grammar 2. If the host sheet does not parse, every role runs on `inherit-parent`, and the ledger reports `host sheet invalid: <error tag>`.
+- If the host sheet is missing, or a role line is missing, the role is `inherit-parent`. If the host sheet is missing and the parent's per-app sheet exists, report once in the ledger: `host sheet missing; <per-app path> ignored; run /setup-engineering-toolkit to migrate it`. Do not read Routes from the per-app sheet.
+- An instruction file can load a per-app sheet into context on every session: the `@` include in `~/.claude/CLAUDE.md`, the marker block in `~/.codex/AGENTS.md`, or Cursor's always-apply `.mdc`. On a delegate host, ignore that text, with or without its scope line (below). Setup leaves these hooks in place, because sessions that are not delegate hosts still need them.
 
-`/setup-engineering-toolkit` writes the host sheet when the session has a delegate tool, and the per-app sheet otherwise. It never copies between them.
+**In every other session**, only the per-app sheet for the parent harness counts:
 
-### Example host sheet (commented; not a default)
+- Claude Code: `~/.claude/engineering-toolkit-models.md`
+- Codex: `~/.codex/engineering-toolkit-models.md`
+- Cursor: `~/.cursor/rules/engineering-toolkit-models.mdc`
 
-Cameron's budget split. Copy into `~/.agents/engineering-toolkit-models.md` only after editing for the models your `orchestrator_capabilities` list actually serves. Opus through a Cursor instance bills shared Cursor usage; keep Opus on the Claude seat (`claude:…`), not `cursor:opus`.
+If that sheet is missing, or a role line is missing, the role is `inherit-parent`. A Route that names another provider is a named dropout ([`provider-dispatch.md`](provider-dispatch.md)). Setup writes the per-app sheet with this scope line under its title, so a reader of the always-loaded text knows when it applies:
+
+```text
+# Applies only without delegate_task. With delegate_task, use ~/.agents/engineering-toolkit-models.md and ignore this sheet.
+```
+
+`/setup-engineering-toolkit` writes the host sheet on a delegate host and the per-app sheet otherwise.
+
+### Example host sheet
+
+This example is not a default, and setup never writes it unless the operator asks for it. It splits work across three providers: Claude for judgment and prose, Cursor's Grok for throughput, and Codex's Sol for bug, perf, and hillclimb work. Before you use it, replace every Route that your capability list does not serve with a Route it does serve. Use the exact model `id` that the list reports. Do not choose a closest match.
 
 ```markdown
 # Engineering Toolkit model configuration
-# Example only. Not written by setup unless you ask for this budget.
 
 Descriptor grammar: 3
 
-# Claude seat (judgment / hard prose)
-judgment and prose: claude:opus@medium
-hardest tasks: claude:opus@medium
-how explainer: claude:opus@medium
-
-# Included Cursor pool (throughput)
+# budget: medium (high)
+judgment and prose: claude:opus@high
+hardest tasks: claude:opus@high
+how explainer: claude:opus@high
 feature, refactoring: cursor:grok-4.7@high
 how explorer: cursor:grok-4.7@high
 swarm workers: cursor:grok-4.7@high
-
-# Codex (bug / perf / hillclimb)
-bug-fix: codex:gpt-6.1-sol@high
-perf-issue: codex:gpt-6.1-sol@high
-hillclimb: codex:gpt-6.1-sol@high
-
-# Panels: three runners (opus + sol + grok). Not Opus-through-Cursor.
-arena runners: claude:opus@medium, codex:gpt-6.1-sol@high, cursor:grok-4.7@high
-arena cross-judge pool: claude:opus@medium, codex:gpt-6.1-sol@high, cursor:grok-4.7@high
-architect runners: claude:opus@medium, codex:gpt-6.1-sol@high, cursor:grok-4.7@high
-interrogate reviewers: claude:opus@medium, codex:gpt-6.1-sol@high, cursor:grok-4.7@high
-
-# MCP-bound roles stay on the parent
+bug-fix: codex:gpt-6-sol@high
+perf-issue: codex:gpt-6-sol@high
+hillclimb: codex:gpt-6-sol@high
+arena runners: claude:opus@high, codex:gpt-6-sol@high, cursor:grok-4.7@high
+arena cross-judge pool: claude:opus@high, codex:gpt-6-sol@high, cursor:grok-4.7@high
+architect runners: claude:opus@high, codex:gpt-6-sol@high, cursor:grok-4.7@high
+interrogate reviewers: claude:opus@high, codex:gpt-6-sol@high, cursor:grok-4.7@high
 why investigators, synthesizer: inherit-parent
 reflect tooling, judgment, divergent, synthesizer: inherit-parent
 ```
-
-If a live capability list uses a different Sol id than `gpt-6.1-sol`, replace that token with the exact model `id` the host reports. Do not invent a closest match.
 
 ## T3 mapping
 

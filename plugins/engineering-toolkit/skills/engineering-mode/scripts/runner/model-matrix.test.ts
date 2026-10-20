@@ -517,7 +517,7 @@ describe("model matrix", () => {
     expect(normalization).toContain("runner rejects a missed Fable or Opus version pin");
   });
 
-  it("makes another provider's Route a named dropout on Codex and Cursor without delegate_task", () => {
+  it("makes another provider's Route a named dropout on Codex and Cursor that are not delegate hosts", () => {
     const flat = (path: string) =>
       readFileSync(path, "utf8").replaceAll("\r\n", "\n").replace(/\s+/g, " ");
     const table = dispatch
@@ -532,7 +532,7 @@ describe("model matrix", () => {
     const rule = "is a named dropout";
     for (const text of [flat(DISPATCH_PATH), flat(CODEX_TOOLS_PATH), flat(CURSOR_TOOLS_PATH)]) {
       expect(text).toContain(rule);
-      expect(text).toContain("no `delegate_task`");
+      expect(text).toContain("not a delegate host");
     }
     const flatDispatch = flat(DISPATCH_PATH);
     expect(flatDispatch).not.toContain("from any other parent");

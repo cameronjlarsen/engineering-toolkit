@@ -5,7 +5,8 @@ import {
   type AppId,
   type Effort,
 } from "./route.ts";
-import { loadRoleMap, printRoleMap } from "./sheet.ts";
+import { shippedCatalog } from "./catalog.ts";
+import { PER_APP_SCOPE_LINE, loadHostRoleMap, loadRoleMap, printRoleMap } from "./sheet.ts";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -351,28 +352,50 @@ describe("sheet budget comment", () => {
   });
 });
 
-describe("host-sheet example budget", () => {
-  it("parses the example block from t3-tools.md", () => {
+describe("host sheet", () => {
+  function contractExample(): string {
     const contract = readFileSync(
       join(import.meta.dir, "../../references/t3-tools.md"),
       "utf8"
-    );
-    const fence = /```markdown\n([\s\S]*?)\n```/.exec(contract);
-    expect(fence).not.toBeNull();
-    if (fence === null) return;
-    const example = fence[1];
-    expect(example).toContain("Descriptor grammar: 3");
-    const result = loadRoleMap(example, "claude-code");
+    ).replace(/\r\n/g, "\n");
+    const section = contract.split(/^### Example host sheet$/m)[1] ?? "";
+    const fence = /^```markdown\n([\s\S]*?)^```$/m.exec(section);
+    if (fence === null) throw new Error("t3-tools.md has no example host sheet");
+    return fence[1];
+  }
+
+  it("parses the documented example without a parent", () => {
+    const result = loadHostRoleMap(contractExample());
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value["judgment and prose"]).toEqual(routeValue("opus", "claude-code", "medium"));
-    expect(result.value["feature, refactoring"]).toEqual(routeValue("grok-4.7", "cursor", "high"));
-    expect(result.value["bug-fix"]).toEqual(routeValue("gpt-6.1-sol", "codex", "high"));
+    expect(result.value["bug-fix"]).toEqual(routeValue("gpt-6-sol", "codex", "high"));
     expect(result.value["arena runners"]).toEqual([
-      routeValue("opus", "claude-code", "medium"),
-      routeValue("gpt-6.1-sol", "codex", "high"),
+      routeValue("opus", "claude-code", "high"),
+      routeValue("gpt-6-sol", "codex", "high"),
       routeValue("grok-4.7", "cursor", "high"),
     ]);
-    expect(result.value["why investigators, synthesizer"]).toEqual({ kind: "inherit-parent" });
+    const catalog = shippedCatalog();
+    for (const binding of Object.values(result.value).flat()) {
+      if (binding.kind !== "route") continue;
+      const { app, model, effort } = binding.route;
+      expect(catalog.get(app)?.models.get(model)?.efforts).toContain(effort);
+    }
+  });
+
+  it("rejects a grammar 2 sheet, whose bare slugs would depend on the parent", () => {
+    expect(loadHostRoleMap(sheet({ "bug-fix": "gpt-6-sol@high" }, "2"))).toEqual({
+      ok: false,
+      error: { tag: "host-sheet-needs-grammar-3", grammar: 2 },
+    });
+  });
+
+  it("scopes a per-app sheet to sessions without delegate_task", () => {
+    const loaded = loadRoleMap(sheet(), "claude-code");
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok) return;
+    const perApp = printRoleMap(loaded.value, { scope: "per-app" });
+    expect(perApp.split("\n")[1]).toBe(PER_APP_SCOPE_LINE);
+    expect(loadRoleMap(perApp, "claude-code")).toEqual(loaded);
+    expect(printRoleMap(loaded.value)).not.toContain(PER_APP_SCOPE_LINE);
   });
 });
