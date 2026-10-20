@@ -1,6 +1,6 @@
 # Codex tool mapping for Engineering Toolkit
 
-Shared skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuestion`) in shared prose. On Codex the files are the same; only those tool names resolve differently. Model execution is not translated here. Read [`provider-dispatch.md`](provider-dispatch.md) for the parent-owned Claude/Codex/Cursor/Grok route table and typed Route values written as `provider:model@effort`.
+Shared skills retain Claude Code tool language (`Skill`, `Agent`, `AskUserQuestion`) in shared prose. On Codex the files are the same; only those tool names resolve differently. Model execution is not translated here. Read [`provider-dispatch.md`](provider-dispatch.md) for the model sheet, the Route format, and the dropout policy.
 
 ## Tool actions
 
@@ -42,7 +42,7 @@ engineering-mode's Subagents section sets Claude-specific defaults (`subagent_ty
 
 ## Models and providers
 
-Do not replace every configured entry with a Codex model. `/setup-engineering-toolkit` writes provider-qualified values such as `claude:fable@max`, `codex:gpt-6-sol@max`, `grok:grok-4.7@xhigh`, and `cursor:grok-4.7@high`. In a Codex parent, only `codex:...` is native. When the session is not a delegate host, a `claude:`, `cursor:`, or `grok:` Route is a named dropout, as `provider-dispatch.md` specifies: report the role and Route, and start no external launcher and no substitute. A panel continues with the lanes that ran and says how many providers ran. On a delegate host, [`t3-tools.md`](t3-tools.md) sets the active sheet and resolves Routes.
+Do not replace every configured entry with a Codex model. In a Codex parent, only a Route with no provider or with the provider `codex` is native. When the session is not a delegate host, a Route whose provider is not `codex` is a named dropout, as `provider-dispatch.md` specifies: report the role and Route, and start no other process and no substitute. A panel continues with the lanes that ran and says how many providers ran. On a delegate host, [`t3-tools.md`](t3-tools.md) sets the active sheet and resolves Routes.
 
 ## Claude built-in skills these skills reference
 

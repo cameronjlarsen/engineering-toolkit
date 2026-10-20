@@ -23,7 +23,7 @@ Skills that dispatch roles read the active model sheet. Never rewrite a Route on
 
 **On a delegate host**, only the host sheet `~/.agents/engineering-toolkit-models.md` counts.
 
-- One host sheet serves every parent harness, so it must not depend on the parent. It is grammar 3, and every Route names its provider (`provider:model@effort`). Parse it with `loadHostRoleMap` in `scripts/routing/sheet.ts`, which rejects grammar 1 and grammar 2. If the host sheet does not parse, every role runs on `inherit-parent`, and the ledger reports `host sheet invalid: <error tag>`.
+- One host sheet serves every parent harness, so it must not depend on the parent: every Route names its provider (`provider:model@effort`). A bare model in the host sheet is a dropout for that role, because no parent provider can complete it. The line format is in [`provider-dispatch.md`](provider-dispatch.md). A line the parent cannot read is a dropout for that role only, and the ledger reports `host sheet line unreadable: <role>`.
 - If the host sheet is missing, or a role line is missing, the role is `inherit-parent`. If the host sheet is missing and the parent's per-app sheet exists, report once in the ledger: `host sheet missing; <per-app path> ignored; run /setup-engineering-toolkit to migrate it`. Do not read Routes from the per-app sheet.
 - An instruction file can load a per-app sheet into context on every session: the `@` include in `~/.claude/CLAUDE.md`, the marker block in `~/.codex/AGENTS.md`, or Cursor's always-apply `.mdc`. On a delegate host, ignore that text, with or without its scope line (below). Setup leaves these hooks in place, because sessions that are not delegate hosts still need them.
 
@@ -43,27 +43,25 @@ If that sheet is missing, or a role line is missing, the role is `inherit-parent
 
 ### Example host sheet
 
-This example is not a default, and setup never writes it unless the operator asks for it. It splits work across three providers: Claude for judgment and prose, Cursor's Grok for throughput, and Codex's Sol for bug, perf, and hillclimb work. Before you use it, replace every Route that your capability list does not serve with a Route it does serve. Use the exact model `id` that the list reports. Do not choose a closest match.
+This example is not a default, and setup never writes it unless the operator asks for it. It splits work across three provider instances: Claude for judgment and prose, OpenCode for throughput, and Codex for bug, perf, and hillclimb work. Before you use it, replace every Route that your capability list does not serve with a Route it does serve. Use the exact model `id` and effort value that the list reports. Do not choose a closest match.
 
 ```markdown
 # Engineering Toolkit model configuration
-
-Descriptor grammar: 3
 
 # budget: medium (high)
 judgment and prose: claude:opus@high
 hardest tasks: claude:opus@high
 how explainer: claude:opus@high
-feature, refactoring: cursor:grok-4.7@high
-how explorer: cursor:grok-4.7@high
-swarm workers: cursor:grok-4.7@high
+feature, refactoring: opencode:opencode-go/glm-5.3@high
+how explorer: opencode:opencode-go/glm-5.3@high
+swarm workers: opencode:opencode-go/glm-5.3@high
 bug-fix: codex:gpt-6-sol@high
 perf-issue: codex:gpt-6-sol@high
 hillclimb: codex:gpt-6-sol@high
-arena runners: claude:opus@high, codex:gpt-6-sol@high, cursor:grok-4.7@high
-arena cross-judge pool: claude:opus@high, codex:gpt-6-sol@high, cursor:grok-4.7@high
-architect runners: claude:opus@high, codex:gpt-6-sol@high, cursor:grok-4.7@high
-interrogate reviewers: claude:opus@high, codex:gpt-6-sol@high, cursor:grok-4.7@high
+arena runners: claude:opus@high, codex:gpt-6-sol@high, opencode:opencode-go/glm-5.3@high
+arena cross-judge pool: claude:opus@high, codex:gpt-6-sol@high, opencode:opencode-go/glm-5.3@high
+architect runners: claude:opus@high, codex:gpt-6-sol@high, opencode:opencode-go/glm-5.3@high
+interrogate reviewers: claude:opus@high, codex:gpt-6-sol@high, opencode:opencode-go/glm-5.3@high
 why investigators, synthesizer: inherit-parent
 reflect tooling, judgment, divergent, synthesizer: inherit-parent
 ```
@@ -101,8 +99,8 @@ On a host that satisfies this contract, the delegate tool replaces the native an
 3. Resolve a Route `provider:model@effort` in this order. The first failure is a named dropout, and no step searches for an alternative.
    - **Instance.** The Route's provider names an instance: it equals the instance's `driverKind` or `providerInstanceId`, with `claude` naming `claudeAgent`. The instance must have `canRunChildTask`. With none, the dropout is `instance-missing`, or `instance-cannot-run` with the first entry of its `constraints`. With two or more, the dropout is `ambiguous-instance`. Do not choose by order. The toolkit keeps no list of providers. Whatever `orchestrator_capabilities` reports is the list.
    - **Model.** The Route's model must equal a model `id` in that instance exactly. Do not strip a prefix, match a bare name, or prefer one backend over another: `glm-5.3` does not match `opencode-go/glm-5.3`. A miss is `model-not-served`; list any ids that end in the requested name. The only exception is the Claude aliases `opus` and `fable`, which resolve to the model with the highest numeric revision among `claude-<alias>-N` and `claude-<alias>-N-M`, compared as (N, M) with M = 0 when absent. Never use list order. With no match the dropout is `alias-unresolved`.
-   - **Effort.** The effort option is the model's one select option whose values include the Route's effort, usually `effort`, `reasoningEffort` or `variant`. No such option is `effort-option-missing`. More than one is `ambiguous-effort-option`. A model with no options cannot carry an effort. The value must be listed verbatim, or the dropout is `effort-not-offered`. Never map `max` to `xhigh` or pick a nearby value.
-4. Pass `target: { providerInstanceId, model, options: { <effort option id>: <effort> } }`. Always pass the effort. Set no other option.
+   - **Effort.** When the Route has an `@effort`, the effort option is the model's one select option whose values include it, usually `effort`, `reasoningEffort` or `variant`. No such option is `effort-option-missing`. More than one is `ambiguous-effort-option`. The value must be listed verbatim, or the dropout is `effort-not-offered`. Never map `max` to `xhigh` or pick a nearby value. A Route with no `@effort` is valid only for a model that lists no effort option, such as `opencode-go/kimi-k2.7-code`. For a model that lists one, the dropout is `effort-required`.
+4. Pass `target: { providerInstanceId, model, options: { <effort option id>: <effort> } }`, or omit `options` for a model with no effort option. Set no other option.
 
 A Route names its harness. Never move a lane to another provider's instance, even when that instance serves the same model. Moving a lane is an edit to the sheet that the user accepts in setup.
 
