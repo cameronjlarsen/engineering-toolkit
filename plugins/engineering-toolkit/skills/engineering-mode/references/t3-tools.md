@@ -21,16 +21,16 @@ A child gets only its brief. A persona (`engineering-agent`, `comment-sicko`) is
 
 Sheet line format is the same everywhere: `[provider:]model@effort`, or `inherit-parent` / `auto`. Grammar 3 writes the provider prefix. A bare slug is valid when the sheet uses one. Only a session with a delegate tool acts on a provider prefix. On any other host, a prefixed Route that names another provider is a named dropout ([`provider-dispatch.md`](provider-dispatch.md)).
 
-**Resolution order** (first match wins; never rewrite a Route onto another model):
+**Which sheet counts** (never rewrite a Route onto another model; never sync one sheet into the other):
 
-1. **Host sheet**, when the session has a delegate tool and `~/.agents/engineering-toolkit-models.md` exists. Skills read that path.
-2. **Per-app sheet** for the parent harness, when it exists:
-   - Claude Code: `~/.claude/engineering-toolkit-models.md`
-   - Codex: `~/.codex/engineering-toolkit-models.md`
-   - Cursor: `~/.cursor/rules/engineering-toolkit-models.mdc`
-3. **Parent model**: if neither sheet exists, or a role line is missing, the role is `inherit-parent`.
+- **Session with a delegate tool.** Only `~/.agents/engineering-toolkit-models.md` counts. Skills read that path. Ignore every per-app sheet for that session. If the host sheet is missing, or a role line is missing, the role is `inherit-parent`.
+- **Session without a delegate tool.** Only the per-app sheet for the parent harness counts:
+  - Claude Code: `~/.claude/engineering-toolkit-models.md`
+  - Codex: `~/.codex/engineering-toolkit-models.md`
+  - Cursor: `~/.cursor/rules/engineering-toolkit-models.mdc`
+  If that sheet is missing, or a role line is missing, the role is `inherit-parent`.
 
-`/setup-engineering-toolkit` writes the per-app sheet for the current parent. In a session with a delegate tool it also writes or explains the host sheet. The host sheet, when present, supersedes the per-app sheet for that session only. It does not delete the per-app sheet.
+`/setup-engineering-toolkit` writes the host sheet when the session has a delegate tool, and the per-app sheet otherwise. It never copies between them.
 
 ### Example host sheet (commented; not a default)
 

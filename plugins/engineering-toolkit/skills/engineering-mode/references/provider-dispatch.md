@@ -2,7 +2,7 @@
 
 When the session has a delegate tool (`delegate_task` today), read the
 Delegation host contract in [`t3-tools.md`](t3-tools.md) first. Its active-sheet
-order and Routes section replace the native and external lanes below.
+rule and Routes section replace the native and external lanes below.
 
 Engineering Toolkit model choices are typed `Route` values written as
 provider-qualified descriptors:

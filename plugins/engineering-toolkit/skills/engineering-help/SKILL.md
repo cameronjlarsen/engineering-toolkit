@@ -23,7 +23,7 @@ Infer the need from the message and the conversation. A named situation, such as
 
 Check the state that changes the answer, and mention it only when it does:
 
-- Check the active model sheet per the Delegation host contract in [`t3-tools.md`](../engineering-mode/references/t3-tools.md) and [`setup-engineering-toolkit`](../setup-engineering-toolkit/SKILL.md). With a delegate tool, `~/.agents/engineering-toolkit-models.md` supersedes the per-app sheet when it exists. Otherwise Claude Code uses `~/.claude/engineering-toolkit-models.md`, Codex uses `~/.codex/engineering-toolkit-models.md`, and Cursor uses `~/.cursor/rules/engineering-toolkit-models.mdc`. A missing sheet means roles without configuration use `inherit-parent`.
+- Check the active model sheet per the Delegation host contract in [`t3-tools.md`](../engineering-mode/references/t3-tools.md). With a delegate tool, only `~/.agents/engineering-toolkit-models.md` counts. Without one, Claude Code uses `~/.claude/engineering-toolkit-models.md`, Codex uses `~/.codex/engineering-toolkit-models.md`, and Cursor uses `~/.cursor/rules/engineering-toolkit-models.mdc`. A missing sheet means roles without configuration use `inherit-parent`.
 - No `verify-*` skill or other app harness in the project means agents have no scripted way to drive the app. Mention `/create-verification-skill` when the question is about proving a change works.
 
 When the model rule is missing and it matters, ask whether the user wants to pick a model for each role and a requested effort now. It matters when the user is new, the question is about setup or cost, or the answer depends on which models run. Ask at most once per chat. If the need is also unclear, ask both questions together. Offer two choices:
