@@ -10,7 +10,7 @@ disable-model-invocation: "true"
 
 ## Platform Adaptation
 
-These skills share one tree across Claude Code, Codex, and Cursor. Read [`references/provider-dispatch.md`](references/provider-dispatch.md) whenever a configured role launches. It defines the typed Route values and `provider:model@effort` wire values, native/external route table, launcher, isolation, receipts, and dropout policy. Children never choose routes. When a skill names a Claude tool or built-in skill (`run`, `verify`, `plugin-dev:skill-development`), read [`references/codex-tools.md`](references/codex-tools.md) on Codex and [`references/cursor-tools.md`](references/cursor-tools.md) on Cursor. When the session has `delegate_task` or `orchestrator_capabilities`, read the Delegation host contract in [`references/t3-tools.md`](references/t3-tools.md). It says whether the session is a delegate host, which model sheet is active, and how routes launch.
+These skills share one tree across Claude Code, Codex, and Cursor. Read [`references/provider-dispatch.md`](references/provider-dispatch.md) whenever a configured role launches. It defines the model sheet, the `[provider:]model@effort` Route format, the native lanes, and the dropout policy. Children never choose routes. When a skill names a Claude tool or built-in skill (`run`, `verify`, `plugin-dev:skill-development`), read [`references/codex-tools.md`](references/codex-tools.md) on Codex and [`references/cursor-tools.md`](references/cursor-tools.md) on Cursor. When the session has `delegate_task` or `orchestrator_capabilities`, read the Delegation host contract in [`references/t3-tools.md`](references/t3-tools.md). It says whether the session is a delegate host, which model sheet is active, and how Routes launch.
 
 ## Non-negotiables
 
@@ -96,7 +96,7 @@ Read the leaf skill in full for any principle you apply. Each entry names when i
 
 ## Subagents
 
-For `inherit-parent`, `auto`, or an unconfigured native ad-hoc helper, prefer `engineering-agent`. `/engineering-mode` owns the playbook and every spawn; `engineering-agent` is a delegate. A typed Route role follows provider dispatch. Keep the configured provider and model, choose a catalog-supported effort for each spawn, and honor an operator-specified effort. Routed workflow skills set the task and access mode. Do not override their choices.
+For `inherit-parent`, `auto`, or an unconfigured native ad-hoc helper, prefer `engineering-agent`. `/engineering-mode` owns the playbook and every spawn; `engineering-agent` is a delegate. A role with a Route follows provider dispatch. Keep the configured provider and model, choose an effort the host lists for that model for each spawn, and honor an operator-specified effort. Routed workflow skills set the task and access mode. Do not override their choices.
 
 Start independent lanes together, use file pointers rather than inlined dumps, preserve only the tools or MCPs the task needs, and give each writer a worktree or unique output directory. Use a fresh child for each new task, fix, retry, follow-up, or second opinion. Reuse a live child only to continue its current assignment when it holds valuable state. `/setup-engineering-toolkit` configures the descriptor per role; per-spawn effort choices do not rewrite it.
 

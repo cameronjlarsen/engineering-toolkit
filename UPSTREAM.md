@@ -15,7 +15,7 @@ Do not open issues on Open Pstack for work that belongs in this fork. Keep one s
 | Commit | `4382e687a50b8d2c5ce4d141d001186589cff8d5` |
 | Cursor pstack version | `0.15.25` |
 | Open Pstack version at fork | `1.4.1` |
-| Engineering Toolkit version | `1.4.7` |
+| Engineering Toolkit version | `1.5.0` |
 
 The table above is the current Cursor pstack sync point. At the fresh fetch for this sync, `cursor/main` was `4382e68` (#709), the last commit to touch `pstack/`. Eight commits touch `pstack/` since `99743e9`. Applied: `16541c6` (#692) and `bc14437` (#708) in `ketchup`, `4382e68` (#709) as `create-formal-verification-skill`, and the README refresh from `019a6a2` (#704) in `README-UPSTREAM.md`. Already in the tree: `0317eb8` (#700), whose reference-file catch-up took fourteen files, and `a968159` (#702), since every skill name already matches its folder. Excluded: `182f2ce` (#637) and `1b80080` (#705), which add and extend a generated Claude Code tree, and the `docs/guide` edits in #704. The commit row moves to `4382e68`. Cursor's manifest still reads `0.15.25`, so that row does not change. This checkout started from Open Pstack 1.4.1, which imported Cursor pstack 0.15.1. `README-UPSTREAM.md` preserves the current Cursor pstack README verbatim. `CHANGES.md` and `NOTICE.md` describe the adaptations and provenance.
 
@@ -29,7 +29,7 @@ The table above is the current Cursor pstack sync point. At the fresh fetch for 
 - The `889ec4b` default-model hunks for `bug-fix`, `perf-issue`, and `hillclimb` are not applied. Those roles stay on the Sol matrix row for cost, same reason as `23a56e2`.
 - The `70b2dc8` default-model hunks that move `bug-fix`, `perf-issue`, and `hillclimb` off Sol are not applied. Those roles stay on `codex:gpt-6-sol`.
 - The `70b2dc8` hunks that shrink arena, architect, and interrogate from four runners to three are not applied. Those panels stay four runners.
-- The Sol and four-runner defaults above live in `/setup-engineering-toolkit`'s first-run sheet. The skill and playbook bodies carry no provider-qualified default: with no sheet or role line they use `inherit-parent`, so a single-provider machine does not lose lanes to a default.
+- Setup proposes the upstream families (Fable, Sol, Grok, Opus) only where the session serves them natively, so the cross-provider quad is no longer seeded. The Sol-for-code and four-runner choices apply where those families exist. The skill and playbook bodies carry no provider-qualified default: with no sheet or role line they use `inherit-parent`, so a single-provider machine does not lose lanes to a default.
 - Cursor `df58112` / #511 is not applied: keep the Sol defaults, four-runner panels, and current model budgets. Do not take `setup-pstack`'s default budget change; this fork keeps operator overrides and Opus routes at `@medium`.
 - Do not take the `b93e811` `~/.cursor/plugins/` search in `poteto-agent`, the Built-in PR tool paragraph, Cursor manifests, `docs/guide`, or the Agent Plugins v1 root manifest.
 - Do not take Cursor's generated Claude Code tree or adapter (`182f2ce` / #637, `1b80080` / #705): `harness/pstack/`, `pstack/docs/harness/claude-code.md`, the harness generator and plugin-validation scripts, and the `~/.claude/rules/pstack-models.md` model sheet path. The adapter maps a non-Claude model slug to the session model, which is a weaker-model fallback. Also do not take `scripts/check-pstack-docs.mjs` or the `docs/guide` edits from `019a6a2` / #704.
@@ -99,7 +99,7 @@ Cursor pstack and this fork keep independent version numbers. Cursor's version i
 ## Maintenance
 
 - The Engineering Toolkit version string lives in `plugins/engineering-toolkit/.claude-plugin/plugin.json`, `plugins/engineering-toolkit/.codex-plugin/plugin.json`, `plugins/engineering-toolkit/.cursor-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.cursor-plugin/marketplace.json`, and the Engineering Toolkit version row above. A catalog version bump updates all six. `tests/skill-collision-repro.sh` checks that they match. The Open Pstack row stays the version this checkout started from. `.agents/plugins/marketplace.json` carries no version field.
-- The canonical default panel quad is the model matrix in `provider-dispatch.md` (`provider:model@default` in family-row order). It is copied into the three panel skills (`arena`, `architect`, `interrogate`) and the `setup-engineering-toolkit` first-run sheet. Keep those copies grep-identical when models change. The static test derives the quad from the matrix.
+- The skill and playbook bodies carry no provider-qualified default, and `tests/skill-collision-repro.sh` checks that. It also checks that setup and `provider-dispatch.md` name the same roles, and that the removed routing layer is not named again.
 - After a change to `skills/engineering-mode/scripts/`, run `bun install --frozen-lockfile`, `bun run test`, and `bun run typecheck` from that directory.
 - `hooks/session-start-context.md` restates skill one-liners. Re-verify it whenever skill names or descriptions change.
 - The package must not contain a `commands/` layer. Claude Code and Codex load the native `skills/` tree directly, and a command layer doubles the workflow inventory.

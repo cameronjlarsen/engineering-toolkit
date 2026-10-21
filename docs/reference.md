@@ -8,7 +8,7 @@ Original by Lauren Tan. This distribution builds on Michael Denyer's [pstack-cla
 
 > if you want to go fast, go deep first. Engineering Toolkit helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence.
 
-This is not a verbatim copy of Cursor pstack. Open Pstack edited skill bodies so Cursor-specific primitives resolve in Claude Code and Codex. See [Differences from upstream](#differences-from-upstream). This fork keeps that shared tree and adds Cursor as a parent and a provider with grammar 3 model sheets. The exhaustive per-skill audit lives in [CHANGES.md](../CHANGES.md). License attribution lives in [NOTICE.md](../NOTICE.md). The Cursor pstack README is preserved verbatim at [README-UPSTREAM.md](../README-UPSTREAM.md).
+This is not a verbatim copy of Cursor pstack. Open Pstack edited skill bodies so Cursor-specific primitives resolve in Claude Code and Codex. See [Differences from upstream](#differences-from-upstream). This fork keeps that shared tree and adds Cursor as a parent and a provider with text model sheets. The exhaustive per-skill audit lives in [CHANGES.md](../CHANGES.md). License attribution lives in [NOTICE.md](../NOTICE.md). The Cursor pstack README is preserved verbatim at [README-UPSTREAM.md](../README-UPSTREAM.md).
 
 ## Install
 
@@ -74,8 +74,8 @@ The marketplace install is the normal user path. Direct links are only for testi
 │   ├── .codex-plugin/plugin.json     # Codex manifest (skills: ./skills/)
 │   ├── .cursor-plugin/plugin.json    # Cursor manifest (skills and agents)
 │   ├── skills/                       # shared skills for Cursor, Claude Code, and Codex
-│   │   ├── engineering-mode/references/{codex-tools,cursor-tools,provider-dispatch}.md  # tool + provider routing
-│   │   └── engineering-mode/scripts/      # bun/bash/node tooling: watch-pr, orch, runner, check-plan.mjs, worktree-audit.sh
+│   │   ├── engineering-mode/references/{codex-tools,cursor-tools,t3-tools,provider-dispatch}.md  # tool + provider routing
+│   │   └── engineering-mode/scripts/      # bun/bash/node tooling: watch-pr, orch, check-plan.mjs, worktree-audit.sh
 │   ├── hooks/                        # SessionStart auto-fire: injects the engineering-mode mandate (Claude Code only)
 │   └── agents/                       # Claude subagents, including the shared `pstack-lane` native lane
 ├── tests/skill-collision-repro.sh    # native-skill package invariants and Claude invocation checks
@@ -101,7 +101,7 @@ The Codex build shares one `skills/` tree with the Claude Code build. Nothing is
 - **Tool and built-in mapping.** Claude tool names and built-in skills resolve through [`codex-tools.md`](../plugins/engineering-toolkit/skills/engineering-mode/references/codex-tools.md). Model execution resolves separately through [`provider-dispatch.md`](../plugins/engineering-toolkit/skills/engineering-mode/references/provider-dispatch.md), so Codex can keep Sol native while invoking Claude and Grok externally.
 - **Subagents.** The `Agent` tool maps to Codex `spawn_agent` / `wait_agent`, enabled by `multi_agent = true`. Parallel fan-out is multiple `spawn_agent` calls in one turn. If the native Codex lane is unavailable, record that lane as a dropout; external Claude and Grok lanes still run, and no provider is silently substituted. There is no `engineering-agent` subagent type on Codex; route ad-hoc subagents by dispatching a `spawn_agent` told to read `engineering-mode` first.
 - **Auto-fire.** The `hooks/` SessionStart injection is Claude Code-only; Codex has no plugin hook runtime. Enter `et:engineering-mode` by name, or add a standing instruction to `~/.codex/AGENTS.md` if you want the same always-on routing.
-- **Models.** `/setup-engineering-toolkit` writes typed Route values and `provider:model@effort` wire values and asks one requested effort per frontier family (`low`, `medium`, `high`, `xhigh`, `max`). The first-run panel is Fable max, Sol max, Grok 4.7 xhigh, and Opus xhigh. Fable and Opus use Claude's rolling aliases. Runtime dispatch normalizes older versioned descriptors in memory, so an installed sheet stops pinning immediately. A setup rerun persists that migration while keeping each role's family and effort. In Claude Code that is not a delegate host, Fable and Opus use native agents and other providers use the runner. On Codex or Cursor that is not a delegate host, only the parent's provider is native; every other Route is a named dropout with no substitution. A delegate host follows [`t3-tools.md`](../plugins/engineering-toolkit/skills/engineering-mode/references/t3-tools.md) for its model sheet and Routes. Children never detect the parent or reroute themselves. The `bug-fix`, `perf-issue`, and `hillclimb` roles stay on the Sol matrix row instead of upstream's Fable default because Sol costs less for these frequent delegated code roles.
+- **Models.** `/setup-engineering-toolkit` reads what the session can run and writes one model sheet of `[provider:]model@effort` Routes, plus a requested effort per role. The first run proposes only the families the session serves natively and leaves every other role on `inherit-parent`. Old versioned Fable and Opus entries read as the rolling aliases. In a session that is not a delegate host, only the parent's provider is native; every other Route is a named dropout with no substitution. A delegate host follows [`t3-tools.md`](../plugins/engineering-toolkit/skills/engineering-mode/references/t3-tools.md) for its model sheet and Routes, and any provider instance it lists can appear in a Route. Children never detect the parent or reroute themselves.
 
 Verified in fresh installed Claude Code and Codex sessions: the user-facing skills are discovered and namespaced under `et`; both parents fan out configured lanes through the documented native/external or delegation route table, retain long-running handles without a default timeout, and cross-judge only after every candidate is terminal. The `principle-*` leaves remain available for `engineering-mode` to read by path. Claude honors their `user-invocable: false` metadata; Codex 0.149.0 does not ([#8](https://github.com/ericlitman/open-pstack/issues/8)).
 
@@ -122,9 +122,8 @@ Not declared as deps, but referenced in skill bodies:
 
 - **`run`, `verify`, `loop`** — Claude Code CLI built-ins (ship with the binary, always available).
 - **`gh` (GitHub CLI).** This is the default forge for every stack playbook and a system-level requirement of the standalone `babysit` skill. Install it with [`brew install gh`](https://cli.github.com) and authenticate with `gh auth login`. If Origin's `origin` CLI is installed and can resolve the repository, the stack playbooks use it instead. No playbook requires Graphite (`gt`); `orch frontier set --forge gh|origin` selects the forge.
-- **`bun`** — runs the vendored `skills/engineering-mode/scripts/` tooling (`watch-pr`, `orch`, `runner`). Install via [`brew install oven-sh/bun/bun`](https://bun.sh). `bootstrap.ts` installs dependencies for `watch-pr` and `orch`; the runner uses only Bun and Node built-ins, so it launches directly without an install/re-exec layer.
+- **`bun`** — runs the vendored `skills/engineering-mode/scripts/` tooling (`watch-pr`, `orch`). Install via [`brew install oven-sh/bun/bun`](https://bun.sh). `bootstrap.ts` installs dependencies for `watch-pr` and `orch`.
 - **`node`** — runs `skills/engineering-mode/scripts/check-plan.mjs`. The checker uses only Node built-ins and does not need Bun.
-- **Claude Code, Codex, Cursor (`cursor-agent`), and Grok Build CLIs** — the external runner uses the assigned subscribed CLI directly. Install and authenticate only the providers present in your model sheet. Same-provider work stays native; the runner refuses it.
 - **`jq` and `rg` (ripgrep)** — only for `scripts/worktree-audit.sh` (the Worktree cleanup playbook). Without them the audit still runs but blanks its PR and LAST_CHAT columns, so it warns on stderr rather than returning a table that looks complete.
 
 No third-party plugins. The harsher-critique escape hatch lives in the bundled `thermo-nuclear-code-quality-review` skill (imported from cursor-team-kit), not in an external plugin.
@@ -175,7 +174,7 @@ The table uses the short upstream names. Claude Code exposes each native skill w
 
 `comment-sicko` is the read-only comment reviewer the `no-comments` skill spawns. Upstream names it `Comment Sicko`; the port renames it to `comment-sicko` so the name is a valid `subagent_type`. Invoke it through `/no-comments`, not directly.
 
-`pstack-lane` is the one native lane for every Claude-served route. It pins no model and no effort: the parent passes `model` (`sonnet`, `opus`, or `fable`) and `effort` on each `Agent` call. It runs in the background and denies nested Agent/Task dispatch. Engineering Toolkit dispatches it from typed Route values and `provider:model@effort` wire values; it is not a user-facing workflow.
+`pstack-lane` is the one native lane for every Claude-served route. It pins no model and no effort: the parent passes `model` (`sonnet`, `opus`, `haiku`, or `fable`) and `effort` on each `Agent` call. It runs in the background and denies nested Agent/Task dispatch. Engineering Toolkit dispatches it from the Routes in the model sheet; it is not a user-facing workflow.
 
 ## Differences from upstream
 
@@ -210,12 +209,12 @@ The port is editorial, not mechanical. Anywhere upstream pstack assumed Cursor-s
 | Cursor cloud agents (`environment: "cloud"`, `cloud_base_branch`) | Local background subagents (`run_in_background: true`), isolated by git worktree |
 | Cursor's `/goal` (standing objective across turns) | The program objective written into the run's standing orders and restated in the todolist |
 | The Cursor agent store (path in the system prompt) | `~/.claude/orchestrate/<project-slug>/`, which survives the session restarts a multi-day program expects |
-| Model rule `~/.cursor/rules/engineering-toolkit-models.mdc` | This fork keeps grammar 3 in that `.mdc` (always-apply wrapper). Claude Code writes `~/.claude/engineering-toolkit-models.md`, included from `CLAUDE.md`. A delegate host uses the sheet that `t3-tools.md` names instead. Upstream Task slugs are not a second grammar. |
-| Multi-model panels (arena, architect, interrogate) | With no model sheet, each skill runs on `inherit-parent` (the parent model). `/setup-engineering-toolkit` writes the upstream frontier quad: `claude:fable@max`, `codex:gpt-6-sol@max`, `grok:grok-4.7@xhigh`, `claude:opus@xhigh`. Same-provider lanes stay native. On Claude Code, other providers use the bundled runner. On Codex or Cursor that is not a delegate host, every entry not on the parent's provider is a named dropout. On a delegate host, `t3-tools.md` resolves Routes. |
+| Model rule `~/.cursor/rules/engineering-toolkit-models.mdc` | This fork keeps the model sheet in that `.mdc` (always-apply wrapper). Claude Code writes `~/.claude/engineering-toolkit-models.md`, included from `CLAUDE.md`. A delegate host uses the sheet that `t3-tools.md` names instead. Upstream Task slugs are not a second grammar. |
+| Multi-model panels (arena, architect, interrogate) | With no model sheet, each skill runs on `inherit-parent` (the parent model). `/setup-engineering-toolkit` proposes one lane per family the session serves natively. On a session that is not a delegate host, every entry not on the parent's provider is a named dropout. On a delegate host, `t3-tools.md` resolves Routes. |
 
 ### Cross-vendor dispatch
 
-The earlier Open Pstack port collapsed panels to Claude-only models. The bundled runner restores cross-provider judgment without adding a daemon or model-router service. A Cursor parent runs Fable and Opus as native plugin-agent Tasks with a live family selector on `Task.model`, Grok as native host-spawn, and reports a named dropout for a Claude, Codex, or Grok Route when the session is not a delegate host. Claude Code shells out to Codex, Cursor, and Grok. A Codex parent reports the same dropouts. The top-level parent chooses every route and each external process receives a complete task directly, so there is no supervising model invocation and no child-side harness detection.
+This fork no longer launches another provider's CLI. A cross-provider panel needs a delegate host, a session with `delegate_task` and `orchestrator_capabilities` such as T3. There the parent resolves each Route against the live capability list, and any provider instance that list reports can appear in a Route. Elsewhere the parent runs its own provider's models natively and reports a named dropout for every other Route. The top-level parent chooses every route, so there is no supervising model invocation and no child-side harness detection. Release v1.4.7 shipped a bundled runner that started the Codex, Cursor, and Grok CLIs from Claude Code.
 
 ### What's deliberately kept
 

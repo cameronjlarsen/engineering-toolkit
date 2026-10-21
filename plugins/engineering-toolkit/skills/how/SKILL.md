@@ -7,7 +7,7 @@ description: "Use for \"how does X work\", code walkthroughs before changing som
 
 Explore the codebase to answer "how does X work?" questions. Produce architectural explanations at the level of a senior engineer onboarding onto a subsystem, enough to build a working mental model, not so much that it reads like annotated source code.
 
-**Dispatch contract.** Resolve every configured role through [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md). Values are typed Routes written as `provider:model@effort`. The parent chooses native versus external execution. On Codex, resolve remaining Claude tool names via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
+**Dispatch contract.** Resolve every configured role through [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md). Values are Routes written as `[provider:]model@effort`. On Codex, resolve remaining Claude tool names via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
 
 Each spawn below names a role line in the active model sheet (see [`t3-tools.md`](../engineering-mode/references/t3-tools.md)) and a default. Use that line's value, or the default if the sheet or the line is missing. Leave the Route unset when the value is `auto` or `inherit-parent`.
 
@@ -22,7 +22,7 @@ When in doubt, take the simple path.
 
 ## Step 2a. Explore (complex questions only)
 
-Decompose the question into 2 to 4 exploration angles, each a distinct slice of the subsystem. Start all explorers in one fan-out phase through provider dispatch. Use the `how explorer` line (default `inherit-parent`) in `read-only` mode. A native lane uses the parent subagent primitive; an external lane uses the launcher directly.
+Decompose the question into 2 to 4 exploration angles, each a distinct slice of the subsystem. Start all explorers in one fan-out phase through provider dispatch. Use the `how explorer` line (default `inherit-parent`) in `read-only` mode.
 
 Each explorer gets the prompt in `references/explorer-prompt.md` with its angle filled in. Then go to Step 3.
 
