@@ -12,7 +12,7 @@ The active sheet is the text file that [`t3-tools.md`](t3-tools.md) names for th
 <role>: <entry>[, <entry>...]
 ```
 
-The role ends at the first `:`. Any line whose role is not in the list below is prose and is ignored. A role that appears twice, or is missing, is `inherit-parent`, and the parent says so once. Single roles take one entry. Panel roles take one entry per lane, so the list length is the fan-out count. `swarm workers` is single: its one entry is the descriptor every worker runs on, and the swarm skill sets the worker count.
+The role ends at the first `:`. Any line whose role is not in the list below is prose and is ignored. A line with a listed role whose entry the parent cannot read is a dropout for that role only. A role that appears twice, or is missing, is `inherit-parent`, and the parent says so once. Single roles take one entry. Panel roles take one entry per lane, so the list length is the fan-out count. `swarm workers` is single: its one entry is the descriptor every worker runs on, and the swarm skill sets the worker count.
 
 | Kind | Roles |
 |---|---|
@@ -30,7 +30,7 @@ An entry is `inherit-parent`, `auto`, or a Route. `inherit-parent` and `auto` us
 [<provider>:]<model>[@<effort>]
 ```
 
-- **Provider.** The text before the next `:`. Any token is valid; the toolkit keeps no list of providers. It names a harness or provider instance. A bare model, with no provider, runs on the parent's own provider. On a delegate host the host sheet needs a provider on every Route, so a bare model there is a dropout ([`t3-tools.md`](t3-tools.md)).
+- **Provider.** The text before the next `:`. Any token is valid; the toolkit keeps no list of providers. It names a harness or provider instance. A bare model, with no provider, runs on the parent's own provider when the parent is Claude Code, Codex, or Cursor; any other harness drops it (Native lanes). On a delegate host the host sheet needs a provider on every Route, so a bare model there is a dropout ([`t3-tools.md`](t3-tools.md)).
 - **Effort.** The text after the last `@`, written exactly as the host lists it. It is required when the host lists an effort option for that model, and omitted when it lists none. Do not map one effort to another.
 - **Model.** Everything between. It can contain `/` and `.`, as in `opencode-go/glm-5.3`. It must equal a model the host lists. Do not strip a prefix, match a bare name, or choose a close match.
 
@@ -62,7 +62,7 @@ Pass the complete task, grounding paths, access mode, and unique output location
 
 - **Claude Code.** A Route with no provider or with `claude`. Call `Agent` with `subagent_type` `et:pstack-lane`, `model` set to the alias for the Route's model, and `effort` set to the resolved effort. `Agent` accepts only the aliases `sonnet`, `opus`, `haiku`, and `fable`, and an omitted `effort` inherits the parent's, so always pass both. Map `fable` and `claude-fable-*` to `fable`, `opus` and `claude-opus-*` to `opus`, `claude-sonnet-5-5` to `sonnet`, and `claude-haiku-*` to `haiku`. A Route whose model has no alias is a dropout, and so is an effort outside `low`, `medium`, `high`, `xhigh`, `max`.
 - **Codex.** A Route with no provider or with `codex`. Call `spawn_agent` with the Route's model and `reasoning_effort`. A model or effort that `spawn_agent` does not list is a dropout. Use an isolated worktree for a writer.
-- **Cursor.** A Route with no provider or with `cursor`. Follow [`cursor-tools.md`](cursor-tools.md): `Task` with a live selector for the Route's model and effort. An omitted or unmatched selector inherits the parent and is a dropout.
+- **Cursor.** A Route with no provider or with `cursor`. Follow [`cursor-tools.md`](cursor-tools.md): `Task` with a live selector for the Route's model and effort. An omitted or unmatched selector would run the lane on the parent's model, so it is a dropout.
 - **Any other harness.** It has no provider token, so a Route is a dropout. Only `inherit-parent` and `auto` run, on the parent's own subagent primitive.
 - **`inherit-parent` and `auto`.** Use the parent's subagent primitive with no model override, or `engineering-agent`.
 

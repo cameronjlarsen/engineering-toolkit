@@ -59,7 +59,7 @@ Prefer AskQuestion. On Claude Code that tool is AskUserQuestion. Offer these fou
 - `medium, high reasoning`
 - `small, medium reasoning`
 
-Every run, build the working table from step 6 first. On a rerun, keep any role the operator already changed. Then apply the budget. `unlimited` leaves every effort as in the table. The other three set the `@effort` of every real Route, panel lanes included, to `xhigh`, `high`, or `medium`. `inherit-parent` and `auto` do not change. A Route with no `@effort`, or an effort that is not on the `low`, `medium`, `high`, `xhigh`, `max` ladder, does not change. If the model does not list the target effort, use the highest listed ladder effort at or below it, else mark the role as needing a choice.
+Every run, build the working table from step 6 first. On a rerun, keep any role the operator already changed. Then apply the budget. `unlimited` leaves every effort as in the table. On a first run the table has no efforts yet: give each Route the target effort, or for `unlimited` the highest ladder effort its model lists, and give a model that lists no effort option none. The other three set the `@effort` of every real Route, panel lanes included, to `xhigh`, `high`, or `medium`. `inherit-parent` and `auto` do not change. A Route with no `@effort`, or an effort that is not on the `low`, `medium`, `high`, `xhigh`, `max` ladder, does not change. If the model does not list the target effort, use the highest listed ladder effort at or below it, else mark the role as needing a choice.
 
 ### 5. Probe the selected routes
 

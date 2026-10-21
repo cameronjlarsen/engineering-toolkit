@@ -71,12 +71,12 @@ Tests alone are not sufficient verification. A PR is verified only when its unit
 
 ### Boot recipe, for every live lane
 
-Each live lane is one `swarm workers` lane at the PR head, resolved through provider dispatch, in its own worktree or output directory, with its own receipt. Drive the surface only through the driver skill this plan names.
+Each live lane is one `swarm workers` lane at the PR head, resolved through provider dispatch, in its own worktree or output directory, with its own result. Drive the surface only through the driver skill this plan names.
 
 - [ ] `git fetch -- "$head_url" "refs/heads/$head_branch" && git checkout --detach "$head_sha"` in the lane's worktree.
 - [ ] <Start the backend and the surface. Wait for ready.>
 - [ ] <Deliver input only through the driver skill's commands. Name the read-only diagnostics.>
-- [ ] Save every screenshot to `<scratch path>/swarm-<pr-id>/worker-<n>/<slug>.png` and return the paths with the receipt path.
+- [ ] Save every screenshot to `<scratch path>/swarm-<pr-id>/worker-<n>/<slug>.png` and return the paths with the lane's result.
 
 ## <Task as a verb phrase> (<PR id>)
 
