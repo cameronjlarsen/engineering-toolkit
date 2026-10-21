@@ -213,7 +213,7 @@ fi
 removed_vocab="$(
   grep -REn \
     --include='*.md' --include='*.ts' --include='*.sh' --include='*.json' \
-    'pstack-runner|loadRoleMap|loadHostRoleMap|printRoleMap|parseCodexDebugModels|proposeStalePinMigrations|provider-report|pinned-argv|typed Route|scripts/routing|scripts/runner' \
+    'pstack-runner|loadRoleMap|loadHostRoleMap|printRoleMap|parseCodexDebugModels|proposeStalePinMigrations|provider-report|pinned-argv|typed Route|scripts/routing|scripts/runner|grammar [123]' \
     "$repo/plugins" "$repo/README.md" "$repo/docs/reference.md" "$repo/AGENTS.md" \
     2>/dev/null | grep -v '/node_modules/' || true
 )"

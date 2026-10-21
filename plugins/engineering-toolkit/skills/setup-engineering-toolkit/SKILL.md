@@ -35,7 +35,7 @@ Use the tool surface running this skill. `delegate_task` plus `orchestrator_capa
 
 ### 2. Read the current sheet
 
-Read the active sheet as text. Keep every role line you can read. Drop a line whose role is not in the role table in `provider-dispatch.md`. Report a duplicate role before you go on. Read an old `claude-fable-<N>` or `claude-opus-<N>` as `fable` or `opus`, and record each such change for confirmation. A `Descriptor grammar:` header and a `# budget:` line are prose. Name the recorded budget when you ask in step 4.
+Read the active sheet as text. Keep every role line you can read. Drop a line whose role is not in the role table in `provider-dispatch.md`. A role that appears twice renders as `inherit-parent`, as `provider-dispatch.md` says. Report it before you go on. Read an old `claude-fable-<N>` or `claude-opus-<N>` as `fable` or `opus`, and record each such change for confirmation. A `Descriptor grammar:` header and a `# budget:` line are prose. Name the recorded budget when you ask in step 4.
 
 If the host sheet is missing and the session is a delegate host, read the per-app sheet for this harness as a starting point. Show each carried-over role. A bare model in it becomes `<this harness's provider>:<model>`, because a host sheet needs a provider on every Route. If no sheet exists, use the first-run map in step 6.
 
@@ -67,7 +67,7 @@ Probe only the selected Routes, after the budget remap. Spawn one read-only chil
 
 On Cursor, a Route needs an exact selector for its family and effort in the session's `Task` list. Without one the Route is unknown, not ready. Do not guess a selector, and do not accept another revision. A named dropout on this session is not probed and does not block the write.
 
-A failed probe writes nothing. Report the failing Route and keep the active sheet and its wiring unchanged. A failed first run creates neither file. There is no implicit timeout. Receipts and transcripts prove the requested route, not hidden applied reasoning depth.
+A failed probe writes nothing. Report the failing Route and keep the active sheet and its wiring unchanged. A failed first run creates neither file. There is no implicit timeout. A child's transcript and its own model report prove the requested route, not hidden applied reasoning depth.
 
 ### 6. Render
 
