@@ -185,7 +185,7 @@ Read [UPSTREAM.md](UPSTREAM.md) before changing content that came from either tr
 
 Search [GitHub Issues](https://github.com/cameronjlarsen/engineering-toolkit/issues) before opening a new issue. Do not open issues on [ericlitman/open-pstack](https://github.com/ericlitman/open-pstack) for work that belongs here.
 
-Pull requests must keep one shared skill tree for Cursor, Claude Code, and Codex. They must pass the repository's tests, type checks, plugin validation, and static checks.
+Pull requests must keep one shared skill tree for Cursor, Claude Code, and Codex. They must pass the repository's tests, type checks, manifest checks, and static checks in `.github/workflows/ci.yml`.
 
 ## License
 
