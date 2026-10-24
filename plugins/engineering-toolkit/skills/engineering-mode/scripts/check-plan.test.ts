@@ -657,4 +657,20 @@ describe("check-plan fences", () => {
     const problems = withExample("```markdown `invalid`\n## Example only\n```\n");
     expect(problems.some((problem) => problem.includes(STRAY_HEADING))).toBe(true);
   });
+
+  it("ignores prose punctuation inside matching multi-backtick code spans", () => {
+    for (const count of [2, 3, 4]) {
+      const delimiter = "`".repeat(count);
+      expect(withExample(`Use ${delimiter}echo \`x\`: \u201cquoted\u201d \u2014 example${delimiter}.\n`)).toEqual([]);
+    }
+  });
+
+  it("checks prose following a multi-backtick span and unmatched delimiters", () => {
+    const outside = withExample("Use ``echo `x`: y``. Bad: prose.\n");
+    expect(outside).toHaveLength(1);
+    expect(outside[0]).toContain("mid-sentence colon");
+    const unmatched = withExample("Use ``unclosed: bad` here.\n");
+    expect(unmatched).toHaveLength(1);
+    expect(unmatched[0]).toContain("mid-sentence colon");
+  });
 });
