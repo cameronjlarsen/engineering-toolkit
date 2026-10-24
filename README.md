@@ -175,7 +175,7 @@ This repository also keeps:
 
 ## Tracked sources
 
-This checkout is Engineering Toolkit 1.5.0. It tracks Cursor pstack 0.15.25 at commit [`4382e687a50b8d2c5ce4d141d001186589cff8d5`](https://github.com/cursor/plugins/commit/4382e687a50b8d2c5ce4d141d001186589cff8d5) and started from Open Pstack 1.4.1.
+This checkout is Engineering Toolkit 1.5.0. It tracks Cursor pstack 0.15.32 at commit [`9580c23696ac8d7abed0c166f2f9918800afb819`](https://github.com/cursor/plugins/commit/9580c23696ac8d7abed0c166f2f9918800afb819) and started from Open Pstack 1.4.1.
 
 Two version numbers stay independent. Cursor pstack versions Lauren's plugin. This fork versions the checkout you are in.
 
