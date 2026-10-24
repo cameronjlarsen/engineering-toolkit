@@ -12,12 +12,12 @@ Do not open issues on Open Pstack for work that belongs in this fork. Keep one s
 | --- | --- |
 | Repository | `https://github.com/cursor/plugins.git` |
 | Path | `pstack/` |
-| Commit | `4382e687a50b8d2c5ce4d141d001186589cff8d5` |
-| Cursor pstack version | `0.15.25` |
+| Commit | `9580c23696ac8d7abed0c166f2f9918800afb819` |
+| Cursor pstack version | `0.15.32` |
 | Open Pstack version at fork | `1.4.1` |
 | Engineering Toolkit version | `1.5.0` |
 
-The table above is the current Cursor pstack sync point. At the fresh fetch for this sync, `cursor/main` was `4382e68` (#709), the last commit to touch `pstack/`. Eight commits touch `pstack/` since `99743e9`. Applied: `16541c6` (#692) and `bc14437` (#708) in `ketchup`, `4382e68` (#709) as `create-formal-verification-skill`, and the README refresh from `019a6a2` (#704) in `README-UPSTREAM.md`. Already in the tree: `0317eb8` (#700), whose reference-file catch-up took fourteen files, and `a968159` (#702), since every skill name already matches its folder. Excluded: `182f2ce` (#637) and `1b80080` (#705), which add and extend a generated Claude Code tree, and the `docs/guide` edits in #704. The commit row moves to `4382e68`. Cursor's manifest still reads `0.15.25`, so that row does not change. This checkout started from Open Pstack 1.4.1, which imported Cursor pstack 0.15.1. `README-UPSTREAM.md` preserves the current Cursor pstack README verbatim. `CHANGES.md` and `NOTICE.md` describe the adaptations and provenance.
+The table above is the current Cursor pstack sync point. At the fresh fetch for this sync, `cursor/main` was `9580c23` and `e73df47` (#807) was the last commit to touch `pstack/`. Twenty-four commits touch `pstack/` since `4382e68`. Applied: the final `sharpen` text from `75fabac` (#712) and `88d4751` (#729), without upstream's `disable-model-invocation: true`; `ketchup-video` (#797) and `maintain-formal-verification-skill` (#716), both without `disable-model-invocation: true`; `create-formal-verification-skill` (#721, #794); the `statechart` skill and its scripts (#741, #776, #779, #791), also without that flag; the `engineering-help` routing rows (#715) without the Claude Code adapter paragraph; the `reflect` plugin-cache rule (#800) with Claude Code and Cursor destinations; the `swarm` result-table wording (#807); the `engineering-mode/scripts/` fixes `fe096ef` (#802), `96dec8e` (#801), `3c596e7` (#804), `86c2448` (#803), and `f83fbe6` (#805); and the README refresh from #716, #729, #741, #797, and #806 in `README-UPSTREAM.md`. Already in the tree: the `swarm` Phase A numbering of #807, since the fork's step 3 already sets N. Excluded: the version bumps `0b8e952` (#710), `0148b78` (#713), `d4575673` (#724), `642289e` (#792), and `b1a1298` (#798), since the fork keeps its own version; the offer-a-formal-verification step that `f9be7aa` (#715) adds to `setup-pstack`, because the fork's setup has no verification-skill offer step to extend; and every `docs/guide` edit. Cursor's manifests read `0.15.32`, so the version row moves from `0.15.25`.
 
 ## Cursor pstack exclusions
 
@@ -59,8 +59,8 @@ Fetch and inspect only commits that touched pstack after the recorded sync point
 
 ```shell
 git fetch cursor main
-git log --oneline 99743e9c151c8537cbbf1f98bb38f34ef3368453..cursor/main -- pstack
-git diff --stat 99743e9c151c8537cbbf1f98bb38f34ef3368453..cursor/main -- pstack
+git log --oneline 9580c23696ac8d7abed0c166f2f9918800afb819..cursor/main -- pstack
+git diff --stat 9580c23696ac8d7abed0c166f2f9918800afb819..cursor/main -- pstack
 ```
 
 No output means the tracked pstack tree has not changed. This comparison does not need a polling service or generated mirror branch.
