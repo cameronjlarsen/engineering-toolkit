@@ -158,6 +158,8 @@ The table uses the short upstream names. Claude Code exposes each native skill w
 | `/create-verification-skill` | generate a project-local verification skill and feature map |
 | `/maintain-verification-skill` | re-sync a drifted verification skill and its feature map |
 | `/create-formal-verification-skill` | formally verify a race, invariant, or other property that tests rarely reach, and leave a project-local skill that rechecks it |
+| `/maintain-formal-verification-skill` | bring a formal verification back in line after the code it covers changed, and say whether each failure is drift or a bug |
+| `/statechart` | draw a TLA+ model as a Mermaid statechart for the person who owns the behavior, with each bug as a numbered path |
 | `/deslop` | deslop a diff before commit |
 | `/babysit` | monitor an open PR, fix CI/comments, keep it merge-ready |
 | `/thermo-nuclear-code-quality-review` | extremely strict maintainability audit |
