@@ -28,6 +28,12 @@ jobs:
       - name: Typecheck
         working-directory: plugins/engineering-toolkit/skills/engineering-mode/scripts
         run: bun run typecheck
+      - name: Install statechart
+        working-directory: plugins/engineering-toolkit/skills/statechart/scripts
+        run: npm install
+      - name: Test statechart
+        working-directory: plugins/engineering-toolkit/skills/statechart/scripts
+        run: npm test
       - name: Validate manifests and static invariants
         run: |
           bun -e 'for (const path of [".claude-plugin/marketplace.json", ".agents/plugins/marketplace.json", ".cursor-plugin/marketplace.json", "plugins/engineering-toolkit/.claude-plugin/plugin.json", "plugins/engineering-toolkit/.codex-plugin/plugin.json", "plugins/engineering-toolkit/.cursor-plugin/plugin.json"]) JSON.parse(await Bun.file(path).text())'
