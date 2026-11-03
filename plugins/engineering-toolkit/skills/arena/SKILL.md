@@ -26,7 +26,7 @@ The N candidates will receive the same prompt, so the prompt is the contract.
 
 1. State the artifact each candidate is producing.
 2. Derive the rubric. State what success looks like for *this* task, then turn it into 3-6 concrete gradeable criteria. The rubric is the picker's tool in Phase D. Candidates only see the task.
-3. Pick the runners. Use the `arena runners` line in the active model sheet (see [`t3-tools.md`](../engineering-mode/references/t3-tools.md)). If the sheet or that line is missing, default to `inherit-parent`: every runner is the parent model, and `/setup-engineering-toolkit` configures a panel. An `auto` or `inherit-parent` entry in this line or the cross-judge line means the parent model. A Route follows [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md). If a configured entry does not resolve, record a dropout and continue. Never pick the closest model or silently fall back. Spawn more when the arena covers multiple design directions. Same descriptor N times when the work is generation-bound rather than judgment-sensitive.
+3. Pick the runners. Use the `arena runners` line in the active model sheet (see [`t3-tools.md`](../engineering-mode/references/t3-tools.md)). If the sheet or that line is missing, default to `inherit-parent`: every runner is the parent model, and `/setup-engineering-toolkit` configures a panel. An `auto` or `inherit-parent` entry in this line means the parent model. A Route follows [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md). If a configured entry does not resolve, record a dropout and continue. Never pick the closest model or silently fall back. Spawn more when the arena covers multiple design directions. Same descriptor N times when the work is generation-bound rather than judgment-sensitive.
 4. Assign output paths. Each candidate writes to its own location (a git worktree where possible, otherwise `/tmp/arena-<slug>/candidate-<n>/`), per the **separate-before-serializing-shared-state** principle skill.
 
 ## Phase B: Fan out
@@ -39,17 +39,17 @@ A lane counts when its child returned a non-empty result on the assigned model. 
 
 ## Phase C: Cross-judge
 
-After all Phase B candidates complete, choose the judge descriptor from the `arena cross-judge pool` line in the active model sheet. If the sheet or that line is missing, the judge is the parent model. Prefer a provider different from the parent and the likely base candidate when the sheet offers one. Dispatch one read-only judge through the provider contract. It sees the rubric and completed candidates by path label, scores each criterion, and recommends a base with rationale. It runs in parallel with the parent's reading in Phase D, not with the candidates themselves. Don't dispatch the judge while candidates are still writing.
+After all Phase B candidates complete, choose one judge from the `arena cross-judge pool` line in the active model sheet. Families are Fable, Sol, Grok, and Opus. The judge comes from a family other than the parent's. Try only the entries from another family, in pool order. An `auto` or `inherit-parent` entry never judges. Dispatch one read-only judge through the provider contract. If a configured entry does not resolve, record a dropout and try the next entry from another family. Never refill a dropped seat, pick the closest model, or omit the model. If the sheet or that line is missing, if no entry from another family runs, or if the parent's family is unknown, skip the judge and say so. The judge sees the rubric and completed candidates by path label, scores each criterion, and recommends a base with rationale. It runs in parallel with the parent's reading in Phase D, not with the candidates themselves. Don't dispatch the judge while candidates are still writing.
 
 ## Phase D: Pick a base
 
 Read every candidate end to end before picking.
 
-Score each candidate against the rubric criterion by criterion, not on holistic feel. Compare against the cross-judge. Agreement on the base confirms the pick only when the judge is a different model from the candidate. A judge on the parent model repeating the parent's own candidates is a same-model check, not confirmation. Disagreement means one of you is biased or the rubric was ambiguous. Read both rationales before deciding.
+Score each candidate against the rubric criterion by criterion, not on holistic feel. Compare with the cross-judge only when Phase C ran one. Agreement on the base confirms the pick only when the judge is a different model from the candidate. A judge on the parent model repeating the parent's own candidates is a same-model check, not confirmation. Disagreement means one of you is biased or the rubric was ambiguous. Read both rationales before deciding.
 
 Pick the base on which candidate a future maintainer can extend most easily without breaking invariants. Prefer the cleaner boundary or smaller API when two feel tied, per the Laziness Protocol.
 
-Record the pick and the reason in a short synthesis note alongside the base artifact, including the cross-judge's verdict.
+Record the pick and the reason in a short synthesis note alongside the base artifact, including the cross-judge's verdict or that Phase C skipped the judge.
 
 ## Phase E: Graft
 
@@ -69,4 +69,4 @@ If verification surfaces a problem the arena did not catch, either Phase A was w
 
 ## Outputs
 
-One synthesized artifact. One short synthesis note alongside, naming the base, the grafts (with source candidate), the rejections, the dropouts if any, and the verification result.
+One synthesized artifact. One short synthesis note alongside, naming the base, the grafts (with source candidate), the rejections, the cross-judge's verdict or that Phase C skipped the judge, the dropouts if any, and the verification result.
