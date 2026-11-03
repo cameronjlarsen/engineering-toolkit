@@ -10,3 +10,4 @@
 .vscode/
 
 plugins/engineering-toolkit/skills/engineering-mode/scripts/node_modules/
+plugins/engineering-toolkit/skills/statechart/scripts/node_modules/

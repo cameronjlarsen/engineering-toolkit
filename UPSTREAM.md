@@ -12,12 +12,14 @@ Do not open issues on Open Pstack for work that belongs in this fork. Keep one s
 | --- | --- |
 | Repository | `https://github.com/cursor/plugins.git` |
 | Path | `pstack/` |
-| Commit | `9580c23696ac8d7abed0c166f2f9918800afb819` |
-| Cursor pstack version | `0.15.32` |
+| Commit | `c742dd61706fbacc1b95f1a20b7b988cf096ce6c` |
+| Cursor pstack version | `0.15.36` |
 | Open Pstack version at fork | `1.4.1` |
-| Engineering Toolkit version | `1.5.0` |
+| Engineering Toolkit version | `1.6.0` |
 
 The table above is the current Cursor pstack sync point. At the fresh fetch for this sync, `cursor/main` was `9580c23` and `e73df47` (#807) was the last commit to touch `pstack/`. Twenty-four commits touch `pstack/` since `4382e68`. Applied: the final `sharpen` text from `75fabac` (#712) and `88d4751` (#729), without upstream's `disable-model-invocation: true`; `ketchup-video` (#797) and `maintain-formal-verification-skill` (#716), both without `disable-model-invocation: true`; `create-formal-verification-skill` (#721, #794); the `statechart` skill and its scripts (#741, #776, #779, #791), also without that flag; the `engineering-help` routing rows (#715) without the Claude Code adapter paragraph; the `reflect` plugin-cache rule (#800) with Claude Code and Cursor destinations; the `swarm` result-table wording (#807); the `engineering-mode/scripts/` fixes `fe096ef` (#802), `96dec8e` (#801), `3c596e7` (#804), `86c2448` (#803), and `f83fbe6` (#805); and the README refresh from #716, #729, #741, #797, and #806 in `README-UPSTREAM.md`. Already in the tree: the `swarm` Phase A numbering of #807, since the fork's step 3 already sets N. Excluded: the version bumps `0b8e952` (#710), `0148b78` (#713), `d4575673` (#724), `642289e` (#792), and `b1a1298` (#798), since the fork keeps its own version; the offer-a-formal-verification step that `f9be7aa` (#715) adds to `setup-pstack`, because the fork's setup has no verification-skill offer step to extend; and every `docs/guide` edit. Cursor's manifests read `0.15.32`, so the version row moves from `0.15.25`.
+
+At the fresh fetch for the next sync, `cursor/main` was `ae5650fe` and `c742dd61` (#1043) was the last commit to touch `pstack/`. Seven commits touch `pstack/` since `9580c23`. Applied: the statechart TypeScript compiler from `34b1b7c9` (#977), `740d2c07` (#982), and `519d36aa` (#981), without `disable-model-invocation: true`, with a Windows `node scripts/statechart.ts` entry and best-effort `taskkill /F /T` in place of `/bin/sh`; the skill text from `ab1f702c` (#986) for explain-the-number, ketchup-video subtitles, autonomous-run, the engineering-mode first reply, the arena judge families Fable, Sol, Grok, and Opus, interrogate's prove-by-run report, and the autopilot block rule; and the harness-neutral Orchestrate supervision from `c742dd61` (read the diff, live `gh pr view` / `gh pr checks` before a report, stall judged by pushes) while keeping the `orch` CLI. Excluded: the version-only commits `7c7bde70` (#978) and `164ced10` (#983); the `0.15.36` manifest bump inside `c742dd61`; the deletion of `scripts/orch/`; the arena seat refill and closest-slug fallback; the two-step replacement of Autopilot-stack; every `docs/guide` edit; the regenerated `harness/pstack` tree; and `disable-model-invocation`. Cursor's manifests read `0.15.36`, so the version row moves from `0.15.32`. This fork stays `1.6.0`.
 
 ## Cursor pstack exclusions
 

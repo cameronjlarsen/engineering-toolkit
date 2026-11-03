@@ -135,7 +135,7 @@ This repository also keeps:
 
 ## Tracked sources
 
-This checkout is Engineering Toolkit 1.5.0. It tracks Cursor pstack 0.15.32 at commit [`9580c23696ac8d7abed0c166f2f9918800afb819`](https://github.com/cursor/plugins/commit/9580c23696ac8d7abed0c166f2f9918800afb819) and started from Open Pstack 1.4.1.
+This checkout is Engineering Toolkit 1.6.0. It tracks Cursor pstack 0.15.36 at commit [`c742dd61706fbacc1b95f1a20b7b988cf096ce6c`](https://github.com/cursor/plugins/commit/c742dd61706fbacc1b95f1a20b7b988cf096ce6c) and started from Open Pstack 1.4.1.
 
 Cursor pstack's version and this fork's version stay independent. The Open Pstack version records the fork point only. Read `UPSTREAM.md` before changing content derived from Cursor pstack. Incoming pstack commits are read in order.
 

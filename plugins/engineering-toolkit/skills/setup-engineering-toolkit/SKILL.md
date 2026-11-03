@@ -84,7 +84,7 @@ Build the new sheet in memory. Do not write it yet.
 | Grok | `feature, refactoring`, `how explorer`, `swarm workers` |
 | Opus | none single; it is a panel lane only |
 
-Each panel role (`arena runners`, `arena cross-judge pool`, `architect runners`, `interrogate reviewers`) gets one lane per served family: Fable, Sol, Grok, Opus. A role whose family this session does not serve is `inherit-parent`. If no family is served, a panel is the single entry `inherit-parent`, and the report says that a panel has no diversity until a second model is configured. The two parent-bound roles are always `inherit-parent`.
+Each panel role (`arena runners`, `arena cross-judge pool`, `architect runners`, `interrogate reviewers`) gets one lane per served family: Fable, Sol, Grok, Opus. A role whose family this session does not serve is `inherit-parent`. If no family is served, a panel is the single entry `inherit-parent`, and the report says that a panel has no diversity until a second model is configured. The two parent-bound roles are always `inherit-parent`. The cross-judge is another family, and `inherit-parent` and `auto` never judge.
 
 After route selection, ask whether to keep the role assignments or change named roles. Keeping them is the default. A changed role may use a selected Route, `inherit-parent`, or `auto`. Keep every role line in the file.
 

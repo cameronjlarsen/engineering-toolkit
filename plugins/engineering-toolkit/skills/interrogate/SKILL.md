@@ -1,100 +1,34 @@
 ---
 name: interrogate
-description: "Use for \"interrogate\", \"adversarial review\", \"multi-model review\", \"challenge this\", \"stress test this code\", \"find blind spots\", or \"tear this apart\". Multiple LLM reviewers challenge changes from independent angles."
+description: "Use for \"interrogate\", \"adversarial review\", \"multi-model review\", \"challenge this\", \"stress test this code\", \"find blind spots\", or \"tear this apart\". Adversaries try to break a change or design, and only findings proven by a run survive."
 ---
 
 # Interrogate
 
-Spawn one reviewer per configured model to adversarially review code changes. Each model gets the same prompt and rubric. The adversarial signal comes from model diversity, not assigned personas. With no sheet that is one reviewer and no diversity, and the report says so.
-
-The deliverable is a synthesized verdict. Do NOT auto-apply changes.
+Adversaries try to break a change or a design. A finding survives only when a command proves it. Report the findings. Do not apply fixes.
 
 **Dispatch contract.** Read [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md) before launching reviewers. Configured entries are Routes written as `[provider:]model@effort`; the parent starts the read-only lanes directly. On Codex, resolve remaining Claude tool names via [`codex-tools.md`](../engineering-mode/references/codex-tools.md).
 
-## Step 1, Determine Scope
+## Frame
 
-Identify what to review from context:
+The scope is what the user names. Otherwise it is the branch diff from its merge base with the base branch, through the working tree. State the intent with the **in-your-own-words** skill, from the user's message, the commits, and the PR description. Ask the user when the intent is unclear.
 
-- If the user points at specific files or a diff, use that
-- If on a feature branch, run `git diff main...HEAD` (or the appropriate base branch) for the full changeset
-- If the user's message references recent work, gather the relevant files
+## Fan out
 
-Package the diff (or file contents) plus any surrounding context files the reviewers need to understand the code.
+Run Phase A steps 3 and 4 and Phase B of the **arena** skill, with these changes. Read the `interrogate reviewers` line in the active model sheet (see [`t3-tools.md`](../engineering-mode/references/t3-tools.md)) in place of `arena runners`. One reviewer runs per entry on that line. Setup writes one entry per served family, and this skill does not change that count. Copy the scope's uncommitted changes into each worktree. Each adversary is a read-only lane on its configured Route, with its own output path. If the descriptor is `inherit-parent` or `auto`, use the parent subagent primitive without a model override. A Route follows [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md). If a configured entry does not resolve, record a dropout and continue with the completed reviewers. Never pick the closest model or silently fall back. Do not spawn `generalPurpose`.
 
-## Step 2, State the Intent
+In place of the arena task and rationale, give each adversary the scope, the intent, and this brief:
 
-Before spawning reviewers, state the intent explicitly. Derive this from:
+> Break this change. Prove each finding with a run against the real code, such as a failing test, a repro script, or command output that shows the wrong behavior. For a design or plan, run a prototype or probe the current tree. Keep repros in your own worktree. Report each finding with a title, the exact command, the output it printed, and the output the intent requires. Leave out anything you did not run. That covers style, naming, structure, and risks that need a future change to matter. No findings is a valid result.
 
-- The user's message
-- Commit messages
-- PR description if one exists
-- The code itself
+## Verify
 
-Write one clear paragraph. If you're unsure about the intent, ask the user before proceeding.
+The lead reruns each finding's command, the check arena Phase F names. Keep a finding when the output shows the failure and the failure breaks the intent. Drop the rest. Merge findings that share a root cause.
 
-## Step 3, Spawn Reviewers
+Skip arena Phases C, D, and E. Adversaries find different failures, so the verdict keeps every verified finding, not one adversary's list.
 
-Start all reviewers in one fan-out phase. Use the `interrogate reviewers` line in the active model sheet (see [`t3-tools.md`](../engineering-mode/references/t3-tools.md)), one reviewer per entry, labeled Reviewer A, B, C, and so on. If the sheet or that line is missing, run one reviewer on `inherit-parent` (the parent model) and say that `/setup-engineering-toolkit` configures a multi-model panel. Each reviewer must return a complete result on its assigned model.
+## Output
 
-For each reviewer, route the configured descriptor with `read-only` access and a unique output path. If the descriptor is `inherit-parent` or `auto`, use the parent subagent primitive without a model override. A Route follows [`provider-dispatch.md`](../engineering-mode/references/provider-dispatch.md). If a configured entry does not resolve, record a dropout and continue with the completed reviewers. Never pick the closest model or silently fall back; that destroys the meaning of cross-provider agreement.
-
-Read `references/reviewer-prompt.md` and fill in the template with:
-1. The stated intent
-2. The diff or file contents
-3. The review rubric from `references/rubric.md`
-4. The code-quality lens from `references/code-quality-review.md`
-
-The same filled template goes to all reviewers, so every model applies the code-quality lens.
-
-## Step 4, Synthesize
-
-As results come back, build a unified picture:
-
-1. **Parse all findings** from the reviewers
-2. **Identify consensus**. Findings raised by 2+ models independently are highest signal. With one reviewer there is no cross-model signal: skip this step, say so in the report, and write "single reviewer, no cross-model signal" in the Agreement Map.
-3. **Identify lone-model findings**. Still worth reading, but weight accordingly.
-4. **Deduplicate**. Different models may describe the same issue differently. Merge these and note which models raised it.
-5. **Note disagreements**. If one model flags something and another explicitly says the opposite, that's useful context for the verdict.
-
-## Step 5, Lead Judgment
-
-You are the lead reviewer, a pragmatic senior engineer, not a neutral aggregator.
-
-Read `references/lead-judgment.md` for the full framework.
-
-Categorize every finding using these buckets:
-
-- **Act on**. Real issues affecting correctness, security, or maintainability given the actual goals. These would block a real PR.
-- **Consider**. Legitimate points, but you're not sure they outweigh the cost of addressing them right now. Worth the user's attention.
-- **Noted**. Technically valid but not actionable. Context-dependent, premature optimization, or low-impact given the current stage.
-- **Dismissed**. Wrong, nitpicky, or missing context. Brief explanation why.
-
-For each finding, include:
-- Which model(s) raised it
-- The category (act on / consider / noted / dismissed)
-- A one-line rationale for the categorization
-
-## Output Format
-
-Present the verdict in this structure:
-
-### Intent
-> [The stated intent paragraph from Step 2]
-
-### Reviewers
-- Reviewer [label]: [model name], [N findings] (one bullet per reviewer)
-
-### Act On
-[Findings that should be addressed. For each: description, which models raised it, why it matters.]
-
-### Consider
-[Findings worth thinking about. For each: description, which models raised it, tradeoff involved.]
-
-### Noted
-[Valid but low-priority. Brief list.]
-
-### Dismissed
-[Rejected findings with brief rationale.]
-
-### Agreement Map
-[Where did models agree, where did they diverge, and what does the pattern of agreement/disagreement tell us?]
+- **Intent**: the restatement.
+- **Findings**: for each verified finding, the command, its output, how it breaks the intent, and the adversaries that found it. Say "no verified findings" when none survive.
+- **Dropped**: for each adversary, the count of dropped findings and why.
