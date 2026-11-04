@@ -118,7 +118,7 @@ A Route runs in the parent app when its provider is that app's token: `claude` o
 
 On a session that is not a delegate host, a Route that names another provider is a named dropout. The parent does not start that provider's CLI, does not run the lane on the parent model, and does not substitute a model. A panel continues with the lanes that ran.
 
-On a delegate host, `t3-tools.md` resolves `provider:model@effort` against the live capability list. A miss is a named dropout.
+On a delegate host, `t3-tools.md` resolves `provider:model@effort` against the live capability list. A miss is a named dropout. A sheet may name a fallback provider. A seat cap retries that route once there with the same resolved model and the same effort.
 
 Grok is a family in that set when the session serves it. The three plugin manifests are the parent apps. There is no Grok manifest.
 

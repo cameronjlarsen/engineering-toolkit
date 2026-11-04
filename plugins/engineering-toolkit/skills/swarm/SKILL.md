@@ -34,7 +34,7 @@ When a worker must start from a non-default branch, check that branch out in the
 
 Every brief stands alone. Include the goal, scope, exact slice or race arm, how to verify, and what to report. Reports use `PASS`, `ISSUES`, or `BLOCKED` with evidence. A worker that can prove a defect reports `ISSUES` and lists every issue it can prove, not only the first.
 
-If a worker drops out, proceed with N-1 and note the provider, model, and failure. Never substitute another provider silently.
+If a worker drops out, proceed with N-1 and note the provider, model, and failure. Never substitute another provider silently. A seat cap uses the reported fallback retry in `provider-dispatch.md`.
 
 ## Phase C: Aggregate
 
