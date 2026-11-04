@@ -24,6 +24,8 @@ The parent-bound roles need the parent's live MCP surface. They run on `inherit-
 
 An entry is `inherit-parent`, `auto`, or a Route. `inherit-parent` and `auto` use the parent's own model and still count as one panel lane. Other lines in the file, such as `# budget:` and a `Descriptor grammar:` header from an older sheet, are prose.
 
+A line `fallback: <source-provider> <destination-provider>` is not a role. The parent reads it. One destination per source. A source that appears twice is ignored, and the parent says so once. A line whose destination is the source is ignored. With no fallback line, a seat cap is a dropout.
+
 ## Route
 
 ```text
@@ -68,8 +70,12 @@ Pass the complete task, grounding paths, access mode, and unique output location
 
 ## Completion and dropouts
 
-A lane counts when its child returned a non-empty result on the assigned model. A missing model, an unlisted effort, a failed login, a cancelled child, or a malformed result is a named dropout. Unknown readiness is a dropout, not a pass. Never substitute the parent model, retry on another provider, or move a lane to a different harness. A panel continues with the lanes that ran, names each dropout, and says how many providers ran. A required review with no completed reviewer stays blocked.
+A lane counts when its child returned a non-empty result on the assigned model. A missing model, an unlisted effort, a failed login, a cancelled child, or a malformed result is a named dropout. Unknown readiness is a dropout, not a pass. Never substitute the parent model or move a lane to a different harness. The seat-cap fallback below is the only retry on another provider. A panel continues with the lanes that ran, names each dropout, and says how many providers ran. A required review with no completed reviewer stays blocked.
 
 Start all lanes in one fan-out phase, then wait for all of them before judging. A judge must not read candidate paths while their owners are still writing.
+
+## Seat-cap fallback
+
+On a delegate host, a route that fails because its provider's seat, quota, or usage limit is exhausted is retried once on the destination named by that provider's `fallback:` line. The retry uses the resolved model id and the same effort. Pass the effort on the option the destination lists for that id. If the sheet names no destination, or the destination does not serve that id and that effort, the lane is a dropout. Report the cap, the source, and the destination. Do not change the model, retry again, or rewrite the sheet. Any other failure stays a dropout. A session that is not a delegate host does not retry. This is a seat or quota limit, not the context-size cap-hit in Orchestrate.
 
 There is no implicit timeout and no weaker-model fallback.

@@ -102,7 +102,7 @@ On a host that satisfies this contract, the delegate tool replaces the native la
    - **Effort.** When the Route has an `@effort`, the effort option is the model's one select option whose values include it, usually `effort`, `reasoningEffort` or `variant`. No such option is `effort-option-missing`. More than one is `ambiguous-effort-option`. The value must be listed verbatim, or the dropout is `effort-not-offered`. Never map `max` to `xhigh` or pick a nearby value. A Route with no `@effort` is valid only for a model that lists no effort option, such as `opencode-go/kimi-k2.7-code`. For a model that lists one, the dropout is `effort-required`.
 4. Pass `target: { providerInstanceId, model, options: { <effort option id>: <effort> } }`, or omit `options` for a model with no effort option. Set no other option.
 
-A Route names its harness. Never move a lane to another provider's instance, even when that instance serves the same model. Moving a lane is an edit to the sheet that the user accepts in setup.
+A Route names its harness. Never move a lane to another provider's instance, even when that instance serves the same model. The one exception is the seat-cap fallback in [`provider-dispatch.md`](provider-dispatch.md). Any other move is an edit to the sheet that the user accepts in setup.
 
 A panel that loses lanes continues with the completed ones, as `provider-dispatch.md` requires, and says how many providers ran. A required review with no completed reviewer stays blocked.
 

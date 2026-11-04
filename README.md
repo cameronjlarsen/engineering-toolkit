@@ -118,7 +118,7 @@ A Route runs in the parent app when its provider is that app's token: `claude` o
 
 On a session that is not a delegate host, a Route that names another provider is a named dropout. The parent does not start that provider's CLI, does not run the lane on the parent model, and does not substitute a model. A panel continues with the lanes that ran.
 
-On a delegate host, `t3-tools.md` resolves `provider:model@effort` against the live capability list. A miss is a named dropout.
+On a delegate host, `t3-tools.md` resolves `provider:model@effort` against the live capability list. A miss is a named dropout. A sheet may name a fallback provider. A seat cap retries that route once there with the same resolved model and the same effort.
 
 Grok is a family in that set when the session serves it. The three plugin manifests are the parent apps. There is no Grok manifest.
 
@@ -135,7 +135,7 @@ This repository also keeps:
 
 ## Tracked sources
 
-This checkout is Engineering Toolkit 1.6.0. It tracks Cursor pstack 0.15.36 at commit [`c742dd61706fbacc1b95f1a20b7b988cf096ce6c`](https://github.com/cursor/plugins/commit/c742dd61706fbacc1b95f1a20b7b988cf096ce6c) and started from Open Pstack 1.4.1.
+This checkout is Engineering Toolkit 1.7.0. It tracks Cursor pstack 0.15.36 at commit [`c742dd61706fbacc1b95f1a20b7b988cf096ce6c`](https://github.com/cursor/plugins/commit/c742dd61706fbacc1b95f1a20b7b988cf096ce6c) and started from Open Pstack 1.4.1.
 
 Cursor pstack's version and this fork's version stay independent. The Open Pstack version records the fork point only. Read `UPSTREAM.md` before changing content derived from Cursor pstack. Incoming pstack commits are read in order.
 

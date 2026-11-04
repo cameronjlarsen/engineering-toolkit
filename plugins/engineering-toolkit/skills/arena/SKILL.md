@@ -35,7 +35,7 @@ Start all N lanes in one fan-out phase through the provider-dispatch contract. L
 
 Each rationale names the alternatives the candidate considered and what it rejected.
 
-A lane counts when its child returned a non-empty result on the assigned model. If a candidate fails, proceed with N-1 and note the exact dropout in the synthesis record. Never replace it with another provider silently.
+A lane counts when its child returned a non-empty result on the assigned model. If a candidate fails, proceed with N-1 and note the exact dropout in the synthesis record. Never replace it with another provider silently. A seat cap uses the reported fallback retry in `provider-dispatch.md`.
 
 ## Phase C: Cross-judge
 
