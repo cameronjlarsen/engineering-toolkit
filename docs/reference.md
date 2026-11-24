@@ -45,7 +45,7 @@ codex plugin marketplace add cameronjlarsen/engineering-toolkit --ref main
 codex plugin add et@engineering-toolkit
 ```
 
-Codex discovers the plugin skills under the `et` namespace, so they list as `et:engineering-mode`, `et:tdd`, and so on. The namespace comes from `plugins/engineering-toolkit/.codex-plugin/plugin.json`. To enable the multi-model and parallel-subagent skills (`interrogate`, `arena`, `how`, `why`, `reflect`, `architect`), turn on subagents in `~/.codex/config.toml`:
+Codex discovers the plugin skills under the `et` namespace, so they list as `et:engineering-mode`, `et:tdd`, and so on. The namespace comes from `plugins/engineering-toolkit/.codex-plugin/plugin.json`. To enable the multi-model and parallel-subagent skills (`interrogate`, `arena`, `how`), turn on subagents in `~/.codex/config.toml`:
 
 ```toml
 [features]
@@ -136,7 +136,7 @@ The table uses the short upstream names. Claude Code exposes each native skill w
 | --- | --- |
 | `/engineering-mode` | default entry point for any non-trivial task |
 | `/how` | walk through how a subsystem works |
-| `/why` | investigate why something was built this way (parallel multi-MCP evidence) |
+| `/why` | investigate why something was built this way, from the commit and PR record |
 | `/architect` | settle types and module shape before writing code that crosses a function boundary |
 | `/arena` | run N parallel attempts at the same task and pick the best parts |
 | `/interrogate` | have four different models try to break a diff |
@@ -212,7 +212,7 @@ The port is editorial, not mechanical. Anywhere upstream pstack assumed Cursor-s
 | Cursor's `/goal` (standing objective across turns) | The program objective written into the run's standing orders and restated in the todolist |
 | The Cursor agent store (path in the system prompt) | `~/.claude/orchestrate/<project-slug>/`, which survives the session restarts a multi-day program expects |
 | Model rule `~/.cursor/rules/engineering-toolkit-models.mdc` | This fork keeps the model sheet in that `.mdc` (always-apply wrapper). Claude Code writes `~/.claude/engineering-toolkit-models.md`, included from `CLAUDE.md`. A delegate host uses the sheet that `t3-tools.md` names instead. Upstream Task slugs are not a second grammar. |
-| Multi-model panels (arena, architect, interrogate) | With no model sheet, each skill runs on `inherit-parent` (the parent model). `/setup-engineering-toolkit` proposes one lane per family the session serves natively. On a session that is not a delegate host, every entry not on the parent's provider is a named dropout. On a delegate host, `t3-tools.md` resolves Routes. |
+| Multi-model panels (arena, interrogate) | With no model sheet, each skill runs on `inherit-parent` (the parent model). `/setup-engineering-toolkit` proposes one lane per family the session serves natively. On a session that is not a delegate host, every entry not on the parent's provider is a named dropout. On a delegate host, `t3-tools.md` resolves Routes. |
 
 ### Cross-vendor dispatch
 

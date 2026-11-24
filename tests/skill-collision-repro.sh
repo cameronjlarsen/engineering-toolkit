@@ -196,9 +196,9 @@ for name in arena architect interrogate swarm how; do
   skill="$repo/plugins/engineering-toolkit/skills/$name/SKILL.md"
   got="$(route_of < "$skill")"
   [ -z "$got" ] || panel_bad="$panel_bad$skill: provider-qualified default [$got]"$'\n'
-  grep -Fq 'inherit-parent' "$skill" || panel_bad="$panel_bad$skill: missing-sheet default is not inherit-parent"$'\n'
+  case "$name" in how|architect) ;; *) grep -Fq 'inherit-parent' "$skill" || panel_bad="$panel_bad$skill: missing-sheet default is not inherit-parent"$'\n' ;; esac
 done
-for role in "feature, refactoring" "bug-fix" "perf-issue" "hillclimb" "judgment and prose" "hardest tasks" "how explorer" "how explainer" "why investigators, synthesizer" "reflect tooling, judgment, divergent, synthesizer" "arena runners" "arena cross-judge pool" "swarm workers" "architect runners" "interrogate reviewers"; do
+for role in "feature, refactoring" "bug-fix" "perf-issue" "hillclimb" "judgment and prose" "hardest tasks" "arena runners" "arena cross-judge pool" "swarm workers" "interrogate reviewers"; do
   grep -q "^${role}: " "$setup" || panel_bad="$panel_bad$setup lost the sheet row: $role"$'\n'
   grep -Fq "\`${role}\`" "$dispatch" || panel_bad="$panel_bad$dispatch lost the role: $role"$'\n'
 done

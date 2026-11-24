@@ -67,7 +67,7 @@ In Codex, ask: `Use et:setup-engineering-toolkit to configure Engineering Toolki
 
 In Cursor, run `/setup-engineering-toolkit`.
 
-Setup reads the models this session can run, shows the route table, and asks before it writes. The first run keeps only the families this session serves. The families are Fable, Sol, Grok, and Opus. A role whose family this session does not serve is `inherit-parent`. The two parent-bound roles are always `inherit-parent`.
+Setup reads the models this session can run, shows the route table, and asks before it writes. The first run keeps only the families this session serves. The families are Fable, Sol, Grok, and Opus. A role whose family this session does not serve is `inherit-parent`.
 
 Setup asks for one budget for the whole sheet. The labels are `unlimited, keep max`, `large, xhigh reasoning`, `medium, high reasoning`, and `small, medium reasoning`. Large, medium, and small write one effort onto every real Route. On a first run, `unlimited` gives each Route the highest ladder effort its model lists.
 
