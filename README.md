@@ -12,6 +12,8 @@ The entry point is `engineering-mode`. You give it a task in plain language. It 
 
 For a feature, engineering-mode follows `playbooks/feature.md`. It runs `how` on the affected part, uses `architect` to explore the design, names the data shape before the delegate writes code, and delegates the implementation. It verifies on the matching surface. If the design is contested, it runs `interrogate` before shipping. Then it runs Opening a PR. The other skills are there when engineering-mode needs them, or when you call one directly.
 
+![How Engineering Toolkit routes a task through focused skills, real-app proof, and a review-ready pull request](assets/engineering-toolkit-workflow.png)
+
 Claude Code prefixes plugin skills with `/et:`, from the plugin name `et`. In Codex, ask for `et:engineering-mode`. In Cursor, run `/engineering-mode`. Claude's SessionStart hook tells the session to invoke `et:engineering-mode` before a non-trivial engineering task. Codex does not load that hook.
 
 ## Install
