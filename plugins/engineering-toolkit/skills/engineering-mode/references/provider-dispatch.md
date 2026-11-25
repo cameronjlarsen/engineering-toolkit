@@ -16,11 +16,8 @@ The role ends at the first `:`. Any line whose role is not in the list below is 
 
 | Kind | Roles |
 |---|---|
-| Single | `feature, refactoring`, `bug-fix`, `perf-issue`, `hillclimb`, `judgment and prose`, `hardest tasks`, `how explorer`, `how explainer`, `swarm workers` |
-| Panel | `arena runners`, `arena cross-judge pool`, `architect runners`, `interrogate reviewers` |
-| Parent-bound | `why investigators, synthesizer`, `reflect tooling, judgment, divergent, synthesizer` |
-
-The parent-bound roles need the parent's live MCP surface. They run on `inherit-parent` or `auto`. If the sheet gives one a Route, ignore the Route and say so.
+| Single | `feature, refactoring`, `bug-fix`, `perf-issue`, `hillclimb`, `judgment and prose`, `hardest tasks`, `swarm workers` |
+| Panel | `arena runners`, `arena cross-judge pool`, `interrogate reviewers` |
 
 An entry is `inherit-parent`, `auto`, or a Route. `inherit-parent` and `auto` use the parent's own model and still count as one panel lane. Other lines in the file, such as `# budget:` and a `Descriptor grammar:` header from an older sheet, are prose.
 

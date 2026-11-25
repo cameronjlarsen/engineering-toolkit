@@ -42,7 +42,7 @@ In Claude Code, a typed skill carries the plugin prefix, as in `/et:engineering-
 
 If cost is the worry, say where the tokens go and how to spend fewer. Engineering Toolkit spends extra tokens on subagents and review panels. Rerun `/setup-engineering-toolkit` and pick lower efforts or cheaper models. A role set to `auto` or `inherit-parent` runs on the session's model, which saves tokens when the session runs on a cheaper model. A shorter panel list runs fewer subagents, one for each entry. Save `/engineering-mode` for work that needs rigor.
 
-Engineering Toolkit ships one shared skill tree for Cursor, Claude Code, and Codex. T3 Code is not a dedicated parent in this baseline. A T3 session using the Codex or Claude Code harness follows that harness's available skills and mapping; do not claim T3-specific setup or dispatch support. Workflow skills such as `/engineering-mode`, `/how`, `/why`, and `/teach` start subagents with per-role models. A model from the app you are using runs inside it, and other models run through their signed-in command-line tools. Codex has no `loop` skill and no `engineering-agent` type. [`codex-tools.md`](../engineering-mode/references/codex-tools.md) and [`cursor-tools.md`](../engineering-mode/references/cursor-tools.md) map the shared tool language to each parent.
+Engineering Toolkit ships one shared skill tree for Cursor, Claude Code, and Codex. T3 Code is not a dedicated parent in this baseline. A T3 session using the Codex or Claude Code harness follows that harness's available skills and mapping; do not claim T3-specific setup or dispatch support. Workflow skills such as `/engineering-mode`, `/how`, and `/teach` start subagents, some with per-role models. A model from the app you are using runs inside it, and other models run through their signed-in command-line tools. Codex has no `loop` skill and no `engineering-agent` type. [`codex-tools.md`](../engineering-mode/references/codex-tools.md) and [`cursor-tools.md`](../engineering-mode/references/cursor-tools.md) map the shared tool language to each parent.
 
 ## Start a task with `/engineering-mode`
 
@@ -66,6 +66,7 @@ The default answer is `/engineering-mode`, which runs most of the others when it
 | Do any non-trivial task with rigor | [`/engineering-mode`](../engineering-mode/SKILL.md) |
 | Check that the agent understood their goal and the problem before it starts | [`/in-your-own-words`](../in-your-own-words/SKILL.md) |
 | Get a prompt rewritten deeper, not bigger, before sending it: what a top professional would add, their raw material and methods, and an outside check. It returns the prompt and doesn't do the task | [`/sharpen`](../sharpen/SKILL.md) |
+| Learn the expert words for what they're building, including words borrowed from neighboring fields, with every cited source checked, and get their description rewritten with them | [`/reframe`](../reframe/SKILL.md) |
 | Know how code works now, or where new code should live | [`/how`](../how/SKILL.md) |
 | Know why code is shaped this way, or where a number came from | [`/why`](../why/SKILL.md) |
 | Understand a change or subsystem, explained plainly | [`/teach`](../teach/SKILL.md) |
@@ -103,7 +104,6 @@ Close calls:
 
 - `/how` explains what the code does. `/why` explains the reasons. `/teach` runs one or both and explains the result plainly.
 - `/arena` gives every worker the same brief and merges the best parts. `/swarm` splits work into slices or a race and returns one report.
-- `/architect` implements right after it settles the design. Add "with checkpoint" to review the design before it writes code.
 - `/interrogate` reviews the diff. Read the Dropped list too. `/blast-radius` looks for breakage outside the diff and proves the one fact that makes the change safe.
 - `/recall` rebuilds context across recent chats. `/ketchup` covers only this chat since the user's last message. Resuming one specific chat or branch is the Session pickup playbook.
 - `/figure-it-out` designs one rigorous run. The Orchestrate playbook runs a program that spans days and many PRs. The Autonomous run playbook drives one task to a finish condition.

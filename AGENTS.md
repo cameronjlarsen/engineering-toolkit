@@ -13,14 +13,4 @@ The typed routing layer and the external launcher are deleted. The last release 
 
 Before opening a pull request, run what `.github/workflows/ci.yml` runs. It is the source of the commands: the Bun tests, the strict typecheck, the manifest JSON check, and the static invariants in `tests/skill-collision-repro.sh`. A version bump moves every manifest version and the version row in `UPSTREAM.md` together.
 
-Nothing merges, tags, releases, or rolls out until the exact candidate is installed and the changed behavior passes a live test from the real user surface. Unit tests, validators, source inspection, and self-reports do not satisfy this gate. What to test depends on what the pull request changes:
-
-- A mapping file, anything under `engineering-mode/scripts/`, a hook, an agent definition under `agents/`, a manifest, or a version field: test every harness it affects.
-- Skill text: if it names no harness-specific tool, path, or model, test on one harness and say which. Otherwise test every harness it names.
-- Documentation, provenance, tests, or CI only: no live test. Say so in the pull request.
-
-If a pull request fits more than one rule, the stricter one applies.
-
-Record the installed version, harness, surface, action, and observed result in the pull request template. A pull request that needs a live test and has no evidence remains a draft.
-
 Do not add an implicit runtime timeout or a weaker-model fallback.

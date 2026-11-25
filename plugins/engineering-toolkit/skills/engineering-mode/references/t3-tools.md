@@ -51,19 +51,14 @@ This example is not a default, and setup never writes it unless the operator ask
 # budget: medium (high)
 judgment and prose: claude:opus@high
 hardest tasks: claude:opus@high
-how explainer: claude:opus@high
 feature, refactoring: opencode:opencode-go/glm-5.3@high
-how explorer: opencode:opencode-go/glm-5.3@high
 swarm workers: opencode:opencode-go/glm-5.3@high
 bug-fix: codex:gpt-6-sol@high
 perf-issue: codex:gpt-6-sol@high
 hillclimb: codex:gpt-6-sol@high
 arena runners: claude:opus@high, codex:gpt-6-sol@high, opencode:opencode-go/glm-5.3@high
 arena cross-judge pool: claude:opus@high, codex:gpt-6-sol@high, opencode:opencode-go/glm-5.3@high
-architect runners: claude:opus@high, codex:gpt-6-sol@high, opencode:opencode-go/glm-5.3@high
 interrogate reviewers: claude:opus@high, codex:gpt-6-sol@high, opencode:opencode-go/glm-5.3@high
-why investigators, synthesizer: inherit-parent
-reflect tooling, judgment, divergent, synthesizer: inherit-parent
 ```
 
 ## T3 mapping

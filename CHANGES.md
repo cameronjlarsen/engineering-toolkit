@@ -46,6 +46,8 @@ The single mapping file is `plugins/engineering-toolkit/skills/engineering-mode/
 
 ## Per-skill changes applied
 
+The `reflect`, `why`, `how`, and `architect` sections below record the original port. Those four skills now carry upstream's one-file text from the `9e278fe4` sync, with the substitution table applied, and their reference files are deleted. See [UPSTREAM.md](UPSTREAM.md).
+
 ### `skills/engineering-mode/SKILL.md`
 
 - Triggers section: `create-skill` → `plugin-dev:skill-development`; `deslop` "from `cursor-team-kit`" qualifier dropped; `control-cli`/`control-ui` line replaced with `run`/`verify` driver guidance; `Cursor's built-in **babysit**` → this plugin's `babysit`.
@@ -122,7 +124,6 @@ The single mapping file is `plugins/engineering-toolkit/skills/engineering-mode/
 - **`claude-opus-4-8` model ID.** Already a valid Claude model; no edit needed beyond stripping the Cursor `-thinking-xhigh` UI suffix. Extended thinking is configured separately, not as a model variant.
 - **`/loop`, `/deslop`, `/babysit` slash references.** These all resolve in Claude Code now (`loop` is a built-in skill; `deslop` and `babysit` ship in this plugin).
 - **`run_in_background: true`.** Claude Code's `Agent` tool supports this — kept as-is.
-- **"currently open files, recent edits, the cursor location"** in `why/SKILL.md` (line 59). "Cursor location" here means editor cursor (caret position), not the IDE; generic phrasing, no edit.
 - **`engineering-agent` subagent ID.** Plugin ships this agent in place of upstream's `poteto-agent`; see the rename table in `UPSTREAM.md`.
 - **Cursor's `/create-skill` writing style guidance referenced indirectly.** Pointed at `plugin-dev:skill-development` which covers the same ground in Claude Code. If you want stricter parity, also install Anthropic's `superpowers:writing-skills` skill.
 

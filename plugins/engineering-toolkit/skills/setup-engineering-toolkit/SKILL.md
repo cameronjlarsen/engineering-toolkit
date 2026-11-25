@@ -79,12 +79,12 @@ Build the new sheet in memory. Do not write it yet.
 
 | Family | Roles that use it |
 |---|---|
-| Fable | `judgment and prose`, `hardest tasks`, `how explainer` |
+| Fable | `judgment and prose`, `hardest tasks` |
 | Sol | `bug-fix`, `perf-issue`, `hillclimb` |
-| Grok | `feature, refactoring`, `how explorer`, `swarm workers` |
+| Grok | `feature, refactoring`, `swarm workers` |
 | Opus | none single; it is a panel lane only |
 
-Each panel role (`arena runners`, `arena cross-judge pool`, `architect runners`, `interrogate reviewers`) gets one lane per served family: Fable, Sol, Grok, Opus. A role whose family this session does not serve is `inherit-parent`. If no family is served, a panel is the single entry `inherit-parent`, and the report says that a panel has no diversity until a second model is configured. The two parent-bound roles are always `inherit-parent`. The cross-judge is another family, and `inherit-parent` and `auto` never judge.
+Each panel role (`arena runners`, `arena cross-judge pool`, `interrogate reviewers`) gets one lane per served family: Fable, Sol, Grok, Opus. A role whose family this session does not serve is `inherit-parent`. If no family is served, a panel is the single entry `inherit-parent`, and the report says that a panel has no diversity until a second model is configured. The cross-judge is another family, and `inherit-parent` and `auto` never judge.
 
 After route selection, ask whether to keep the role assignments or change named roles. Keeping them is the default. A changed role may use a selected Route, `inherit-parent`, or `auto`. Keep every role line in the file.
 
@@ -107,14 +107,9 @@ perf-issue: <entry>
 hillclimb: <entry>
 judgment and prose: <entry>
 hardest tasks: <entry>
-how explorer: <entry>
-how explainer: <entry>
-why investigators, synthesizer: inherit-parent
-reflect tooling, judgment, divergent, synthesizer: inherit-parent
 arena runners: <entry>, <entry>
 arena cross-judge pool: <entry>, <entry>
 swarm workers: <entry>
-architect runners: <entry>, <entry>
 interrogate reviewers: <entry>, <entry>
 ```
 

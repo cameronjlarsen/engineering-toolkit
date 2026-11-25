@@ -12,6 +12,8 @@ The entry point is `engineering-mode`. You give it a task in plain language. It 
 
 For a feature, engineering-mode follows `playbooks/feature.md`. It runs `how` on the affected part, uses `architect` to explore the design, names the data shape before the delegate writes code, and delegates the implementation. It verifies on the matching surface. If the design is contested, it runs `interrogate` before shipping. Then it runs Opening a PR. The other skills are there when engineering-mode needs them, or when you call one directly.
 
+![How Engineering Toolkit routes a task through focused skills, real-app proof, and a review-ready pull request](assets/engineering-toolkit-workflow.png)
+
 Claude Code prefixes plugin skills with `/et:`, from the plugin name `et`. In Codex, ask for `et:engineering-mode`. In Cursor, run `/engineering-mode`. Claude's SessionStart hook tells the session to invoke `et:engineering-mode` before a non-trivial engineering task. Codex does not load that hook.
 
 ## Install
@@ -67,7 +69,7 @@ In Codex, ask: `Use et:setup-engineering-toolkit to configure Engineering Toolki
 
 In Cursor, run `/setup-engineering-toolkit`.
 
-Setup reads the models this session can run, shows the route table, and asks before it writes. The first run keeps only the families this session serves. The families are Fable, Sol, Grok, and Opus. A role whose family this session does not serve is `inherit-parent`. The two parent-bound roles are always `inherit-parent`.
+Setup reads the models this session can run, shows the route table, and asks before it writes. The first run keeps only the families this session serves. The families are Fable, Sol, Grok, and Opus. A role whose family this session does not serve is `inherit-parent`.
 
 Setup asks for one budget for the whole sheet. The labels are `unlimited, keep max`, `large, xhigh reasoning`, `medium, high reasoning`, and `small, medium reasoning`. Large, medium, and small write one effort onto every real Route. On a first run, `unlimited` gives each Route the highest ladder effort its model lists.
 
@@ -135,7 +137,7 @@ This repository also keeps:
 
 ## Tracked sources
 
-This checkout is Engineering Toolkit 1.7.0. It tracks Cursor pstack 0.15.36 at commit [`c742dd61706fbacc1b95f1a20b7b988cf096ce6c`](https://github.com/cursor/plugins/commit/c742dd61706fbacc1b95f1a20b7b988cf096ce6c) and started from Open Pstack 1.4.1.
+This checkout is Engineering Toolkit 1.8.0. It tracks Cursor pstack 0.15.48 at commit [`9e278fe4d4ecd8bfe98b1b79bf4be662efb338cc`](https://github.com/cursor/plugins/commit/9e278fe4d4ecd8bfe98b1b79bf4be662efb338cc) and started from Open Pstack 1.4.1.
 
 Cursor pstack's version and this fork's version stay independent. The Open Pstack version records the fork point only. Read `UPSTREAM.md` before changing content derived from Cursor pstack. Incoming pstack commits are read in order.
 
